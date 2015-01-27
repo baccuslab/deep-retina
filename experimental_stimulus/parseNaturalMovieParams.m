@@ -1,11 +1,11 @@
-function ex = parseLaneInput(varargin)
+function ex = parseNaturalMovieParams(varargin)
 %
-% FUNCTION ex = parseLaneInput(varargin)
+% FUNCTION ex = parseNaturalMovieParams(varargin)
 %
 % The function parseLaneInput is the template function for parsing optional input
 % arguments to an experiment.
 %
-% (c) bnaecker@stanford.edu 20 Feb 2013	
+%
 
 % length of each repeat (seconds)
 if any(strcmpi('time', varargin))
@@ -45,14 +45,9 @@ else
 	ex.pa.useWhite = true;
 end
 
-if any(strcmpi('est', varargin))
-    ex.pa.useEst = varargin{find(strcmpi('est', varargin)) + 1};
+% choose natural image directory
+if any(strcmpi('dir', varargin))
+    ex.pa.imgDir = varargin{find(strcmpi('dir', varargin)) + 1};
 else
-    ex.pa.useEst = true;
-end
-
-if any(strcmpi('ramp', varargin))
-    ex.pa.useRamps = varargin{find(strcmpi('ramp', varargin)) + 1};
-else
-    ex.pa.useRamps = true;
+    ex.pa.imgDir = '~/Documents/Natural_Images/RawData/cd01A';
 end

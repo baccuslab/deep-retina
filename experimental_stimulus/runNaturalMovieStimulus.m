@@ -6,7 +6,7 @@ function ex = runAsteriskStimulus(ex)
 % experiment-specific stimulus. In this case, it is the SimpleEdges drifting
 % grating stimulus
 %
-% (c) bnaecker@stanford.edu 28 Jan 2013 
+% 
 
 %% get the block number
 si = ex.pa.currentStimBlock;

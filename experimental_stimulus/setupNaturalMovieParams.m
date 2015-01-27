@@ -1,13 +1,10 @@
-function ex = setupLaneParams(ex)
+function ex = setupNaturalMovieParams(ex)
 %
-% FUNCTION ex = setupTemplateParams(ex)
+% FUNCTION ex = setupNaturalMovieParams(ex)
 %
-% The function setupTemplateParams is the template function to create experimental
+% The function setupNaturalMovieParams is the function to create experimental
 % parameters.
 %
-% see also: RunTemplateExpt.m
-%
-% (c) bnaecker@stanford.edu 20 Feb 2013
 
 %% Notify
 Screen('DrawText', ex.ds.winPtr, 'Creating stimulus parameters ... ', ...
@@ -15,36 +12,17 @@ Screen('DrawText', ex.ds.winPtr, 'Creating stimulus parameters ... ', ...
 Screen('Flip', ex.ds.winPtr);
 
 %% basic information
-ex.pa.experimentName = 'Lane';
+ex.pa.experimentName = 'NaturalMovieStimulus';
 ex.pa.date = datestr(now, 30);
 ex.pa.saveDir = '~/Desktop';
 ex = makeSaveDirectory(ex);
 
-%% stimulus types
-%ex.pa.stimType = ['white'; 'white'; cellstr(repmat('checkers', ex.pa.nReps, 1))];
-%by default ex.pa.nReps = 20 (set in parseLaneInput)
-%est        = cell(3, 1);
-%[est{:}]   = deal('establish');
-%ramps      = cell(ex.pa.nReps, 1);
-%[ramps{:}] = deal('ramp');
 whiteStims = cellstr(repmat('white', 5, 1));
-est        = cellstr(repmat('establish', 10, 1));
-ramps      = cellstr(repmat('ramp', ex.pa.nReps, 1));
-asterisks  = cellstr(repmat('asterisk', ex.pa.nReps, 1));
-%rampsFast  = cellstr(repmat('rampFast', ex.pa.nReps, 1));
-%ex.pa.stimType = [whiteStims; est; ramps; rampsFast];
-ex.pa.stimType = [whiteStims; est; ramps; asterisks];
+natural    = cellstr(repmat('natural', ex.pa.nReps, 1));
+ex.pa.stimType = [whiteStims; natural];
 
 if ~ex.pa.useWhite
     ex.pa.stimType = ex.pa.stimType(~strcmp(ex.pa.stimType,'white'));
-end
-
-if ~ex.pa.useEst
-    ex.pa.stimType = ex.pa.stimType(~strcmp(ex.pa.stimType,'establish'));
-end
-
-if ~ex.pa.useRamps
-    ex.pa.stimType = ex.pa.stimType(~strcmp(ex.pa.stimType,'ramp'));
 end
 
 %% aperture information
@@ -63,20 +41,21 @@ ex.pa.nBoxes = 32;							    % used as resolution for ALL stimuli
 ex.pa.whiteContrastIndex = ones(ex.pa.nFrames, 1);
 
 %% create conditions 
-% need to have [contrasts, corrs] in conditionList
-corrs = [1 -1];
-contrasts = [0.05 0.35];
-numLevels = 9;
-ex.pa.conditionList = [(200 - 25)*(exp(linspace(0,3,numLevels)) - 1)/max(exp(linspace(0,3,numLevels))-1) + 25]';
-% am now using log spacing instead of linear spacing [25.0; 50.0; 75.0; 100.0; 125.0; 150.0; 175.0; 200.0; 225.0];
-ex.pa.nConditions = size(ex.pa.conditionList, 1);
-middle            = median(1:ex.pa.nConditions);
-if mod(ex.pa.nConditions,2) ~= 1
-    error('Number of conditions not odd')
+% store a cell array of the image names to ex.pa.imgNames
+imageStruct = dir(ex.pa.imgDir);
+ex.pa.imgNames = cell(length(imageStruct));
+for img = 1:length(ex.pa.imageNames)
+    if ~isempty(findstr('LUM',imageStruct(img).name))
+        ex.pa.imgNames{img} = imageStruct(img).name;
+    end
 end
-ex.pa.contrast    = 0.2;
-ex.pa.stds        = ex.pa.contrast.*ex.pa.conditionList;
-ex.pa.probes      = {-2; 0; 2};
+ex.pa.imgNames = ex.pa.imgNames(~cellfun('isempty',ex.pa.imgNames));
+
+% store a cell array of the image paths
+ex.pa.imgPaths = cell(length(ex.pa.imgNames));
+for img = 1:length(ex.pa.imgPaths)
+    ex.pa.imgPaths{img} = strcat(ex.pa.imgDir, '/', ex.pa.imgNames{img});
+end
 
 %% random seed for each stimulus block
 % Note how the seed # changes with each iteration; each sequence different

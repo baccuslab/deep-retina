@@ -44,7 +44,7 @@ ex.pa.whiteContrastIndex = ones(ex.pa.nFrames, 1);
 % store a cell array of the image names to ex.pa.imgNames
 imageStruct = dir(ex.pa.imgDir);
 ex.pa.imgNames = cell(length(imageStruct));
-for img = 1:length(ex.pa.imageNames)
+for img = 1:length(ex.pa.imgNames)
     if ~isempty(findstr('LUM',imageStruct(img).name))
         ex.pa.imgNames{img} = imageStruct(img).name;
     end

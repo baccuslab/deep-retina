@@ -25,8 +25,10 @@ while fi <= ex.pa.nFrames && ~ex.kb.keyCode(ex.kb.escKey)
 
 
 	% make the texture
+    if mod(fi, 5) == 1
+        newImage = ex.pa.imgNames
 	tex = zeros(ex.pa.nBoxes);
-	if strcmp(ex.pa.stimType{si}, 'asterisk')
+	if strcmp(ex.pa.stimType{si}, 'natural')
 		tex(:) = ex.pa.texture{si}(fi);
 	end
 

@@ -259,7 +259,7 @@ def init_five_layer_convnet(input_shape=(3, 64, 64), num_classes=100,
   F1, F2, F3, FC = num_filters
   filter_size = 5
   model = {}
-  model['W1'] = np.random.randn(F1, 3, filter_sizes[0], filter_sizes[0])
+  model['W1'] = np.random.randn(F1, C, filter_sizes[0], filter_sizes[0])
   model['b1'] = np.random.randn(F1)
   model['W2'] = np.random.randn(F2, F1, filter_sizes[1], filter_sizes[1])
   model['b2'] = np.random.randn(F2)

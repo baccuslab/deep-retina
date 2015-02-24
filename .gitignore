@@ -58,3 +58,6 @@ target/
 
 # Temporary data
 .ipynb_checkpoints/
+
+# hide images
+*.png

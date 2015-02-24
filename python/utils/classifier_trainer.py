@@ -152,7 +152,7 @@ class ClassifierTrainer(object):
 
         # evaluate val accuracy, but split the validation set into batches
         y_pred_val = []
-        for i in xrange(X_val.shape[0] / 100):
+        for i in xrange(int(np.ceil(X_val.shape[0] / 100.0))):
           X_val_slice = X_val[i*100:(i+1)*100]
           if predict_fn is not None:
             X_val_slice = predict_fn(X_val_slice)

@@ -139,27 +139,32 @@ class ClassifierTrainer(object):
           y_train_subset = y
         # Computing a forward pass with a batch size of 1000 will is no good,
         # so we batch it
-        y_pred_train = []
-        for i in xrange(X_train_subset.shape[0] / 100):
-          X_train_slice = X_train_subset[i*100:(i+1)*100]
-          if predict_fn is not None:
-            X_train_slice = predict_fn(X_train_slice)
-          scores = loss_function(X_train_slice, model)
-          y_pred_train.append(np.argmax(scores, axis=1))
-        y_pred_train = np.hstack(y_pred_train)
-        train_acc = np.mean(y_pred_train == y_train_subset)
+        scores = loss_function(X_train_subset, model)
+        y_pred_train = (1./(1 + np.exp(-scores)))
+        #y_pred_train = []
+        #for i in xrange(X_train_subset.shape[0] / 100):
+        #  X_train_slice = X_train_subset[i*100:(i+1)*100]
+        #  if predict_fn is not None:
+        #    X_train_slice = predict_fn(X_train_slice)
+        #  scores = loss_function(X_train_slice, model)
+        #  y_pred_train.append(np.argmax(scores, axis=1))
+        #y_pred_train = np.hstack(y_pred_train)
+        #train_acc = np.mean(y_pred_train == y_train_subset)
+        train_acc = np.mean((y_pred_train - y_train)**2)
         train_acc_history.append(train_acc)
 
         # evaluate val accuracy, but split the validation set into batches
-        y_pred_val = []
-        for i in xrange(int(np.ceil(X_val.shape[0] / 100.0))):
-          X_val_slice = X_val[i*100:(i+1)*100]
-          if predict_fn is not None:
-            X_val_slice = predict_fn(X_val_slice)
-          scores = loss_function(X_val_slice, model)
+        scores = loss_function(X_val, model)
+        y_pred_val = (1./(1 + np.exp(-scores)))
+
+        #for i in xrange(int(np.ceil(X_val.shape[0] / 100.0))):
+        #  X_val_slice = X_val[i*100:(i+1)*100]
+        #  if predict_fn is not None:
+        #    X_val_slice = predict_fn(X_val_slice)
+        #  scores = loss_function(X_val_slice, model)
           #y_pred_val.append(np.argmax(scores, axis=1))
-          y_pred_val.append(1./(1 + np.exp(-scores))) # just give the probability of spiking
-        y_pred_val = np.hstack(y_pred_val)
+        #  y_pred_val.append(1./(1 + np.exp(-scores))) # just give the probability of spiking
+        #y_pred_val = np.hstack(y_pred_val)
         #val_acc = np.mean(y_pred_val ==  y_val)
         val_acc = np.mean((y_pred_val - y_val)**2)
         val_acc_history.append(val_acc)

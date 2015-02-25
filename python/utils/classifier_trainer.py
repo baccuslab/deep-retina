@@ -150,7 +150,7 @@ class ClassifierTrainer(object):
         #  y_pred_train.append(np.argmax(scores, axis=1))
         #y_pred_train = np.hstack(y_pred_train)
         #train_acc = np.mean(y_pred_train == y_train_subset)
-        train_acc = np.mean((y_pred_train - y_train)**2)
+        train_acc = np.mean((y_pred_train - y_train_subset)**2)
         train_acc_history.append(train_acc)
 
         # evaluate val accuracy, but split the validation set into batches

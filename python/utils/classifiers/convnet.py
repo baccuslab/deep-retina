@@ -286,7 +286,7 @@ def five_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0,
   """
   Compute the loss and gradient for a five layer convnet with the architecture
 
-  [conv - relu - pool] x 3 - affine - relu - dropout - affine - softmax
+  [conv - relu - pool] x 3 - affine - relu - dropout - affine - logistic regression
 
   Each conv is stride 1 with padding chosen so the convolutions are "same";
   all padding is 2x2 stride 2.
@@ -371,13 +371,14 @@ def five_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0,
 
   if y is None:
     if return_probs:
-      probs = np.exp(scores - np.max(scores, axis=1, keepdims=True))
-      probs /= np.sum(probs, axis=1, keepdims=True)
+      #probs = np.exp(scores - np.max(scores, axis=1, keepdims=True))
+      #probs /= np.sum(probs, axis=1, keepdims=True)
+      probs = 1. / (1 + np.exp(-scores))
       return probs
     else:
       return scores
 
-  data_loss, dscores = softmax_loss(scores, y)
+  data_loss, dscores = mse_loss(scores, y)
   dd4, dW5, db5 = affine_backward(dscores, cache6)
   da4 = dropout_backward(dd4, cache5)
   da3, dW4, db4 = affine_relu_backward(da4, cache4)

@@ -209,6 +209,9 @@ def mse_loss(x, y):
   - dx:   Gradient of the loss with respect to x
   """
   # compute logistic regression forward pass
+
+  # guarantee that y matches probs
+  y      = y.reshape(x.shape)
   probs  = 1./(1 + np.exp(-x))
   loss   = np.mean((probs - y)**2)
 

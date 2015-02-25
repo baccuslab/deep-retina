@@ -157,9 +157,11 @@ class ClassifierTrainer(object):
           if predict_fn is not None:
             X_val_slice = predict_fn(X_val_slice)
           scores = loss_function(X_val_slice, model)
-          y_pred_val.append(np.argmax(scores, axis=1))
+          #y_pred_val.append(np.argmax(scores, axis=1))
+          y_pred_val.append(1./(1 + np.exp(-scores))) # just give the probability of spiking
         y_pred_val = np.hstack(y_pred_val)
-        val_acc = np.mean(y_pred_val ==  y_val)
+        #val_acc = np.mean(y_pred_val ==  y_val)
+        val_acc = np.mean((y_pred_val - y_val)**2)
         val_acc_history.append(val_acc)
         
         # keep track of the best model based on validation accuracy

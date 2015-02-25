@@ -208,9 +208,12 @@ def mse_loss(x, y):
   - loss: Scalar giving the loss
   - dx:   Gradient of the loss with respect to x
   """
-  # compute logistic regression
+  # compute logistic regression forward pass
   probs  = 1./(1 + np.exp(-x))
   loss   = np.mean((probs - y)**2)
-  dprobs = 2*np.mean(probs-y)
+
+  # backward pass
+  dprobs = 2*(probs-y)
   dx     = probs*(1 - probs) * dprobs
+  dx     /= x.shape[0]
   return loss, dx

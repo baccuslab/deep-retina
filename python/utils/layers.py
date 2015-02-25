@@ -195,3 +195,22 @@ def softmax_loss(x, y):
   dx /= N
   return loss, dx
 
+def mse_loss(x, y):
+  """
+  Computes the mean squared error loss and gradient for logistic regression.
+  Assumes that y is a vector of probabilities (for instance, of firing).
+
+  Inputs:
+  - x: Input data, of shape (N,) where x[i] is the score for the ith input.
+  - y: Vector of ground truth, of shape (N,) where y[i] is the desired ith output.
+
+  Returns a tuple of:
+  - loss: Scalar giving the loss
+  - dx:   Gradient of the loss with respect to x
+  """
+  # compute logistic regression
+  probs  = 1./(1 + np.exp(-x))
+  loss   = np.mean((probs - y)**2)
+  dprobs = 2*np.mean(probs-y)
+  dx     = probs*(1 - probs) * dprobs
+  return loss, dx

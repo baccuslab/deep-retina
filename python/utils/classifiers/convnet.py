@@ -403,8 +403,8 @@ def five_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0,
   reg_loss = 0.0
   for p in ['W1', 'W2', 'W3', 'W4', 'W5']:
     W = model[p]
-    reg_loss += 0.5 * reg * np.sum(W*W) 
-    grads[p] += reg * W
+    reg_loss += np.sum(np.abs(W)) #0.5 * reg * np.sum(W*W) 
+    grads[p] += reg * np.sign(W)  #reg * W
   loss = data_loss + reg_loss
 
   return loss, grads

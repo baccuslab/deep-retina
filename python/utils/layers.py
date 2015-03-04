@@ -220,3 +220,26 @@ def mse_loss(x, y):
   dx     = probs*(1 - probs) * dprobs
   dx     /= x.shape[0]
   return loss, dx
+
+def cross_entropy_loss(x, y):
+  """
+  Computes the cross entropy or logistic loss.
+  Assumes that y is a vector of probabilities (for instance, of firing), and x is a vector of scores.
+
+  Inputs:
+  - x: Input data, of shape (N,) where x[i] is the score for the ith input.
+  - y: Vector of ground truth, of shape (N,) where y[i] is the desired ith output.
+
+  Returns a tuple of:
+  - loss: Scalar giving the loss
+  - dx:   Gradient of the loss with respect to x
+  """
+  y     = y.reshape(x.shape)
+  probs = 1./(1 + np.exp(-x))
+  loss  = np.mean(-y*np.log(probs) - (1.-y)*np.log(1.-probs))
+
+  # backward pass
+  dprobs = -y/probs + (1.-y)/(1.-probs)
+  dx     = probs*(1 - probs) * dprobs
+  dx    /= x.shape[0]
+  return loss, dx

@@ -110,7 +110,7 @@ def init_two_layer_convnet(weight_scale=1e-3, bias_scale=0, input_shape=(3, 32, 
   return model
 
 
-def init_three_layer_convnet(input_shape=(3, 32, 32), num_classes=10,
+def init_three_layer_convnet(input_shape=(3, 32, 32), num_classes=1,
                             filter_size=5, num_filters=(32, 128),
                             weight_scale=1e-2, bias_scale=0, dtype=np.float32):
   """
@@ -139,9 +139,8 @@ def init_three_layer_convnet(input_shape=(3, 32, 32), num_classes=10,
   """
   C, H, W = input_shape
   F1, FC = num_filters
-  filter_size = 5
   model = {}
-  model['W1'] = np.random.randn(F1, 3, filter_size, filter_size)
+  model['W1'] = np.random.randn(F1, C, filter_size, filter_size)
   model['b1'] = np.random.randn(F1)
   model['W2'] = np.random.randn(H * W * F1 / 4, FC)
   model['b2'] = np.random.randn(FC)
@@ -158,7 +157,7 @@ def init_three_layer_convnet(input_shape=(3, 32, 32), num_classes=10,
   return model
 
 
-def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None):
+def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None, return_probs=False, compute_dX=False):
   """
   Compute the loss and gradient for a simple three layer ConvNet that uses
   the following architecture:
@@ -201,9 +200,13 @@ def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None):
     scores, cache4 = affine_forward(d2, W3, b3)
 
   if y is None:
-    return scores
+    if return_probs:
+        probs = 1. / (1 + np.exp(-scores))
+        return probs
+    else:
+        return scores
 
-  data_loss, dscores = softmax_loss(scores, y)
+  data_loss, dscores = mse_loss(scores, y)
   if dropout is None:
     da2, dW3, db3 = affine_backward(dscores, cache4)
   else:
@@ -212,13 +215,17 @@ def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None):
   da1, dW2, db2 = affine_relu_backward(da2, cache2)
   dX, dW1, db1 = conv_relu_pool_backward(da1, cache1)
 
+  if compute_dX:
+      #dX, _, _ = conv_relu_pool_backward(da1, cache1)
+      return dX
+
   grads = { 'W1': dW1, 'b1': db1, 'W2': dW2, 'b2': db2, 'W3': dW3, 'b3': db3 }
 
   reg_loss = 0.0
   for p in ['W1', 'W2', 'W3']:
     W = model[p]
-    reg_loss += 0.5 * reg * np.sum(W * W)
-    grads[p] += reg * W
+    reg_loss += np.sum(np.abs(W)) #0.5 * reg * np.sum(W * W)
+    grads[p] += reg * np.sign(W)  #reg * W
   loss = data_loss + reg_loss
 
   return loss, grads
@@ -257,7 +264,6 @@ def init_five_layer_convnet(input_shape=(3, 64, 64), num_classes=100,
   """
   C, H, W = input_shape
   F1, F2, F3, FC = num_filters
-  filter_size = 5
   model = {}
   model['W1'] = np.random.randn(F1, C, filter_sizes[0], filter_sizes[0])
   model['b1'] = np.random.randn(F1)

@@ -157,7 +157,7 @@ def init_three_layer_convnet(input_shape=(3, 32, 32), num_classes=1,
   return model
 
 
-def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None, return_probs=False, compute_dX=False):
+def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None, return_probs=False, compute_dX=False, top_layer='mqe'):
   """
   Compute the loss and gradient for a simple three layer ConvNet that uses
   the following architecture:
@@ -206,7 +206,14 @@ def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None, return_probs=Fa
     else:
         return scores
 
-  data_loss, dscores = mse_loss(scores, y)
+  # choose the loss function
+  if top_layer == 'mse':
+    data_loss, dscores = mse_loss(scores, y)
+  elif top_layer == 'mqe':
+    data_loss, dscores = mqe_loss(scores, y)
+  elif top_layer == 'logistic':
+    data_loss, dscores = cross_entropy_loss(scores, y)
+
   if dropout is None:
     da2, dW3, db3 = affine_backward(dscores, cache4)
   else:
@@ -384,7 +391,8 @@ def five_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0,
     else:
       return scores
 
-  data_loss, dscores = mse_loss(scores, y)
+  #data_loss, dscores = mse_loss(scores, y)
+  data_loss, dscores = cross_entropy_loss(scores, y)
   dd4, dW5, db5 = affine_backward(dscores, cache6)
   da4 = dropout_backward(dd4, cache5)
   da3, dW4, db4 = affine_relu_backward(da4, cache4)

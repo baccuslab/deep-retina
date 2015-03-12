@@ -234,12 +234,55 @@ def cross_entropy_loss(x, y):
   - loss: Scalar giving the loss
   - dx:   Gradient of the loss with respect to x
   """
+  # if you don't do this step, loss is shape (num_ex, num_ex)
+  desqueezeX = False
+  if len(x.shape) > 1:
+      x = x.squeeze()
+      desqueezeX = True
+  if len(y.shape) > 1:
+      y = y.squeeze()
+
   y     = y.reshape(x.shape)
   probs = 1./(1 + np.exp(-x))
+  probs[probs==0.0] = 10e-200
+  probs[probs==1.0] = 1. - 10e-15
   loss  = np.mean(-y*np.log(probs) - (1.-y)*np.log(1.-probs))
 
   # backward pass
   dprobs = -y/probs + (1.-y)/(1.-probs)
   dx     = probs*(1 - probs) * dprobs
   dx    /= x.shape[0]
+  if (np.isnan(dx)).any():
+      import pdb
+      pdb.set_trace()
+
+  if desqueezeX:
+      dx = np.expand_dims(dx, 1)
+
+  return loss, dx
+
+def mqe_loss(x, y):
+  """
+  Computes the mean squared error loss and gradient for logistic regression.
+  Assumes that y is a vector of probabilities (for instance, of firing).
+
+  Inputs:
+  - x: Input data, of shape (N,) where x[i] is the score for the ith input.
+  - y: Vector of ground truth, of shape (N,) where y[i] is the desired ith output.
+
+  Returns a tuple of:
+  - loss: Scalar giving the loss
+  - dx:   Gradient of the loss with respect to x
+  """
+  # compute logistic regression forward pass
+
+  # guarantee that y matches probs
+  y      = y.reshape(x.shape)
+  probs  = 1./(1 + np.exp(-x))
+  loss   = np.mean((probs - y)**4)
+
+  # backward pass
+  dprobs = 4*((probs-y)**3)
+  dx     = probs*(1 - probs) * dprobs
+  dx     /= x.shape[0]
   return loss, dx

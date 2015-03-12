@@ -1,4 +1,6 @@
 import numpy as np
+import layers
+from scipy.stats.stats import pearsonr
 
 
 class ClassifierTrainer(object):
@@ -11,13 +13,13 @@ class ClassifierTrainer(object):
             reg=0.0, dropout=1.0,
             learning_rate=1e-2, momentum=0, learning_rate_decay=0.95,
             update='momentum', sample_batches=True,
-            num_epochs=30, batch_size=100, err_frequency=None,
+            num_epochs=30, batch_size=100, acc_frequency=None,
             augment_fn=None, predict_fn=None,
             verbose=False):
     """
     Optimize the parameters of a model to minimize a loss function. We use
     training data X and y to compute the loss and gradients, and periodically
-    check the error on the validation set.
+    check the accuracy on the validation set.
 
     Inputs:
     - X: Array of training data; each X[i] is a training sample.
@@ -41,8 +43,8 @@ class ClassifierTrainer(object):
       each parameter update (gradient descent).
     - num_epochs: The number of epochs to take over the training data.
     - batch_size: The number of training samples to use at each iteration.
-    - err_frequency: If set to an integer, we compute the training and
-      validation set error after every err_frequency iterations.
+    - acc_frequency: If set to an integer, we compute the training and
+      validation set accuracy after every acc_frequency iterations.
     - augment_fn: A function to perform data augmentation. If this is not
       None, then during training each minibatch will be passed through this
       before being passed as input to the network.
@@ -52,12 +54,12 @@ class ClassifierTrainer(object):
     - verbose: If True, print status after each epoch.
 
     Returns a tuple of:
-    - best_model: The model that got the highest validation error during
+    - best_model: The model that got the highest validation accuracy during
       training.
     - loss_history: List containing the value of the loss function at each
       iteration.
-    - train_err_history: List storing the training set error at each epoch.
-    - val_err_history: List storing the validation set error at each epoch.
+    - train_acc_history: List storing the training set accuracy at each epoch.
+    - val_acc_history: List storing the validation set accuracy at each epoch.
     """
 
     N = X.shape[0]
@@ -68,11 +70,11 @@ class ClassifierTrainer(object):
       iterations_per_epoch = 1 # using GD
     num_iters = num_epochs * iterations_per_epoch
     epoch = 0
-    best_val_err = np.inf
+    best_val_acc = np.inf
     best_model = {}
     loss_history = []
-    train_err_history = []
-    val_err_history = []
+    train_acc_history = []
+    val_acc_history = []
     for it in xrange(num_iters):
       if verbose:
         if it % 10 == 0:  print 'starting iteration ', it
@@ -122,14 +124,14 @@ class ClassifierTrainer(object):
       # every epoch perform an evaluation on the validation set
       first_it = (it == 0)
       epoch_end = (it + 1) % iterations_per_epoch == 0
-      err_check = (err_frequency is not None and it % err_frequency == 0)
-      if first_it or epoch_end or err_check:
+      acc_check = (acc_frequency is not None and it % acc_frequency == 0)
+      if first_it or epoch_end or acc_check:
         if it > 0 and epoch_end:
           # decay the learning rate
           learning_rate *= learning_rate_decay
           epoch += 1
 
-        # evaluate train error
+        # evaluate train accuracy
         if N > 1000:
           train_mask = np.random.choice(N, 1000)
           X_train_subset = X[train_mask]
@@ -149,11 +151,15 @@ class ClassifierTrainer(object):
         #  scores = loss_function(X_train_slice, model)
         #  y_pred_train.append(np.argmax(scores, axis=1))
         #y_pred_train = np.hstack(y_pred_train)
-        #train_err = np.mean(y_pred_train == y_train_subset)
-        train_err = np.mean((y_pred_train - y_train_subset)**2)
-        train_err_history.append(train_err)
+        #train_acc = np.mean(y_pred_train == y_train_subset)
+        
+        
+        train_acc, _ = pearsonr(y_pred_train, y_train_subset) 
+        #train_acc, _ = layers.cross_entropy_loss(scores, y_train_subset)
+        #train_acc = np.mean((y_pred_train - y_train_subset)**2)
+        train_acc_history.append(train_acc)
 
-        # evaluate val error, but split the validation set into batches
+        # evaluate val accuracy, but split the validation set into batches
         scores = loss_function(X_val, model)
         y_pred_val = (1./(1 + np.exp(-scores)))
 
@@ -165,14 +171,17 @@ class ClassifierTrainer(object):
           #y_pred_val.append(np.argmax(scores, axis=1))
         #  y_pred_val.append(1./(1 + np.exp(-scores))) # just give the probability of spiking
         #y_pred_val = np.hstack(y_pred_val)
-        #val_err = np.mean(y_pred_val ==  y_val)
-        val_err = np.mean((y_pred_val - y_val)**2)
-        val_err_history.append(val_err)
+        #val_acc = np.mean(y_pred_val ==  y_val)
+
+        val_acc, _ = pearsonr(y_pred_val, y_val)
+        #val_acc, _ = layers.cross_entropy_loss(scores, y_val)
+        #val_acc = np.mean((y_pred_val - y_val)**2)
+        val_acc_history.append(val_acc)
         
-        # keep track of the best model based on validation error
-        if val_err < best_val_err:
+        # keep track of the best model based on validation accuracy
+        if val_acc > best_val_acc:
           # make a copy of the model
-          best_val_err = val_err
+          best_val_acc = val_acc
           best_model = {}
           for p in model:
             best_model[p] = model[p].copy()
@@ -180,12 +189,12 @@ class ClassifierTrainer(object):
         # print progress if needed
         if verbose:
           print ('Finished epoch %d / %d: cost %f, train: %f, val %f, lr %e'
-                 % (epoch, num_epochs, cost, train_err, val_err, learning_rate))
+                 % (epoch, num_epochs, cost, train_acc, val_acc, learning_rate))
 
     if verbose:
-      print 'finished optimization. best validation error: %f' % (best_val_err, )
+      print 'finished optimization. best validation accor: %f' % (best_val_acc, )
     # return the best model and the training history statistics
-    return best_model, loss_history, train_err_history, val_err_history
+    return best_model, loss_history, train_acc_history, val_acc_history
 
 
 

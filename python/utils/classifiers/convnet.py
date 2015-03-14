@@ -61,16 +61,17 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logisti
 
   # Compute the backward pass
   if top_layer == 'softmax':
-    data_loss, dscores = softmax_loss(rates, y)
+    data_loss, drates = softmax_loss(rates, y)
   elif top_layer == 'mse':
-    data_loss, dscores = mse_loss(rates, y)
+    data_loss, drates = mse_loss(rates, y)
   elif top_layer == 'mqe':
-    data_loss, dscores = mqe_loss(rates, y)
+    data_loss, drates = mqe_loss(rates, y)
   elif top_layer == 'logistic':
-    data_loss, dscores = cross_entropy_loss(rates, y)
+    data_loss, drates = cross_entropy_loss(rates, y)
 
   # Compute the gradients using a backward pass
-  dd1, dW2, db2 = affine_backward(dscores, cache3)
+  de1, dparams  = logistic_backward(drates, cache4)
+  dd1, dW2, db2 = affine_backward(de1, cache3)
   da1 = dropout_backward(dd1, cache2)
   dX,  dW1, db1 = conv_relu_pool_backward(da1, cache1)
 
@@ -80,7 +81,7 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logisti
   reg_loss = reg * (np.sum(np.abs(W1)) + np.sum(np.abs(W2))) #0.5 * reg * sum(np.sum(W * W) for W in [W1, W2])
 
   loss = data_loss + reg_loss
-  grads = {'W1': dW1, 'b1': db1, 'W2': dW2, 'b2': db2}
+  grads = {'W1': dW1, 'b1': db1, 'W2': dW2, 'b2': db2, 'logistic': dparams}
   
   return loss, grads
 

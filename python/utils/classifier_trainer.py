@@ -150,20 +150,9 @@ class ClassifierTrainer(object):
                 batch_mask = np.random.choice(X_train_subset.shape[0], batch_size)
                 X_batch    = X_train_subset[batch_mask]
                 y_batch    = y_train_subset[batch_mask]
-                scores[it*batch_size:(it+1)*batch_size] = loss_function(X_batch, model).squeeze()
-                y_pred_train[it*batch_size:(it+1)*batch_size] = (1./(1 + np.exp(-scores[it*batch_size:(it+1)*batch_size])))
+                y_pred_train[it*batch_size:(it+1)*batch_size] = loss_function(X_batch, model).squeeze()
         else:
-            scores = loss_function(X_train_subset, model)
-            y_pred_train = (1./(1 + np.exp(-scores)))
-        #y_pred_train = []
-        #for i in xrange(X_train_subset.shape[0] / 100):
-        #  X_train_slice = X_train_subset[i*100:(i+1)*100]
-        #  if predict_fn is not None:
-        #    X_train_slice = predict_fn(X_train_slice)
-        #  scores = loss_function(X_train_slice, model)
-        #  y_pred_train.append(np.argmax(scores, axis=1))
-        #y_pred_train = np.hstack(y_pred_train)
-        #train_acc = np.mean(y_pred_train == y_train_subset)
+            y_pred_train = loss_function(X_train_subset, model) # calling loss_function with y=None returns rates
         
         train_acc, _ = pearsonr(y_pred_train.squeeze(), y_train_subset.squeeze()) 
         #train_acc, _ = layers.cross_entropy_loss(scores, y_train_subset)
@@ -180,26 +169,12 @@ class ClassifierTrainer(object):
                 batch_mask  = np.random.choice(X_val.shape[0], batch_size)
                 X_val_batch = X_val[batch_mask]
                 y_val_batch = y_val[batch_mask]
-
-                scores[it*batch_size:(it+1)*batch_size] = loss_function(X_val_batch, model).squeeze()
-                y_pred_val[it*batch_size:(it+1)*batch_size] = (1./(1 + np.exp(-scores[it*batch_size:(it+1)*batch_size])))
+                y_pred_val[it*batch_size:(it+1)*batch_size] = loss_function(X_val_batch, model).squeeze()
         else:
-            scores = loss_function(X_val, model)
-            y_pred_val = (1./(1 + np.exp(-scores)))
+            y_pred_val = loss_function(X_val, model) # calling loss_function with y=None returns rates
 
-        #for i in xrange(int(np.ceil(X_val.shape[0] / 100.0))):
-        #  X_val_slice = X_val[i*100:(i+1)*100]
-        #  if predict_fn is not None:
-        #    X_val_slice = predict_fn(X_val_slice)
-        #  scores = loss_function(X_val_slice, model)
-          #y_pred_val.append(np.argmax(scores, axis=1))
-        #  y_pred_val.append(1./(1 + np.exp(-scores))) # just give the probability of spiking
-        #y_pred_val = np.hstack(y_pred_val)
-        #val_acc = np.mean(y_pred_val ==  y_val)
 
         val_acc, _ = pearsonr(y_pred_val.squeeze(), y_val.squeeze())
-        #val_acc, _ = layers.cross_entropy_loss(scores, y_val)
-        #val_acc = np.mean((y_pred_val - y_val)**2)
         val_acc_history.append(val_acc)
         
         # keep track of the best model based on validation accuracy
@@ -216,7 +191,7 @@ class ClassifierTrainer(object):
                  % (epoch, num_epochs, cost, train_acc, val_acc, learning_rate))
 
     if verbose:
-      print 'finished optimization. best validation accor: %f' % (best_val_acc, )
+      print 'finished optimization. best validation accuracy: %f' % (best_val_acc, )
     # return the best model and the training history statistics
     return best_model, loss_history, train_acc_history, val_acc_history
 

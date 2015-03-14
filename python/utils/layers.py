@@ -233,12 +233,12 @@ def cross_entropy_loss(x, y):
   - dx:   Gradient of the loss with respect to x
   """
   # if you don't do this step, loss is shape (num_ex, num_ex)
-  #desqueezeX = False
-  #if len(x.shape) > 1:
-  #    x = x.squeeze()
-  #    desqueezeX = True
-  #if len(y.shape) > 1:
-  #    y = y.squeeze()
+  desqueezeX = False
+  if len(x.shape) > 1:
+      x = x.squeeze()
+      desqueezeX = True
+  if len(y.shape) > 1:
+      y = y.squeeze()
 
   x[x==0.0] = 10e-200
   x[x==1.0] = 1. - 10e-15
@@ -252,8 +252,8 @@ def cross_entropy_loss(x, y):
   #    import pdb
   #    pdb.set_trace()
 
-  #if desqueezeX:
-  #    dx = np.expand_dims(dx, 1)
+  if desqueezeX:
+      dx = np.expand_dims(dx, 1)
 
   return loss, dx
 
@@ -303,7 +303,7 @@ def logistic_backward(dout, cache):
   dalpha  = 1. / (1 + np.exp(-b * (x - c)))
   dgain   = - a * (c - x) * np.exp(-b * (x - c)) / ((1 + np.exp(-b * (x - c)))**2)
   dthresh = - a * b * np.exp(-b * (x - c)) / ((1 + np.exp(-b * (x - c)))**2)
-  dparams = np.array([dout * dalpha, dout * dgain, dout * dthresh])
+  dparams = np.array([dalpha.T.dot(dout), dgain.T.dot(dout), dthresh.T.dot(dout)]).squeeze()
 
   return dx, dparams
 

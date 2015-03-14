@@ -141,8 +141,20 @@ class ClassifierTrainer(object):
           y_train_subset = y
         # Computing a forward pass with a batch size of 1000 will is no good,
         # so we batch it
-        scores = loss_function(X_train_subset, model)
-        y_pred_train = (1./(1 + np.exp(-scores)))
+        if sample_batches:
+            iterations = X_train_subset.shape[0] / batch_size
+
+            scores       = np.zeros(*y_train_subset)
+            y_pred_train = np.zeros(*y_train_subset)
+            for it in xrange(iterations):
+                batch_mask = np.random.choice(X_train_subset.shape[0], batch_size)
+                X_batch    = X_train_subset[batch_mask]
+                y_batch    = y_train_subset[batch_mask]
+                scores[it*batch_size:(it+1)*batch_size] = loss_function(X_batch, model)
+                y_pred_train[it*batch_size:(it+1)*batch_size] = (1./(1 + np.exp(-scores[it*batch_size:(it+1)*batch_size])))
+        else:
+            scores = loss_function(X_train_subset, model)
+            y_pred_train = (1./(1 + np.exp(-scores)))
         #y_pred_train = []
         #for i in xrange(X_train_subset.shape[0] / 100):
         #  X_train_slice = X_train_subset[i*100:(i+1)*100]
@@ -159,8 +171,21 @@ class ClassifierTrainer(object):
         train_acc_history.append(train_acc)
 
         # evaluate val accuracy, but split the validation set into batches
-        scores = loss_function(X_val, model)
-        y_pred_val = (1./(1 + np.exp(-scores)))
+        if sample_batches:
+            iterations = X_val.shape[0] / batch_size
+
+            scores     = np.zeros(*y_val.shape)
+            y_pred_val = np.zeros(*y_val.shape)
+            for it in xrange(iterations):
+                batch_mask  = np.random.choice(X_val.shape[0], batch_size)
+                X_val_batch = X_val[batch_mask]
+                y_val_batch = y_val[batch_mask]
+
+                scores[it*batch_size:(it+1)*batch_size] = loss_function(X_val_batch, model)
+                y_pred_val[it*batch_size:(it+1)*batch_size] = (1./(1 + np.exp(-scores[it*batch_size:(it+1)*batch_size])))
+        else:
+            scores = loss_function(X_val, model)
+            y_pred_val = (1./(1 + np.exp(-scores)))
 
         #for i in xrange(int(np.ceil(X_val.shape[0] / 100.0))):
         #  X_val_slice = X_val[i*100:(i+1)*100]

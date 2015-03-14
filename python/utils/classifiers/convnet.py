@@ -79,7 +79,7 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logisti
   # Add regularization
   dW1 += reg * np.sign(W1) # reg * W1
   dW2 += reg * np.sign(W2) # reg * W2
-  reg_loss = reg * np.sum(np.abs(W) for W in [W1, W2]) #0.5 * reg * sum(np.sum(W * W) for W in [W1, W2])
+  reg_loss = reg * (np.sum(np.abs(W1)) + np.sum(np.abs(W2))) #0.5 * reg * sum(np.sum(W * W) for W in [W1, W2])
 
   loss = data_loss + reg_loss
   grads = {'W1': dW1, 'b1': db1, 'W2': dW2, 'b2': db2}

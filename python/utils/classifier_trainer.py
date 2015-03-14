@@ -70,7 +70,7 @@ class ClassifierTrainer(object):
       iterations_per_epoch = 1 # using GD
     num_iters = num_epochs * iterations_per_epoch
     epoch = 0
-    best_val_acc = np.inf
+    best_val_acc = 0.0 # if you switch back to error, this needs to be np.inf
     best_model = {}
     loss_history = []
     train_acc_history = []
@@ -153,8 +153,7 @@ class ClassifierTrainer(object):
         #y_pred_train = np.hstack(y_pred_train)
         #train_acc = np.mean(y_pred_train == y_train_subset)
         
-        
-        train_acc, _ = pearsonr(y_pred_train, y_train_subset) 
+        train_acc, _ = pearsonr(y_pred_train.squeeze(), y_train_subset.squeeze()) 
         #train_acc, _ = layers.cross_entropy_loss(scores, y_train_subset)
         #train_acc = np.mean((y_pred_train - y_train_subset)**2)
         train_acc_history.append(train_acc)
@@ -173,7 +172,7 @@ class ClassifierTrainer(object):
         #y_pred_val = np.hstack(y_pred_val)
         #val_acc = np.mean(y_pred_val ==  y_val)
 
-        val_acc, _ = pearsonr(y_pred_val, y_val)
+        val_acc, _ = pearsonr(y_pred_val.squeeze(), y_val.squeeze())
         #val_acc, _ = layers.cross_entropy_loss(scores, y_val)
         #val_acc = np.mean((y_pred_val - y_val)**2)
         val_acc_history.append(val_acc)

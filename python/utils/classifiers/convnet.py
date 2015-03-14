@@ -157,7 +157,7 @@ def init_three_layer_convnet(input_shape=(3, 32, 32), num_classes=1,
   return model
 
 
-def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None, return_probs=False, compute_dX=False, top_layer='mqe'):
+def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None, return_probs=False, compute_dX=False, top_layer='logistic'):
   """
   Compute the loss and gradient for a simple three layer ConvNet that uses
   the following architecture:

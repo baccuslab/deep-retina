@@ -144,13 +144,13 @@ class ClassifierTrainer(object):
         if sample_batches:
             iterations = X_train_subset.shape[0] / batch_size
 
-            scores       = np.zeros(*y_train_subset)
-            y_pred_train = np.zeros(*y_train_subset)
+            scores       = np.zeros(y_train_subset.shape)
+            y_pred_train = np.zeros(y_train_subset.shape)
             for it in xrange(iterations):
                 batch_mask = np.random.choice(X_train_subset.shape[0], batch_size)
                 X_batch    = X_train_subset[batch_mask]
                 y_batch    = y_train_subset[batch_mask]
-                scores[it*batch_size:(it+1)*batch_size] = loss_function(X_batch, model)
+                scores[it*batch_size:(it+1)*batch_size] = loss_function(X_batch, model).squeeze()
                 y_pred_train[it*batch_size:(it+1)*batch_size] = (1./(1 + np.exp(-scores[it*batch_size:(it+1)*batch_size])))
         else:
             scores = loss_function(X_train_subset, model)
@@ -174,14 +174,14 @@ class ClassifierTrainer(object):
         if sample_batches:
             iterations = X_val.shape[0] / batch_size
 
-            scores     = np.zeros(*y_val.shape)
-            y_pred_val = np.zeros(*y_val.shape)
+            scores     = np.zeros(y_val.shape)
+            y_pred_val = np.zeros(y_val.shape)
             for it in xrange(iterations):
                 batch_mask  = np.random.choice(X_val.shape[0], batch_size)
                 X_val_batch = X_val[batch_mask]
                 y_val_batch = y_val[batch_mask]
 
-                scores[it*batch_size:(it+1)*batch_size] = loss_function(X_val_batch, model)
+                scores[it*batch_size:(it+1)*batch_size] = loss_function(X_val_batch, model).squeeze()
                 y_pred_val[it*batch_size:(it+1)*batch_size] = (1./(1 + np.exp(-scores[it*batch_size:(it+1)*batch_size])))
         else:
             scores = loss_function(X_val, model)

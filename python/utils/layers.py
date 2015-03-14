@@ -286,3 +286,32 @@ def mqe_loss(x, y):
   dx     = probs*(1 - probs) * dprobs
   dx     /= x.shape[0]
   return loss, dx
+
+def logistic_forward(x, params):
+  """
+  Computes the logistic function forward pass.
+  """
+  a, b, c = params
+
+  return a / (1 + np.exp(-b * (x - c)))
+
+def logistic_backward(dout, cache):
+  """
+  Computes the logistic function backward pass.
+  """
+  x, params = cache
+
+  y = logistic_forward(x, params)
+  a, b, c = params
+
+  dx = y * (1 - y)
+  dalpha  = 1. / (1 + np.exp(-b * (x - c)))
+  dgain   = - a * (c - x) * np.exp(-b * (x - c)) / ((1 + np.exp(-b * (x - c)))**2)
+  dthresh = - a * b * np.exp(-b * (x - c)) / ((1 + np.exp(-b * (x - c)))**2)
+  dparams = np.array([dalpha, dgain, dthresh])
+
+  return dx, dparams
+
+
+  
+

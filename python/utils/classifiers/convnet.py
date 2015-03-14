@@ -118,6 +118,7 @@ def init_two_layer_convnet(weight_scale=1e-3, bias_scale=0, input_shape=(3, 32, 
   model['b1'] = bias_scale * np.random.randn(num_filters)
   model['W2'] = weight_scale * np.random.randn(num_filters * H * W / 4, num_classes)
   model['b2'] = bias_scale * np.random.randn(num_classes)
+  model['logistic'] = np.array([1., 1., 0.]) 
   return model
 
 

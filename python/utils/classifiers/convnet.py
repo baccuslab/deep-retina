@@ -5,7 +5,7 @@ from utils.fast_layers import *
 from utils.layer_utils import *
 
 
-def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0):
+def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logistic', return_probs=False, compute_dX=False):
   """
   Compute the loss and gradient for a simple two-layer ConvNet. The architecture
   is conv-relu-pool-affine-softmax, where the conv layer uses stride-1 "same"
@@ -55,10 +55,21 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0):
   scores, cache3 = affine_forward(d1, W2, b2)
 
   if y is None:
-    return scores
+    if return_probs:
+        probs = 1. / (1 + np.exp(-scores))
+        return probs
+    else:
+        return scores
 
   # Compute the backward pass
-  data_loss, dscores = softmax_loss(scores, y)
+  if top_layer == 'softmax':
+    data_loss, dscores = softmax_loss(scores, y)
+  elif top_layer == 'mse':
+    data_loss, dscores = mse_loss(scores, y)
+  elif top_layer == 'mqe':
+    data_loss, dscores = mqe_loss(scores, y)
+  elif top_layer == 'logistic':
+    data_loss, dscores = cross_entropy_loss(scores, y)
 
   # Compute the gradients using a backward pass
   dd1, dW2, db2 = affine_backward(dscores, cache3)
@@ -66,9 +77,9 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0):
   dX,  dW1, db1 = conv_relu_pool_backward(da1, cache1)
 
   # Add regularization
-  dW1 += reg * W1
-  dW2 += reg * W2
-  reg_loss = 0.5 * reg * sum(np.sum(W * W) for W in [W1, W2])
+  dW1 += reg * np.sign(W1) # reg * W1
+  dW2 += reg * np.sign(W2) # reg * W2
+  reg_loss = reg * np.sum(np.abs(W) for W in [W1, W2]) #0.5 * reg * sum(np.sum(W * W) for W in [W1, W2])
 
   loss = data_loss + reg_loss
   grads = {'W1': dW1, 'b1': db1, 'W2': dW2, 'b2': db2}

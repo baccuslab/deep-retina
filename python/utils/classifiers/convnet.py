@@ -5,7 +5,7 @@ from utils.fast_layers import *
 from utils.layer_utils import *
 
 
-def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logistic', return_probs=False, compute_dX=False):
+def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logistic', compute_dX=False):
   """
   Compute the loss and gradient for a simple two-layer ConvNet. The architecture
   is conv-relu-pool-affine-softmax, where the conv layer uses stride-1 "same"
@@ -35,6 +35,7 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logisti
   
   # Unpack weights
   W1, b1, W2, b2 = model['W1'], model['b1'], model['W2'], model['b2']
+
   N, C, H, W = X.shape
 
   # We assume that the convolution is "same", so that the data has the same
@@ -52,24 +53,21 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logisti
   # Compute the forward pass
   a1, cache1 = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
   d1, cache2 = dropout_forward(a1, dropout_param)
-  scores, cache3 = affine_forward(d1, W2, b2)
+  e1, cache3 = affine_forward(d1, W2, b2)
+  rates, cache4 = logistic_forward(e1, model['logistic'])
 
   if y is None:
-    if return_probs:
-        probs = 1. / (1 + np.exp(-scores))
-        return probs
-    else:
-        return scores
+    return rates
 
   # Compute the backward pass
   if top_layer == 'softmax':
-    data_loss, dscores = softmax_loss(scores, y)
+    data_loss, dscores = softmax_loss(rates, y)
   elif top_layer == 'mse':
-    data_loss, dscores = mse_loss(scores, y)
+    data_loss, dscores = mse_loss(rates, y)
   elif top_layer == 'mqe':
-    data_loss, dscores = mqe_loss(scores, y)
+    data_loss, dscores = mqe_loss(rates, y)
   elif top_layer == 'logistic':
-    data_loss, dscores = cross_entropy_loss(scores, y)
+    data_loss, dscores = cross_entropy_loss(rates, y)
 
   # Compute the gradients using a backward pass
   dd1, dW2, db2 = affine_backward(dscores, cache3)
@@ -118,7 +116,7 @@ def init_two_layer_convnet(weight_scale=1e-3, bias_scale=0, input_shape=(3, 32, 
   model['b1'] = bias_scale * np.random.randn(num_filters)
   model['W2'] = weight_scale * np.random.randn(num_filters * H * W / 4, num_classes)
   model['b2'] = bias_scale * np.random.randn(num_classes)
-  model['logistic'] = np.array([1., 1., 0.]) 
+  model['logistic'] = np.array([1., 1., 0.1]) 
   return model
 
 

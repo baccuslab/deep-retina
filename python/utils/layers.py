@@ -211,14 +211,12 @@ def mse_loss(x, y):
   # compute logistic regression forward pass
 
   # guarantee that y matches probs
-  y      = y.reshape(x.shape)
-  probs  = 1./(1 + np.exp(-x))
-  loss   = np.mean((probs - y)**2)
+  loss   = np.mean((x - y)**2)
 
   # backward pass
-  dprobs = 2*(probs-y)
-  dx     = probs*(1 - probs) * dprobs
-  dx     /= x.shape[0]
+  dx = 2*(x - y)
+  dx /= x.shape[0]
+
   return loss, dx
 
 def cross_entropy_loss(x, y):
@@ -235,29 +233,27 @@ def cross_entropy_loss(x, y):
   - dx:   Gradient of the loss with respect to x
   """
   # if you don't do this step, loss is shape (num_ex, num_ex)
-  desqueezeX = False
-  if len(x.shape) > 1:
-      x = x.squeeze()
-      desqueezeX = True
-  if len(y.shape) > 1:
-      y = y.squeeze()
+  #desqueezeX = False
+  #if len(x.shape) > 1:
+  #    x = x.squeeze()
+  #    desqueezeX = True
+  #if len(y.shape) > 1:
+  #    y = y.squeeze()
 
-  y     = y.reshape(x.shape)
-  probs = 1./(1 + np.exp(-x))
-  probs[probs==0.0] = 10e-200
-  probs[probs==1.0] = 1. - 10e-15
-  loss  = np.mean(-y*np.log(probs) - (1.-y)*np.log(1.-probs))
+  x[x==0.0] = 10e-200
+  x[x==1.0] = 1. - 10e-15
+  loss  = np.mean(-y*np.log(x) - (1.-y)*np.log(1.-x))
 
   # backward pass
-  dprobs = -y/probs + (1.-y)/(1.-probs)
-  dx     = probs*(1 - probs) * dprobs
-  dx    /= x.shape[0]
-  if (np.isnan(dx)).any():
-      import pdb
-      pdb.set_trace()
+  dx = -y/x + (1.-y)/(1.-x)
+  dx /= x.shape[0]
 
-  if desqueezeX:
-      dx = np.expand_dims(dx, 1)
+  #if (np.isnan(dx)).any():
+  #    import pdb
+  #    pdb.set_trace()
+
+  #if desqueezeX:
+  #    dx = np.expand_dims(dx, 1)
 
   return loss, dx
 
@@ -277,14 +273,11 @@ def mqe_loss(x, y):
   # compute logistic regression forward pass
 
   # guarantee that y matches probs
-  y      = y.reshape(x.shape)
-  probs  = 1./(1 + np.exp(-x))
-  loss   = np.mean((probs - y)**4)
+  loss   = np.mean((x - y)**4)
 
   # backward pass
-  dprobs = 4*((probs-y)**3)
-  dx     = probs*(1 - probs) * dprobs
-  dx     /= x.shape[0]
+  dx = 4*((x - y)**3)
+  dx /= x.shape[0]
   return loss, dx
 
 def logistic_forward(x, params):
@@ -292,8 +285,10 @@ def logistic_forward(x, params):
   Computes the logistic function forward pass.
   """
   a, b, c = params
+  cache   = (x, params)
+  out     = a / (1 + np.exp(-b * (x - c)))
 
-  return a / (1 + np.exp(-b * (x - c)))
+  return out, cache
 
 def logistic_backward(dout, cache):
   """
@@ -301,14 +296,14 @@ def logistic_backward(dout, cache):
   """
   x, params = cache
 
-  y = logistic_forward(x, params)
   a, b, c = params
-
-  dx = y * (1 - y)
+  y = a / (1 + np.exp(-b * (x - c)))
+  
+  dx = y * (1 - y) * dout
   dalpha  = 1. / (1 + np.exp(-b * (x - c)))
   dgain   = - a * (c - x) * np.exp(-b * (x - c)) / ((1 + np.exp(-b * (x - c)))**2)
   dthresh = - a * b * np.exp(-b * (x - c)) / ((1 + np.exp(-b * (x - c)))**2)
-  dparams = np.array([dalpha, dgain, dthresh])
+  dparams = np.array([dout * dalpha, dout * dgain, dout * dthresh])
 
   return dx, dparams
 

@@ -53,8 +53,8 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logisti
   # Compute the forward pass
   a1, cache1 = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
   d1, cache2 = dropout_forward(a1, dropout_param)
-  e1, cache3 = affine_forward(d1, W2, b2)
-  rates, cache4 = logistic_forward(e1, model['logistic'])
+  rates, cache3 = affine_forward(d1, W2, b2)
+  #rates, cache4 = logistic_forward(e1, model['logistic'])
 
   if y is None:
     return rates
@@ -70,8 +70,8 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logisti
     data_loss, drates = cross_entropy_loss(rates, y)
 
   # Compute the gradients using a backward pass
-  de1, dparams  = logistic_backward(drates, cache4)
-  dd1, dW2, db2 = affine_backward(de1, cache3)
+  #de1, dparams  = logistic_backward(drates, cache4)
+  dd1, dW2, db2 = affine_backward(drates, cache3)
   da1 = dropout_backward(dd1, cache2)
   dX,  dW1, db1 = conv_relu_pool_backward(da1, cache1)
 
@@ -83,17 +83,11 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logisti
   loss = data_loss + reg_loss
 
   # need to investigate why params keep on getting set to nans
-  if np.sum([np.isnan(dp) for dp in dparams]) > 0:
-      import pdb
-      pdb.set_trace()
+  #if np.sum([np.isnan(dp) for dp in dparams]) > 0:
+  #    import pdb
+  #    pdb.set_trace()
 
-  #if dparams[0] == np.nan:
-  #    dparams[0] = 1.0
-  #if dparams[1] == np.nan:
-  #    dparams[1] = 1.0
-  #if dparams[2] == np.nan:
-  #    dparams[2] = 0.1
-  grads = {'W1': dW1, 'b1': db1, 'W2': dW2, 'b2': db2, 'logistic': dparams}
+  grads = {'W1': dW1, 'b1': db1, 'W2': dW2, 'b2': db2} #, 'logistic': dparams}
   
   return loss, grads
 
@@ -129,7 +123,6 @@ def init_two_layer_convnet(weight_scale=1e-3, bias_scale=0, input_shape=(3, 32, 
   model['b1'] = bias_scale * np.random.randn(num_filters)
   model['W2'] = weight_scale * np.random.randn(num_filters * H * W / 4, num_classes)
   model['b2'] = bias_scale * np.random.randn(num_classes)
-  model['logistic'] = np.array([1., 0.005, 0.1]) 
   return model
 
 

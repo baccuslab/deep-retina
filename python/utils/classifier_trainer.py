@@ -154,12 +154,8 @@ class ClassifierTrainer(object):
         else:
             y_pred_train = loss_function(X_train_subset, model) # calling loss_function with y=None returns rates
         
-        #import pdb
-        #pdb.set_trace()
 
         train_acc, _ = pearsonr(y_pred_train, y_train_subset) 
-        #train_acc, _ = layers.cross_entropy_loss(scores, y_train_subset)
-        #train_acc = np.mean((y_pred_train - y_train_subset)**2)
         train_acc_history.append(train_acc)
 
         # evaluate val accuracy, but split the validation set into batches

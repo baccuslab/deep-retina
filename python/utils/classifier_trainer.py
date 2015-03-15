@@ -154,7 +154,10 @@ class ClassifierTrainer(object):
         else:
             y_pred_train = loss_function(X_train_subset, model) # calling loss_function with y=None returns rates
         
-        train_acc, _ = pearsonr(y_pred_train.squeeze(), y_train_subset.squeeze()) 
+        #import pdb
+        #pdb.set_trace()
+
+        train_acc, _ = pearsonr(y_pred_train, y_train_subset) 
         #train_acc, _ = layers.cross_entropy_loss(scores, y_train_subset)
         #train_acc = np.mean((y_pred_train - y_train_subset)**2)
         train_acc_history.append(train_acc)
@@ -174,7 +177,7 @@ class ClassifierTrainer(object):
             y_pred_val = loss_function(X_val, model) # calling loss_function with y=None returns rates
 
 
-        val_acc, _ = pearsonr(y_pred_val.squeeze(), y_val.squeeze())
+        val_acc, _ = pearsonr(y_pred_val, y_val)
         val_acc_history.append(val_acc)
         
         # keep track of the best model based on validation accuracy

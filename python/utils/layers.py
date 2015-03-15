@@ -248,9 +248,9 @@ def cross_entropy_loss(x, y):
   dx = -y/x + (1.-y)/(1.-x)
   dx /= x.shape[0]
 
-  #if (np.isnan(dx)).any():
-  #    import pdb
-  #    pdb.set_trace()
+  if (np.isnan(dx)).any():
+      import pdb
+      pdb.set_trace()
 
   if desqueezeX:
       dx = np.expand_dims(dx, 1)

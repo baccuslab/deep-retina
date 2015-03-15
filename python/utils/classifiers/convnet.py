@@ -81,6 +81,14 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logisti
   reg_loss = reg * (np.sum(np.abs(W1)) + np.sum(np.abs(W2))) #0.5 * reg * sum(np.sum(W * W) for W in [W1, W2])
 
   loss = data_loss + reg_loss
+
+  # need to investigate why params keep on getting set to nans
+  if dparams[0] == np.nan:
+      dparams[0] = 1.0
+  if dparams[1] == np.nan:
+      dparams[1] = 1.0
+  if dparams[2] == np.nan:
+      dparams[2] = 0.1
   grads = {'W1': dW1, 'b1': db1, 'W2': dW2, 'b2': db2, 'logistic': dparams}
   
   return loss, grads

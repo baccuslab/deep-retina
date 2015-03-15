@@ -240,8 +240,8 @@ def cross_entropy_loss(x, y):
   if len(y.shape) > 1:
       y = y.squeeze()
 
-  x[x==0.0] = 10e-200
-  x[x==1.0] = 1. - 10e-15
+  x[x<=0.0] = 10e-200
+  x[x>=1.0] = 1. - 10e-15
   loss  = np.mean(-y*np.log(x) - (1.-y)*np.log(1.-x))
 
   # backward pass

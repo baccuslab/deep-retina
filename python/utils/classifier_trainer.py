@@ -260,6 +260,7 @@ class ClassifierTrainer(object):
     loss_history = []
     train_acc_history = []
     val_acc_history = []
+
     for it in xrange(num_iters):
       if verbose:
         if it % 10 == 0:  print 'starting iteration ', it
@@ -327,11 +328,10 @@ class ClassifierTrainer(object):
             y_pred_train = np.zeros(train_mask.shape)
             for it in xrange(iterations):
                 batch_mask = train_mask[np.random.choice(y[train_mask].shape[0], batch_size, replace=False)]
-                y_pred_train[it*batch_size:(it+1)*batch_size] = loss_function(X[train_mask], model).squeeze()
+                y_pred_train[it*batch_size:(it+1)*batch_size] = loss_function(X[batch_mask], model).squeeze()
         else:
             y_pred_train = loss_function(X[train_mask], model) # calling loss_function with y=None returns rates
         
-
         train_acc, _ = pearsonr(y_pred_train, y[train_mask]) 
         train_acc_history.append(train_acc)
 
@@ -369,7 +369,3 @@ class ClassifierTrainer(object):
       print 'finished optimization. best validation accuracy: %f' % (best_val_acc, )
     # return the best model and the training history statistics
     return best_model, loss_history, train_acc_history, val_acc_history
-
-
-
-

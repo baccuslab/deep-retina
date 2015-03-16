@@ -321,13 +321,14 @@ class ClassifierTrainer(object):
         # Computing a forward pass with a batch size of 1000 will is no good,
         # so we batch it
         if sample_batches:
-            assert y[train_mask].shape[0] % batch_size == 0, 'Size of training data must be divisible by %d.' %(batch_size)
-            iterations = y[train_mask].shape[0] / batch_size
+            M = y[train_mask].shape[0]
+            assert M % batch_size == 0, 'Size of training data must be divisible by %d.' %(batch_size)
+            iterations = M / batch_size
 
             scores       = np.zeros(train_mask.shape)
             y_pred_train = np.zeros(train_mask.shape)
             for it in xrange(iterations):
-                batch_mask = train_mask[np.random.choice(y[train_mask].shape[0], batch_size, replace=False)]
+                batch_mask = train_mask[np.random.choice(M, batch_size, replace=False)]
                 y_pred_train[it*batch_size:(it+1)*batch_size] = loss_function(X[batch_mask], model).squeeze()
         else:
             y_pred_train = loss_function(X[train_mask], model) # calling loss_function with y=None returns rates
@@ -337,13 +338,14 @@ class ClassifierTrainer(object):
 
         # evaluate val accuracy, but split the validation set into batches
         if sample_batches:
-            assert y[val_inds].shape[0] % batch_size == 0, 'Size of val data must be divisible by %d.' %(batch_size)
-            iterations = y[val_inds].shape[0] / batch_size
+            M = y[val_inds].shape[0]
+            assert M % batch_size == 0, 'Size of val data must be divisible by %d.' %(batch_size)
+            iterations = M / batch_size
 
             scores     = np.zeros(y[val_inds].shape)
             y_pred_val = np.zeros(y[val_inds].shape)
             for it in xrange(iterations):
-                batch_mask  = val_inds[np.random.choice(y[val_inds].shape[0], batch_size, replace=False)]
+                batch_mask  = val_inds[np.random.choice(M, batch_size, replace=False)]
                 y_pred_val[it*batch_size:(it+1)*batch_size] = loss_function(X[batch_mask], model).squeeze()
         else:
             y_pred_val = loss_function(X[val_inds], model) # calling loss_function with y=None returns rates

@@ -93,7 +93,7 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logisti
 
 
 def init_two_layer_convnet(weight_scale=1e-3, bias_scale=0, input_shape=(3, 32, 32),
-                           num_classes=10, num_filters=32, filter_size=5):
+                           num_classes=1, num_filters=32, filter_size=5):
   """
   Initialize the weights for a two-layer ConvNet.
 
@@ -254,7 +254,7 @@ def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None, return_probs=Fa
   return loss, grads
 
 
-def init_five_layer_convnet(input_shape=(3, 64, 64), num_classes=100,
+def init_five_layer_convnet(input_shape=(3, 64, 64), num_classes=1,
                             filter_sizes=(5, 5, 5), num_filters=(32, 32, 64, 128),
                             weight_scale=1e-2, bias_scale=0, dtype=np.float32):
   """

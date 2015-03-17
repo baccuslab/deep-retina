@@ -293,6 +293,14 @@ class ClassifierTrainer(object):
     train_acc_history = []
     val_acc_history = []
     weight_norm_history = []
+    max_weight_history = []
+    min_weight_history = []
+    max_dw_history = []
+    min_dw_history = []
+    mean_weight_history = []
+    mean_dw_history = []
+    train_mse_history = []
+    val_mse_history = []
 
     for it in xrange(num_iters):
       if verbose:
@@ -335,6 +343,15 @@ class ClassifierTrainer(object):
         # update the parameters
         model[p] += dx
 
+        if p == 'W1':
+            max_dw_history.append(np.max(dx))
+            min_dw_history.append(np.min(dx))
+            mean_dw_history.append(np.mean(dx))
+
+            max_weight_history.append(np.max(model[p]))
+            min_weight_history.append(np.min(model[p]))
+            mean_weight_history.append(np.mean(model[p]))
+
       # every epoch perform an evaluation on the validation set
       first_it = (it == 0)
       epoch_end = (it + 1) % iterations_per_epoch == 0
@@ -368,6 +385,7 @@ class ClassifierTrainer(object):
         
         train_acc, _ = pearsonr(y_pred_train, y[train_mask]) 
         train_acc_history.append(train_acc)
+        train_mse_history.append(np.mean((y_pred_train - y[train_mask])**2))
 
         # evaluate val accuracy, but split the validation set into batches
         if sample_batches:
@@ -386,6 +404,7 @@ class ClassifierTrainer(object):
 
         val_acc, _ = pearsonr(y_pred_val, y[val_inds])
         val_acc_history.append(val_acc)
+        val_mse_history.append(np.mean((y_pred_val - y[val_inds])**2))
         
         # keep track of the best model based on validation accuracy
         if val_acc > best_val_acc:
@@ -406,24 +425,46 @@ class ClassifierTrainer(object):
                  % (epoch, num_epochs, cost, train_acc, val_acc, learning_rate))
 
         if save_plots:
-          ax = plt.subplot(3, 1, 1)
+          ax = plt.subplot(6, 1, 1)
           ax.plot(loss_history, 'k')
           ax.set_title('Loss history', fontsize=16)
-          ax.set_xlabel('Iteration', fontsize=16)
-          ax.set_ylabel('Loss', fontsize=16)
+          #ax.set_xlabel('Iteration', fontsize=16)
+          ax.set_ylabel('Loss', fontsize=14)
 
-          ax = plt.subplot(3, 1, 2)
+          ax = plt.subplot(6, 1, 2)
           ax.plot(train_acc_history, 'b')
           ax.plot(val_acc_history, 'g')
+          ax.set_title('Correlation Coefficients', fontsize=16)
           ax.legend(['Training corr coeff', 'Validation corr coeff'], loc='lower right')
           #ax.set_xlabel('Acc Frequency', fontsize=16)
-          ax.set_ylabel('Correlation coefficient', fontsize=16)
+          ax.set_ylabel('Correlation coefficient', fontsize=14)
 
-          ax = plt.subplot(3, 1, 3)
+          ax = plt.subplot(6, 1, 3)
+          ax.plot(train_mse_history, 'b')
+          ax.plot(val_mse_history, 'g')
+          ax.set_title('Mean squared error', fontsize=16)
+          ax.legend(['Training mse', 'Validation mse'], loc='lower right')
+          ax.set_ylabel('Mean squared error', fontsize=14)
+
+          ax = plt.subplot(6, 1, 4)
           ax.plot(weight_norm_history, 'k')
           ax.set_title('Weight norm', fontsize=16)
-          ax.set_xlabel('Acc Frequency', fontsize=16)
-          ax.set_ylabel('L2 Norm of W1 and W2', fontsize=16)
+          #ax.set_xlabel('Acc Frequency', fontsize=16)
+          ax.set_ylabel('L2 Norm of W1 and W2', fontsize=14)
+
+          ax = plt.subplot(6, 1, 5)
+          ax.plot(max_weight_history, 'b')
+          ax.plot(min_weight_history, 'b')
+          ax.plot(mean_weight_history, 'r')
+          ax.set_title('Value stats for W1', fontsize=16)
+          ax.set_ylabel('W1 stats', fontsize=14)
+
+          ax = plt.subplot(6, 1, 6)
+          ax.plot(max_dw_history, 'g')
+          ax.plot(min_dw_history, 'g')
+          ax.plot(mean_dw_history, 'r')
+          ax.set_title('Gradient stats for W1', fontsize=16)
+          ax.set_ylabel('dW1 stats', fontsize=14)
 
           fig_dir  = '/Users/lmcintosh/Git/deepRGC/optimization_snapshots/'
           filename = 'Epoch%sIteration%i.png' %(epoch, it)

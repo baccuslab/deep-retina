@@ -233,12 +233,12 @@ def cross_entropy_loss(x, y):
   - dx:   Gradient of the loss with respect to x
   """
   # if you don't do this step, loss is shape (num_ex, num_ex)
-  #desqueezeX = False
-  #if len(x.shape) > 1:
-  #    x = x.squeeze()
-  #    desqueezeX = True
-  #if len(y.shape) > 1:
-  #    y = y.squeeze()
+  desqueezeX = False
+  if len(x.shape) > 1:
+      x = x.squeeze()
+      desqueezeX = True
+  if len(y.shape) > 1:
+      y = y.squeeze()
 
   # only compute cross_entropy_loss when y or (1-y) are not zero
   aboveZero = (y > 0)
@@ -262,8 +262,8 @@ def cross_entropy_loss(x, y):
       import pdb
       pdb.set_trace()
 
-  #if desqueezeX:
-  #    dx = np.expand_dims(dx, 1)
+  if desqueezeX:
+      dx = np.expand_dims(dx, 1)
 
   return loss, dx
 

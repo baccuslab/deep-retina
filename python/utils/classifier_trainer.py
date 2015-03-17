@@ -425,6 +425,8 @@ class ClassifierTrainer(object):
                  % (epoch, num_epochs, cost, train_acc, val_acc, learning_rate))
 
         if save_plots:
+          fig = plt.gcf()
+          fig.set_size_inches((8,24))
           ax = plt.subplot(6, 1, 1)
           ax.plot(loss_history, 'k')
           ax.set_title('Loss history', fontsize=16)
@@ -465,6 +467,8 @@ class ClassifierTrainer(object):
           ax.plot(mean_dw_history, 'r')
           ax.set_title('Gradient stats for W1', fontsize=16)
           ax.set_ylabel('dW1 stats', fontsize=14)
+
+          plt.tight_layout()
 
           fig_dir  = '/Users/lmcintosh/Git/deepRGC/optimization_snapshots/'
           filename = 'Epoch%sIteration%i.png' %(epoch, it)

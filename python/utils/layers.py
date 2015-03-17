@@ -233,27 +233,37 @@ def cross_entropy_loss(x, y):
   - dx:   Gradient of the loss with respect to x
   """
   # if you don't do this step, loss is shape (num_ex, num_ex)
-  desqueezeX = False
-  if len(x.shape) > 1:
-      x = x.squeeze()
-      desqueezeX = True
-  if len(y.shape) > 1:
-      y = y.squeeze()
+  #desqueezeX = False
+  #if len(x.shape) > 1:
+  #    x = x.squeeze()
+  #    desqueezeX = True
+  #if len(y.shape) > 1:
+  #    y = y.squeeze()
 
-  x[x<=0.0] = 10e-200
-  x[x>=1.0] = 1. - 10e-15
-  loss  = np.mean(-y*np.log(x) - (1.-y)*np.log(1.-x))
+  # only compute cross_entropy_loss when y or (1-y) are not zero
+  aboveZero = (y > 0)
+  belowOne  = ((1. - y) > 0)
 
+  rates = x.copy() # don't want to alter the original x's
+  rates[rates<=0.0] = 10e-4
+  rates[rates>=1.0] = 1. - 10e-4
+
+  losses = np.zeros(rates.shape)
+  losses[aboveZero] -= y[aboveZero] * np.log(rates[aboveZero])
+  losses[belowOne]  -= (1. - y[belowOne]) * np.log(1. - rates[belowOne])
+  loss = np.mean(losses)
+    
   # backward pass
-  dx = -y/x + (1.-y)/(1.-x)
-  dx /= x.shape[0]
+  dx = -y/rates + (1.-y)/(1.-rates)
+  dx /= rates.shape[0]
+    
 
   if (np.isnan(dx)).any():
       import pdb
       pdb.set_trace()
 
-  if desqueezeX:
-      dx = np.expand_dims(dx, 1)
+  #if desqueezeX:
+  #    dx = np.expand_dims(dx, 1)
 
   return loss, dx
 

@@ -56,6 +56,10 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logisti
   rates, cache3 = affine_forward(d1, W2, b2)
   #rates, cache4 = logistic_forward(e1, model['logistic'])
 
+  if np.isnan(rates).any():
+      import pdb
+      pdb.set_trace()
+
   if y is None:
     return rates
 

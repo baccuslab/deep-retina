@@ -15,7 +15,7 @@ class ClassifierTrainer(object):
             update='momentum', sample_batches=True,
             num_epochs=30, batch_size=100, acc_frequency=None,
             augment_fn=None, predict_fn=None,
-            verbose=False):
+            verbose=False, save_plots=False):
     """
     Optimize the parameters of a model to minimize a loss function. We use
     training data X and y to compute the loss and gradients, and periodically
@@ -188,6 +188,12 @@ class ClassifierTrainer(object):
         if verbose:
           print ('Finished epoch %d / %d: cost %f, train: %f, val %f, lr %e'
                  % (epoch, num_epochs, cost, train_acc, val_acc, learning_rate))
+
+        if save_plots:
+          from matplotlib.pyplot import *
+          fig = gcf()
+          pl
+
 
     if verbose:
       print 'finished optimization. best validation accuracy: %f' % (best_val_acc, )

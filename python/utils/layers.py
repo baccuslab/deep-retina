@@ -240,13 +240,17 @@ def cross_entropy_loss(x, y):
   if len(y.shape) > 1:
       y = y.squeeze()
 
+  # a small value for computing ~ np.log(0.0) and y/0.0
+  # if you're within epsilon, return zero error
+  eps = 10e-4
+
   # only compute cross_entropy_loss when y or (1-y) are not zero
-  aboveZero = (y > 0)
-  belowOne  = ((1. - y) > 0)
+  aboveZero = (y > eps)
+  belowOne  = ((1. - y) > eps)
 
   rates = x.copy() # don't want to alter the original x's
-  rates[rates<=0.0] = 10e-4
-  rates[rates>=1.0] = 1. - 10e-4
+  rates[rates<eps] = eps
+  rates[rates>(1.0-eps)] = 1. - eps
 
   losses = np.zeros(rates.shape)
   losses[aboveZero] -= y[aboveZero] * np.log(rates[aboveZero])

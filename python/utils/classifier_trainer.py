@@ -1,6 +1,7 @@
 import numpy as np
 import layers
 from scipy.stats.stats import pearsonr
+import matplotlib.pyplot as plt
 
 
 class ClassifierTrainer(object):
@@ -75,6 +76,7 @@ class ClassifierTrainer(object):
     loss_history = []
     train_acc_history = []
     val_acc_history = []
+    weight_norm_history = []
     for it in xrange(num_iters):
       if verbose:
         if it % 10 == 0:  print 'starting iteration ', it
@@ -184,15 +186,39 @@ class ClassifierTrainer(object):
           for p in model:
             best_model[p] = model[p].copy()
 
+        # keep track of weight norms
+        weight_norm_history.append(np.sum([np.sum(model[W]*model[W]) for W in ['W1', 'W2']]))
+
         # print progress if needed
         if verbose:
           print ('Finished epoch %d / %d: cost %f, train: %f, val %f, lr %e'
                  % (epoch, num_epochs, cost, train_acc, val_acc, learning_rate))
 
         if save_plots:
-          from matplotlib.pyplot import *
-          fig = gcf()
-          pl
+          import matplotlib.pyplot as plt
+
+          plt.subplot(3, 1, 1)
+          plt.plot(loss_history)
+          plt.title('Loss history', fontsize=16)
+          plt.xlabel('Iteration', fontsize=16)
+          plt.ylabel('Loss', fontsize=16)
+
+          plt.subplot(3, 1, 2)
+          plt.plot(train_acc_history)
+          plt.plot(val_acc_history)
+          plt.legend(['Training corr coeff', 'Validation corr coeff'], loc='lower right')
+          plt.xlabel('Acc Frequency', fontsize=16)
+          plt.ylabel('Correlation coefficient', fontsize=16)
+
+          plt.subplot(3, 1, 3)
+          plt.plot(weight_norm_history)
+          plt.title('Weight norm', fontsize=16)
+          plt.xlabel('Acc Frequency', fontsize=16)
+          plt.ylabel('L2 Norm of W1 and W2', fontsize=16)
+
+          fig_dir  = '~/Git/deepRGC/optimization_snapshots'
+          filename = 'Epoch%sIteration%i.png' %(epoch, it)
+          savefig(fig_dir + filename)
 
 
     if verbose:
@@ -206,7 +232,7 @@ class ClassifierTrainer(object):
                    learning_rate_decay=0.95, update='momentum', 
                    sample_batches=True, num_epochs=30, batch_size=100, 
                    acc_frequency=None, augment_fn=None, predict_fn=None,
-                   verbose=False):
+                   verbose=False, save_plots=False):
     """
     Optimize the parameters of a model to minimize a loss function. We use
     training data X and y to compute the loss and gradients, and periodically
@@ -266,6 +292,7 @@ class ClassifierTrainer(object):
     loss_history = []
     train_acc_history = []
     val_acc_history = []
+    weight_norm_history = []
 
     for it in xrange(num_iters):
       if verbose:
@@ -333,9 +360,9 @@ class ClassifierTrainer(object):
 
             scores       = np.zeros(train_mask.shape)
             y_pred_train = np.zeros(train_mask.shape)
-            for it in xrange(iterations):
+            for b in xrange(iterations):
                 batch_mask = train_mask[np.random.choice(M, batch_size, replace=False)]
-                y_pred_train[it*batch_size:(it+1)*batch_size] = loss_function(X[batch_mask], model).squeeze()
+                y_pred_train[b*batch_size:(b+1)*batch_size] = loss_function(X[batch_mask], model).squeeze()
         else:
             y_pred_train = loss_function(X[train_mask], model) # calling loss_function with y=None returns rates
         
@@ -350,9 +377,9 @@ class ClassifierTrainer(object):
 
             scores     = np.zeros(y[val_inds].shape)
             y_pred_val = np.zeros(y[val_inds].shape)
-            for it in xrange(iterations):
+            for b in xrange(iterations):
                 batch_mask  = val_inds[np.random.choice(M, batch_size, replace=False)]
-                y_pred_val[it*batch_size:(it+1)*batch_size] = loss_function(X[batch_mask], model).squeeze()
+                y_pred_val[b*batch_size:(b+1)*batch_size] = loss_function(X[batch_mask], model).squeeze()
         else:
             y_pred_val = loss_function(X[val_inds], model) # calling loss_function with y=None returns rates
 
@@ -368,10 +395,39 @@ class ClassifierTrainer(object):
           for p in model:
             best_model[p] = model[p].copy()
 
+
+        # keep track of weight norms
+        weight_norm_history.append(np.sum([np.sum(model[W]*model[W]) for W in ['W1', 'W2']]))
+
+
         # print progress if needed
         if verbose:
           print ('Finished epoch %d / %d: cost %f, train: %f, val %f, lr %e'
                  % (epoch, num_epochs, cost, train_acc, val_acc, learning_rate))
+
+        if save_plots:
+          ax = plt.subplot(3, 1, 1)
+          ax.plot(loss_history, 'k')
+          ax.set_title('Loss history', fontsize=16)
+          ax.set_xlabel('Iteration', fontsize=16)
+          ax.set_ylabel('Loss', fontsize=16)
+
+          ax = plt.subplot(3, 1, 2)
+          ax.plot(train_acc_history, 'b')
+          ax.plot(val_acc_history, 'g')
+          ax.legend(['Training corr coeff', 'Validation corr coeff'], loc='lower right')
+          #ax.set_xlabel('Acc Frequency', fontsize=16)
+          ax.set_ylabel('Correlation coefficient', fontsize=16)
+
+          ax = plt.subplot(3, 1, 3)
+          ax.plot(weight_norm_history, 'k')
+          ax.set_title('Weight norm', fontsize=16)
+          ax.set_xlabel('Acc Frequency', fontsize=16)
+          ax.set_ylabel('L2 Norm of W1 and W2', fontsize=16)
+
+          fig_dir  = '/Users/lmcintosh/Git/deepRGC/optimization_snapshots/'
+          filename = 'Epoch%sIteration%i.png' %(epoch, it)
+          plt.savefig(fig_dir + filename, bbox_inches='tight')
 
     if verbose:
       print 'finished optimization. best validation accuracy: %f' % (best_val_acc, )

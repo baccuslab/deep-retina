@@ -301,6 +301,15 @@ class ClassifierTrainer(object):
     mean_dw_history = []
     train_mse_history = []
     val_mse_history = []
+    train_max_rates_history = []
+    train_min_rates_history = []
+    train_mean_rates_history = []
+    val_max_rates_history = []
+    val_min_rates_history = []
+    val_mean_rates_history = []
+    max_true_history = []
+    min_true_history = []
+    mean_true_history = []
 
     for it in xrange(num_iters):
       if verbose:
@@ -386,6 +395,13 @@ class ClassifierTrainer(object):
         train_acc, _ = pearsonr(y_pred_train, y[train_mask]) 
         train_acc_history.append(train_acc)
         train_mse_history.append(np.mean((y_pred_train - y[train_mask])**2))
+        train_max_rates_history.append(np.max(y_pred_train))
+        train_min_rates_history.append(np.min(y_pred_train))
+        train_mean_rates_history.append(np.mean(y_pred_train))
+        max_true_history.append(np.max(y[train_mask]))
+        min_true_history.append(np.min(y[train_mask]))
+        mean_true_history.append(np.mean(y[train_mask]))
+
 
         # evaluate val accuracy, but split the validation set into batches
         if sample_batches:
@@ -405,6 +421,9 @@ class ClassifierTrainer(object):
         val_acc, _ = pearsonr(y_pred_val, y[val_inds])
         val_acc_history.append(val_acc)
         val_mse_history.append(np.mean((y_pred_val - y[val_inds])**2))
+        val_max_rates_history.append(np.max(y_pred_val))
+        val_min_rates_history.append(np.min(y_pred_val))
+        val_mean_rates_history.append(np.mean(y_pred_val))
         
         # keep track of the best model based on validation accuracy
         if val_acc > best_val_acc:
@@ -426,14 +445,14 @@ class ClassifierTrainer(object):
 
         if save_plots:
           fig = plt.gcf()
-          fig.set_size_inches((8,24))
-          ax = plt.subplot(6, 1, 1)
+          fig.set_size_inches((20,24))
+          ax = plt.subplot(4, 2, 1)
           ax.plot(loss_history, 'k')
           ax.set_title('Loss history', fontsize=16)
           #ax.set_xlabel('Iteration', fontsize=16)
           ax.set_ylabel('Loss', fontsize=14)
 
-          ax = plt.subplot(6, 1, 2)
+          ax = plt.subplot(4, 2, 2)
           ax.plot(train_acc_history, 'b')
           ax.plot(val_acc_history, 'g')
           ax.set_title('Correlation Coefficients', fontsize=16)
@@ -441,32 +460,45 @@ class ClassifierTrainer(object):
           #ax.set_xlabel('Acc Frequency', fontsize=16)
           ax.set_ylabel('Correlation coefficient', fontsize=14)
 
-          ax = plt.subplot(6, 1, 3)
+          ax = plt.subplot(4, 2, 3)
           ax.plot(train_mse_history, 'b')
           ax.plot(val_mse_history, 'g')
           ax.set_title('Mean squared error', fontsize=16)
           ax.legend(['Training mse', 'Validation mse'], loc='lower right')
           ax.set_ylabel('Mean squared error', fontsize=14)
 
-          ax = plt.subplot(6, 1, 4)
+          ax = plt.subplot(4, 2, 4)
           ax.plot(weight_norm_history, 'k')
           ax.set_title('Weight norm', fontsize=16)
           #ax.set_xlabel('Acc Frequency', fontsize=16)
           ax.set_ylabel('L2 Norm of W1 and W2', fontsize=14)
 
-          ax = plt.subplot(6, 1, 5)
+          ax = plt.subplot(4, 2, 5)
           ax.plot(max_weight_history, 'b')
           ax.plot(min_weight_history, 'b')
           ax.plot(mean_weight_history, 'r')
           ax.set_title('Value stats for W1', fontsize=16)
           ax.set_ylabel('W1 stats', fontsize=14)
 
-          ax = plt.subplot(6, 1, 6)
+          ax = plt.subplot(4, 2, 6)
           ax.plot(max_dw_history, 'g')
           ax.plot(min_dw_history, 'g')
           ax.plot(mean_dw_history, 'r')
           ax.set_title('Gradient stats for W1', fontsize=16)
           ax.set_ylabel('dW1 stats', fontsize=14)
+
+          ax = plt.subplot(4, 2, 7)
+          ax.plot(train_max_rates_history, 'b')
+          ax.plot(train_min_rates_history, 'b')
+          ax.plot(val_max_rates_history, 'g')
+          ax.plot(val_min_rates_history, 'g')
+          ax.plot(train_mean_rates_history, 'b', alpha=0.7, linewidth=2)
+          ax.plot(val_mean_rates_history, 'g', alpha=0.7, linewidth=2)
+          ax.plot(max_true_history, 'k', alpha=0.7)
+          ax.plot(min_true_history, 'k', alpha=0.7)
+          ax.plot(mean_true_history, 'k', alpha=0.4, linewidth=2)
+          ax.set_title('Rates stats for train, val, and true', fontsize=16)
+          ax.set_ylabel('prediction stats', fontsize=14)
 
           plt.tight_layout()
 

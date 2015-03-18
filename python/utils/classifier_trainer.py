@@ -402,6 +402,14 @@ class ClassifierTrainer(object):
         min_true_history.append(np.min(y[train_mask]))
         mean_true_history.append(np.mean(y[train_mask]))
 
+        if not first_it:
+            print 'Train preds in (%f, %f), val preds in (%f, %f), truth in (%f, %f).' %(train_min_rates_history[-1],
+                                                                                    train_max_rates_history[-1],
+                                                                                    val_min_rates_history[-1],
+                                                                                    val_max_rates_history[-1],
+                                                                                    min_true_history[-1],
+                                                                                    max_true_history[-1])
+
 
         # evaluate val accuracy, but split the validation set into batches
         if sample_batches:

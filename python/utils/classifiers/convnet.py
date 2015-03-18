@@ -177,7 +177,7 @@ def init_three_layer_convnet(input_shape=(3, 32, 32), num_classes=1,
   return model
 
 
-def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None, return_probs=False, compute_dX=False, top_layer='logistic'):
+def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None, compute_dX=False, top_layer='logistic'):
   """
   Compute the loss and gradient for a simple three layer ConvNet that uses
   the following architecture:
@@ -217,27 +217,23 @@ def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None, return_probs=Fa
     scores, cache4 = affine_forward(a2, W3, b3)
   else:
     d2, cache3 = dropout_forward(a2, dropout_param)
-    scores, cache4 = affine_forward(d2, W3, b3)
+    rates, cache4 = affine_forward(d2, W3, b3)
 
   if y is None:
-    if return_probs:
-        probs = 1. / (1 + np.exp(-scores))
-        return probs
-    else:
-        return scores
+    return rates
 
   # choose the loss function
   if top_layer == 'mse':
-    data_loss, dscores = mse_loss(scores, y)
+    data_loss, drates = mse_loss(rates, y)
   elif top_layer == 'mqe':
-    data_loss, dscores = mqe_loss(scores, y)
+    data_loss, drates = mqe_loss(rates, y)
   elif top_layer == 'logistic':
-    data_loss, dscores = cross_entropy_loss(scores, y)
+    data_loss, drates = cross_entropy_loss(rates, y)
 
   if dropout is None:
-    da2, dW3, db3 = affine_backward(dscores, cache4)
+    da2, dW3, db3 = affine_backward(drates, cache4)
   else:
-    dd2, dW3, db3 = affine_backward(dscores, cache4)
+    dd2, dW3, db3 = affine_backward(drates, cache4)
     da2 = dropout_backward(dd2, cache3)
   da1, dW2, db2 = affine_relu_backward(da2, cache2)
   dX, dW1, db1 = conv_relu_pool_backward(da1, cache1)

@@ -97,7 +97,7 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logisti
 
 
 def init_two_layer_convnet(weight_scale=1e-3, bias_scale=0, input_shape=(3, 32, 32),
-                           num_classes=1, num_filters=32, filter_size=5):
+                           num_classes=1, num_filters=32, filter_size=5, weight_obs=None):
   """
   Initialize the weights for a two-layer ConvNet.
 
@@ -123,10 +123,17 @@ def init_two_layer_convnet(weight_scale=1e-3, bias_scale=0, input_shape=(3, 32, 
   assert filter_size % 2 == 1, 'Filter size must be odd; got %d' % filter_size
 
   model = {}
-  model['W1'] = weight_scale * np.random.randn(num_filters, C, filter_size, filter_size)
-  model['b1'] = bias_scale * np.random.randn(num_filters)
-  model['W2'] = weight_scale * np.random.randn(num_filters * H * W / 4, num_classes)
-  model['b2'] = bias_scale * np.random.randn(num_classes)
+  if weight_obs not None:
+      model['W1'] = np.random.choice(weight_obs, num_filters*C*filter_size*filter_size, replace=True).reshape((num_filters, C, filter_size, filter_size))
+      model['b1'] = bias_scale * np.random.randn(num_filters)
+      model['W2'] = weight_scale * np.random.randn(num_filters * H * W / 4, num_classes)
+      model['b2'] = bias_scale * np.random.randn(num_classes)
+  else:
+      model['W1'] = weight_scale * np.random.randn(num_filters, C, filter_size, filter_size)
+      model['b1'] = bias_scale * np.random.randn(num_filters)
+      model['W2'] = weight_scale * np.random.randn(num_filters * H * W / 4, num_classes)
+      model['b2'] = bias_scale * np.random.randn(num_classes)
+
   return model
 
 

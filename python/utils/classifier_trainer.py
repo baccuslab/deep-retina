@@ -2,6 +2,7 @@ import numpy as np
 import layers
 from scipy.stats.stats import pearsonr
 import matplotlib.pyplot as plt
+from os.path import expanduser
 
 
 class ClassifierTrainer(object):
@@ -232,7 +233,7 @@ class ClassifierTrainer(object):
                    learning_rate_decay=0.95, update='momentum', 
                    sample_batches=True, num_epochs=30, batch_size=100, 
                    acc_frequency=None, augment_fn=None, predict_fn=None,
-                   verbose=False, save_plots=False):
+                   verbose=False, save_plots=False, machine='LaneMacbook'):
     """
     Optimize the parameters of a model to minimize a loss function. We use
     training data X and y to compute the loss and gradients, and periodically
@@ -310,6 +311,11 @@ class ClassifierTrainer(object):
     max_true_history = []
     min_true_history = []
     mean_true_history = []
+
+    if machine == 'LaneMacbook':
+      fig_dir = '/Users/lmcintosh/Git/deepRGC/optimization_snapshots/'
+    elif machine == 'Eggplant':
+      fig_dir = expanduser('~/deep-retina/optimization-screenshots/')
 
     for it in xrange(num_iters):
       if verbose:
@@ -514,7 +520,6 @@ class ClassifierTrainer(object):
 
           plt.tight_layout()
 
-          fig_dir  = '/Users/lmcintosh/Git/deepRGC/optimization_snapshots/'
           filename = 'Epoch%sIteration%i.png' %(epoch, it)
           plt.savefig(fig_dir + filename, bbox_inches='tight')
 

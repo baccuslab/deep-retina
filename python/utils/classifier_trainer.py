@@ -451,7 +451,7 @@ class ClassifierTrainer(object):
           print ('Finished epoch %d / %d: cost %f, train: %f, val %f, lr %e'
                  % (epoch, num_epochs, cost, train_acc, val_acc, learning_rate))
 
-        if save_plots:
+        if save_plots and not epoch_end:
           fig = plt.gcf()
           fig.set_size_inches((20,24))
           ax = plt.subplot(4, 2, 1)
@@ -508,11 +508,19 @@ class ClassifierTrainer(object):
           ax.set_title('Rates stats for train, val, and true', fontsize=16)
           ax.set_ylabel('prediction stats', fontsize=14)
 
+          ax = plt.subplot(4, 2, 8)
+          ax.plot(y_pred_train[:250], 'r')
+          ax.plot(y[train_mask][:250], 'k')
+          ax.set_title('Real (black) vs predicted (red) response', fontsize=16)
+          ax.set_ylabel('Output', fontsize=14)
+
           plt.tight_layout()
 
           fig_dir  = '/Users/lmcintosh/Git/deepRGC/optimization_snapshots/'
           filename = 'Epoch%sIteration%i.png' %(epoch, it)
           plt.savefig(fig_dir + filename, bbox_inches='tight')
+
+          plt.close()
 
     if verbose:
       print 'finished optimization. best validation accuracy: %f' % (best_val_acc, )

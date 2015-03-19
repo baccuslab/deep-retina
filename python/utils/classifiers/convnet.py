@@ -123,10 +123,10 @@ def init_two_layer_convnet(weight_scale=1e-3, bias_scale=0, input_shape=(3, 32, 
   assert filter_size % 2 == 1, 'Filter size must be odd; got %d' % filter_size
 
   model = {}
-  if weight_obs not None:
+  if weight_obs is not None:
       model['W1'] = np.random.choice(weight_obs, num_filters*C*filter_size*filter_size, replace=True).reshape((num_filters, C, filter_size, filter_size))
       model['b1'] = bias_scale * np.random.randn(num_filters)
-      model['W2'] = weight_scale * np.random.randn(num_filters * H * W / 4, num_classes)
+      model['W2'] = weight_scale * np.random.randn(num_filters * H * W / 4, num_classes) + 0.5
       model['b2'] = bias_scale * np.random.randn(num_classes)
   else:
       model['W1'] = weight_scale * np.random.randn(num_filters, C, filter_size, filter_size)
@@ -139,7 +139,7 @@ def init_two_layer_convnet(weight_scale=1e-3, bias_scale=0, input_shape=(3, 32, 
 
 def init_three_layer_convnet(input_shape=(3, 32, 32), num_classes=1,
                             filter_size=5, num_filters=(32, 128),
-                            weight_scale=1e-2, bias_scale=0, dtype=np.float32):
+                            weight_scale=1e-2, bias_scale=0, dtype=np.float32, weight_obs=None):
   """
   Initialize a three layer ConvNet with the following architecture:
 
@@ -167,16 +167,24 @@ def init_three_layer_convnet(input_shape=(3, 32, 32), num_classes=1,
   C, H, W = input_shape
   F1, FC = num_filters
   model = {}
-  model['W1'] = np.random.randn(F1, C, filter_size, filter_size)
-  model['b1'] = np.random.randn(F1)
-  model['W2'] = np.random.randn(H * W * F1 / 4, FC)
-  model['b2'] = np.random.randn(FC)
-  model['W3'] = np.random.randn(FC, num_classes)
-  model['b3'] = np.random.randn(num_classes)
+  if weight_obs is not None:
+      model['W1'] = np.random.choice(weight_obs, F1*C*filter_size*filter_size, replace=True).reshape((F1, C, filter_size, filter_size))
+      model['b1'] = bias_scale * np.random.randn(F1)
+      model['W2'] = weight_scale * np.random.randn(F1 * H * W / 4, FC) + np.mean(model['W1'])
+      model['b2'] = bias_scale * np.random.randn(FC)
+      model['W3'] = weight_scale * np.random.randn(FC, num_classes) + np.mean(model['W1'])
+      model['b3'] = bias_scale * np.random.randn(num_classes)
+  else:
+      model['W1'] = np.random.randn(F1, C, filter_size, filter_size)
+      model['b1'] = np.random.randn(F1)
+      model['W2'] = np.random.randn(H * W * F1 / 4, FC)
+      model['b2'] = np.random.randn(FC)
+      model['W3'] = np.random.randn(FC, num_classes)
+      model['b3'] = np.random.randn(num_classes)
 
-  for i in [1, 2, 3]:
-    model['W%d' % i] *= weight_scale
-    model['b%d' % i] *= bias_scale
+      for i in [1, 2, 3]:
+        model['W%d' % i] *= weight_scale
+        model['b%d' % i] *= bias_scale
 
   for k in model:
     model[k] = model[k].astype(dtype, copy=False)
@@ -221,10 +229,12 @@ def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None, compute_dX=Fals
   a1, cache1 = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
   a2, cache2 = affine_relu_forward(a1, W2, b2)
   if dropout is None:
-    scores, cache4 = affine_forward(a2, W3, b3)
+    a3, cache4 = affine_forward(a2, W3, b3)
+    rates, cache5 = soft_rectification_forward(a3)
   else:
     d2, cache3 = dropout_forward(a2, dropout_param)
-    rates, cache4 = affine_forward(d2, W3, b3)
+    a3, cache4 = affine_forward(d2, W3, b3)
+    rates, cache5 = soft_rectification_forward(a3)
 
   if y is None:
     return rates
@@ -236,11 +246,15 @@ def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None, compute_dX=Fals
     data_loss, drates = mqe_loss(rates, y)
   elif top_layer == 'logistic':
     data_loss, drates = cross_entropy_loss(rates, y)
+  elif top_layer == 'poisson':
+    data_loss, drates = poisson_loss(rates, y)
 
   if dropout is None:
-    da2, dW3, db3 = affine_backward(drates, cache4)
+    da3 = soft_rectification_backward(drates, cache5)
+    da2, dW3, db3 = affine_backward(da3, cache4)
   else:
-    dd2, dW3, db3 = affine_backward(drates, cache4)
+    da3 = soft_rectification_backward(drates, cache5)
+    dd2, dW3, db3 = affine_backward(da3, cache4)
     da2 = dropout_backward(dd2, cache3)
   da1, dW2, db2 = affine_relu_backward(da2, cache2)
   dX, dW1, db1 = conv_relu_pool_backward(da1, cache1)
@@ -254,7 +268,7 @@ def three_layer_convnet(X, model, y=None, reg=0.0, dropout=None, compute_dX=Fals
   reg_loss = 0.0
   for p in ['W1', 'W2', 'W3']:
     W = model[p]
-    reg_loss += np.sum(np.abs(W)) #0.5 * reg * np.sum(W * W)
+    reg_loss += reg * np.sum(np.abs(W)) #0.5 * reg * np.sum(W * W)
     grads[p] += reg * np.sign(W)  #reg * W
   loss = data_loss + reg_loss
 

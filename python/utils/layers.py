@@ -219,6 +219,76 @@ def mse_loss(x, y):
 
   return loss, dx
 
+def soft_rectification_forward(x):
+  """
+  Assumes that x is a vector or scalar between (-inf, inf).
+  Returns a vector or scalar, respectively, between (0, inf).
+  
+  Could run into numerical stability issues if x is too large.
+  """
+  thresh = 1.1
+  out = np.log(1 + np.exp(x - thresh))
+  cache = (x.squeeze(), thresh)
+
+  return out, cache
+
+def soft_rectification_backward(dout, cache):
+  """
+  forward pass was:
+  expx   = 1 + exp(x)
+  logexp = log(expx)
+  """
+  # restore variables from cache
+  # without squeezes, dexpx would be N x N instead of (N,)
+  x, thresh = cache
+
+  # backward pass
+  dx = np.exp(x) / (np.exp(thresh) + np.exp(x)) * dout.squeeze()
+  #dexpx = 1./(1 + np.exp(x - thresh)) * dout.squeeze()
+  #dx    = np.exp(x - thresh) * dexpx
+
+  dx = np.expand_dims(dx, 1)
+
+  return dx
+
+def poisson_loss(x, y):
+  """
+  Negative log likelihood of data y given predictions x, according to a Poisson model.
+
+  Assumes that x is > 0.
+  """
+  desqueezeX = False
+  if len(x.shape) > 1:
+      x = x.squeeze()
+      desqueezeX = True
+  if len(y.shape) > 1:
+      y = y.squeeze()
+
+  # we compute -y*np.log(x) only for y > 0
+  aboveZero = (y > 0)
+  losses = np.zeros(x.shape)
+  losses[aboveZero] -= y[aboveZero] * np.log(x[aboveZero])
+  
+  # add x to yield x - y * np.log(x)
+  losses += x
+  loss = np.mean(losses)
+
+  # backward pass is -y/x + 1
+  # we only compute -y/x for y > 0
+  dx = np.zeros(x.shape)
+  dx[aboveZero] -= y[aboveZero] / x[aboveZero]
+  dx += 1
+
+  if (np.isnan(dx)).any():
+      import pdb
+      pdb.set_trace()
+
+  if desqueezeX:
+      dx = np.expand_dims(dx, 1)
+
+  return loss, dx
+
+
 def cross_entropy_loss(x, y):
   """
   Computes the cross entropy or logistic loss.

@@ -5,7 +5,7 @@ from utils.fast_layers import *
 from utils.layer_utils import *
 
 
-def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logistic', compute_dX=False):
+def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='poisson', compute_dX=False):
   """
   Compute the loss and gradient for a simple two-layer ConvNet. The architecture
   is conv-relu-pool-affine-softmax, where the conv layer uses stride-1 "same"
@@ -53,8 +53,9 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logisti
   # Compute the forward pass
   a1, cache1 = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
   d1, cache2 = dropout_forward(a1, dropout_param)
-  rates, cache3 = affine_forward(d1, W2, b2)
-  #rates, cache4 = logistic_forward(e1, model['logistic'])
+  a2, cache3 = affine_forward(d1, W2, b2)
+  #rates, cache4 = logistic_forward(a2, model['logistic'])
+  rates, cache4 = soft_rectification_forward(a2)
 
   if np.isnan(rates).any():
       import pdb
@@ -72,10 +73,13 @@ def two_layer_convnet(X, model, y=None, reg=0.0, dropout=1.0, top_layer='logisti
     data_loss, drates = mqe_loss(rates, y)
   elif top_layer == 'logistic':
     data_loss, drates = cross_entropy_loss(rates, y)
+  elif top_layer == 'poisson':
+    data_loss, drates = poisson_loss(rates, y)
 
   # Compute the gradients using a backward pass
+  da2 = soft_rectification_backward(drates, cache4)
   #de1, dparams  = logistic_backward(drates, cache4)
-  dd1, dW2, db2 = affine_backward(drates, cache3)
+  dd1, dW2, db2 = affine_backward(da2, cache3)
   da1 = dropout_backward(dd1, cache2)
   dX,  dW1, db1 = conv_relu_pool_backward(da1, cache1)
 

@@ -3,6 +3,8 @@ from fuel.iterator import DataIterator
 from nems.utilities import rolling_window
 import pyret.spiketools as spkt
 import os
+import h5py
+import numpy as np
 
 class RetinaStream(AbstractDataStream):
     """
@@ -17,16 +19,13 @@ class RetinaStream(AbstractDataStream):
 
     """
 
-    def __init__(self, h5filename='retina_012314b.hdf5', datadir='~/experiments/data/012314b', cellidx=1, history=40, **kwargs):
+    def __init__(self, h5filename='retina_012314b.hdf5', datadir='~/experiments/data/012314b', cellidx=1, history=40, fraction=1.0, **kwargs):
 
         # ignore axis labels if not given
         kwargs.setdefault('axis_labels', '')
 
-        # default to all of the data
-        kwargs.setdefault('fraction', 1.0)
-
         # call __init__ of the AbstractDataStream
-        super(RetinaStream, self).__init__(**kwargs)
+        super(self.__class__, self).__init__(**kwargs)
 
         # load the h5py file
         self.datafile = h5py.File(os.path.join(os.path.expanduser(datadir), h5filename))
@@ -64,10 +63,10 @@ class RetinaStream(AbstractDataStream):
         # shuffle indices, subselect a fraction
         inds = np.arange(self.Y.size)
         np.random.shuffle(inds)            # TODO: make this random selection reproducible
-        self.inds = inds[:np.round(kwargs['fraction'] * float(inds.size))]
+        self.inds = inds[:np.round(fraction * float(inds.size))]
         self.current_index = 0
 
-    def get_data():
+    def get_data(self, request=None):
         """Get a new sample of data"""
 
         # get this sample
@@ -78,10 +77,19 @@ class RetinaStream(AbstractDataStream):
 
         return sample
 
-    def close():
+    def close(self):
         """Close the hdf5 file"""
         self.datafile.close()
 
-    def reset():
+    def reset(self):
         """Reset the current data index"""
         self.current_index = 0
+
+
+    # TODO: implement iterator
+    def get_epoch_iterator(self):
+        return None
+
+    # TODO: implement iterator
+    def next_epoch(self):
+        return None

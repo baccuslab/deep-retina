@@ -30,6 +30,7 @@ class RetinaStream(AbstractDataStream):
         # load the h5py file
         self.datafile = h5py.File(os.path.join(os.path.expanduser(datadir), h5filename))
         self.cellidx = cellidx
+        self.sources = ('stimuli', 'rates')
 
         # pre-process
         stim = self.datafile['stimulus/sequence']
@@ -85,10 +86,9 @@ class RetinaStream(AbstractDataStream):
         """Reset the current data index"""
         self.current_index = 0
 
-
-    # TODO: implement iterator
-    def get_epoch_iterator(self):
-        return None
+    def get_epoch_iterator(self, **kwargs):
+        return super(self.__class__, self).get_epoch_iterator(**kwargs)
+    #    return None
 
     # TODO: implement iterator
     def next_epoch(self):

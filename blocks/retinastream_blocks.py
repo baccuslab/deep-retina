@@ -33,15 +33,21 @@ from blocks.extensions.monitoring import DataStreamMonitoring
 from blocks.extensions.plot import Plot
 
 # LOAD DATA
-if machine_name = 'Lena':
+machine_name = 'lane'
+if machine_name == 'lenna':
     datadir = os.path.expanduser('~/experiments/data/012314b/')
-elif machine_name = 'Lane':
+elif machine_name == 'lane':
     datadir = '/Volumes/data/Lane/binary_white_noise/'
+elif machine_name == 'marr':
+    datadir = os.path.expanduser('~/retina/deepretina/datasets/binary_white_noise/')
 filename = 'retina_012314b.hdf5'
-data_stream = RetinaStream(filename, datadir, cellidx=1, history=40)
+print 'Loading RetinaStream'
+train_stream = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8)
+test_stream  = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.2)
 
 # MAKE MODEL
 # First convolutional layer
+print 'Initializing ConvLayer'
 convlayer = ConvolutionalLayer(Rectifier().apply, filter_size=(11,11), num_filters=2, num_channels=40, batch_size=256, pooling_size=(10,10), image_size=(32,32), weights_init=IsotropicGaussian(), biases_init=Constant(0.01))
 convlayer.initialize()
 
@@ -51,19 +57,22 @@ y_hat = convlayer.apply(x)
 
 
 # SNAP ON THE LOSS FUNCTION
+print 'Initializing Cost'
 cost = SquaredError().apply(y_hat, y)
 
+print 'Initializing Computation Graph'
 cg = ComputationGraph(cost)
-monitor = DataStreamMonitoring(variables=[cost], data_stream=retinastream_test, prefix="test")
+monitor = DataStreamMonitoring(variables=[cost], data_stream=test_stream, prefix="test")
 
+print 'Starting Main Loop'
 main_loop = MainLoop(
-        model=None, data_stream=data_stream,
+        model=None, data_stream=train_stream,
         algorithm=GradientDescent(cost=cost, params=cg.parameters,
             step_rule=Scale(learning_rate=0.1)),
         extensions=[FinishAfter(after_n_epochs=1),
             TrainingDataMonitoring([cost], after_batch=True),
             Plot('Plotting example', channels=[['cost']],
-                after_batch=True), Printing()])
+                after_batch=True)])
 
 main_loop.run()
 

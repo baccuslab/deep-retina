@@ -29,6 +29,7 @@ from blocks.algorithms import GradientDescent, Scale
 # from blocks.algorithms import RMSProp
 from blocks.extensions import FinishAfter
 from blocks.extensions.monitoring import TrainingDataMonitoring
+from blocks.extensions.monitoring import DataStreamMonitoring
 from blocks.extensions.plot import Plot
 
 # LOAD DATA
@@ -53,15 +54,16 @@ y_hat = convlayer.apply(x)
 cost = SquaredError().apply(y_hat, y)
 
 cg = ComputationGraph(cost)
+monitor = DataStreamMonitoring(variables=[cost], data_stream=retinastream_test, prefix="test")
 
 main_loop = MainLoop(
         model=None, data_stream=data_stream,
-        algorithm=GradientDescent(cost=cost, params=[convlayer.convolution.convolution.params[0]],
+        algorithm=GradientDescent(cost=cost, params=cg.parameters,
             step_rule=Scale(learning_rate=0.1)),
         extensions=[FinishAfter(after_n_epochs=1),
-            TrainingDataMonitoring([cost, convlayer.convolution.convolution.params[0]], after_batch=True),
-            Plot('Plotting example', channels=[['cost'], ['W']],
-                after_batch=True)])
+            TrainingDataMonitoring([cost], after_batch=True),
+            Plot('Plotting example', channels=[['cost']],
+                after_batch=True), Printing()])
 
 main_loop.run()
 

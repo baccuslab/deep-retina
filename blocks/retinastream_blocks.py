@@ -39,7 +39,7 @@ if machine_name == 'lenna':
 elif machine_name == 'lane':
     datadir = '/Volumes/data/Lane/binary_white_noise/'
 elif machine_name == 'marr':
-    datadir = os.path.expanduser('~/retina/deepretina/datasets/binary_white_noise/')
+    datadir = os.path.expanduser('~/deepretina/datasets/binary_white_noise/')
 filename = 'retina_012314b.hdf5'
 print 'Loading RetinaStream'
 train_stream = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8)

@@ -51,8 +51,8 @@ print 'Initializing ConvLayer'
 convlayer = ConvolutionalLayer(Rectifier().apply, filter_size=(11,11), num_filters=2, num_channels=40, batch_size=256, pooling_size=(10,10), image_size=(32,32), weights_init=IsotropicGaussian(), biases_init=Constant(0.01))
 convlayer.initialize()
 
-x = T.ftensor4('data')
-y = T.fvector('rates')
+x = T.xtensor4('data')
+y = T.xvector('rates')
 y_hat = convlayer.apply(x)
 
 

@@ -71,7 +71,7 @@ class RetinaStream(AbstractDataStream):
         """Get a new sample of data"""
 
         # get this sample
-        sample = (self.X[self.current_index,:,:,:].astype('float64'), self.Y[self.current_index])
+        sample = (self.X[self.current_index,:,:,:], self.Y[self.current_index])
 
         # increment
         self.current_index += 1

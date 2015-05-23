@@ -30,7 +30,7 @@ class RetinaStream(AbstractDataStream):
         # load the h5py file
         self.datafile = h5py.File(os.path.join(os.path.expanduser(datadir), h5filename))
         self.cellidx = cellidx
-        self.sources = ('stimuli', 'rates')
+        self.sources = ('rates', 'data')
 
         # pre-process
         stim = self.datafile['stimulus/sequence']

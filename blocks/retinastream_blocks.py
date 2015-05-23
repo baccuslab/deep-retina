@@ -1,7 +1,6 @@
 import numpy as np
 import theano
 import theano.tensor as T
-from theano.floatX import xvector, xtensor4
 import blocks
 from fuel.schemes import SequentialScheme
 from fuel.streams import DataStream
@@ -52,8 +51,8 @@ print 'Initializing ConvLayer'
 convlayer = ConvolutionalLayer(Rectifier().apply, filter_size=(11,11), num_filters=2, num_channels=40, batch_size=256, pooling_size=(10,10), image_size=(32,32), weights_init=IsotropicGaussian(), biases_init=Constant(0.01))
 convlayer.initialize()
 
-x = xtensor4('data')
-y = xvector('rates')
+x = T.dtensor4('data')
+y = T.dvector('rates')
 y_hat = convlayer.apply(x)
 
 

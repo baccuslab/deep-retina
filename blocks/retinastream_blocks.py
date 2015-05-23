@@ -1,6 +1,7 @@
 import numpy as np
 import theano
 import theano.tensor as T
+from theano.floatX import xvector, xtensor4
 import blocks
 from fuel.schemes import SequentialScheme
 from fuel.streams import DataStream
@@ -33,7 +34,7 @@ from blocks.extensions.monitoring import DataStreamMonitoring
 from blocks.extensions.plot import Plot
 
 # LOAD DATA
-machine_name = 'lane'
+machine_name = 'marr'
 if machine_name == 'lenna':
     datadir = os.path.expanduser('~/experiments/data/012314b/')
 elif machine_name == 'lane':
@@ -51,8 +52,8 @@ print 'Initializing ConvLayer'
 convlayer = ConvolutionalLayer(Rectifier().apply, filter_size=(11,11), num_filters=2, num_channels=40, batch_size=256, pooling_size=(10,10), image_size=(32,32), weights_init=IsotropicGaussian(), biases_init=Constant(0.01))
 convlayer.initialize()
 
-x = T.xtensor4('data')
-y = T.xvector('rates')
+x = xtensor4('data')
+y = xvector('rates')
 y_hat = convlayer.apply(x)
 
 

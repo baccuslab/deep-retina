@@ -15,7 +15,7 @@ plt.rcParams['image.cmap'] = 'gray'
 # data handling
 import os
 import h5py
-from nems.utilities import rolling_window
+#from nems.utilities import rolling_window
 from retinastream import RetinaStream
 
 # blocks
@@ -48,7 +48,7 @@ test_stream  = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0
 # MAKE MODEL
 # First convolutional layer
 print 'Initializing ConvLayer'
-convlayer = ConvolutionalLayer(Rectifier().apply, filter_size=(11,11), num_filters=2, num_channels=40, batch_size=256, pooling_size=(10,10), image_size=(32,32), weights_init=IsotropicGaussian(), biases_init=Constant(0.01))
+convlayer = ConvolutionalLayer(Rectifier().apply, filter_size=(11,11), num_filters=2, num_channels=40, batch_size=256, pooling_size=(2,2), image_size=(32,32), weights_init=IsotropicGaussian(), biases_init=Constant(0.01))
 convlayer.initialize()
 
 x = T.dtensor4('data')
@@ -66,7 +66,7 @@ monitor = DataStreamMonitoring(variables=[cost], data_stream=test_stream, prefix
 
 print 'Starting Main Loop'
 main_loop = MainLoop(
-        model=None, data_stream=train_stream,
+        model=Model(cost), data_stream=train_stream,
         algorithm=GradientDescent(cost=cost, params=cg.parameters,
             step_rule=Scale(learning_rate=0.1)),
         extensions=[FinishAfter(after_n_epochs=1),

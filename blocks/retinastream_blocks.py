@@ -21,7 +21,7 @@ from retinastream import RetinaStream
 # blocks
 from blocks.bricks.conv import Convolutional, ConvolutionalLayer, ConvolutionalActivation
 from blocks.initialization import IsotropicGaussian, Constant
-from blocks.bricks import Rectifier, Softmax
+from blocks.bricks import Linear, Rectifier, Softmax
 from blocks.bricks.cost import SquaredError
 from blocks.graph import ComputationGraph
 from blocks.main_loop import MainLoop

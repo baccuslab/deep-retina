@@ -59,7 +59,7 @@ x = T.dtensor4('data')
 y = T.dvector('rates')
 #y_hat = convlayer.apply(x)
 convlayer_output = convlayer.apply(x)
-affine_output    = affinelayer.apply(convlayer_output)
+affine_output    = affinelayer.apply(convlayer_output.flatten()) # input to affine layer must be 1d
 y_hat            = Softmax().apply(affine_output)
 
 

@@ -25,6 +25,7 @@ from blocks.bricks import Rectifier
 from blocks.bricks.cost import SquaredError
 from blocks.graph import ComputationGraph
 from blocks.main_loop import MainLoop
+from blocks.model import Model # assumes everything is annotated in ComputationGraph
 from blocks.algorithms import GradientDescent, Scale
 # from blocks.algorithms import RMSProp
 from blocks.extensions import FinishAfter

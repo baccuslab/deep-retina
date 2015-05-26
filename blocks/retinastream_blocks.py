@@ -21,7 +21,7 @@ from retinastream import RetinaStream
 # blocks
 from blocks.bricks.conv import Convolutional, ConvolutionalLayer, ConvolutionalActivation
 from blocks.initialization import IsotropicGaussian, Constant
-from blocks.bricks import Rectifier
+from blocks.bricks import Rectifier, Softmax
 from blocks.bricks.cost import SquaredError
 from blocks.graph import ComputationGraph
 from blocks.main_loop import MainLoop
@@ -48,13 +48,19 @@ test_stream  = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0
 
 # MAKE MODEL
 # First convolutional layer
-print 'Initializing ConvLayer'
+print 'Initializing convlayer'
 convlayer = ConvolutionalLayer(Rectifier().apply, filter_size=(11,11), num_filters=2, num_channels=40, batch_size=256, pooling_size=(2,2), image_size=(32,32), weights_init=IsotropicGaussian(), biases_init=Constant(0.01))
 convlayer.initialize()
 
+print 'Initializing affinelayer'
+affinelayer = Linear(name='affinelayer', input_dim=2*16*16, output_dim=1)
+
 x = T.dtensor4('data')
 y = T.dvector('rates')
-y_hat = convlayer.apply(x)
+#y_hat = convlayer.apply(x)
+convlayer_output = convlayer.apply(x)
+affine_output    = affinelayer.apply(convlayer_output)
+y_hat            = Softmax().apply(affine_output)
 
 
 # SNAP ON THE LOSS FUNCTION

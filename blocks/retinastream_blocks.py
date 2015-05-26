@@ -60,6 +60,7 @@ y_hat = convlayer.apply(x)
 # SNAP ON THE LOSS FUNCTION
 print 'Initializing Cost'
 cost = SquaredError().apply(y_hat, y)
+cost.name = 'cost'
 
 print 'Initializing Computation Graph'
 cg = ComputationGraph(cost)

@@ -31,7 +31,7 @@ conv_layers = [
         ConvolutionalLayer(Rectifier().apply, (3,3), 32, (2,2), name='l2')]
 
 convnet = ConvolutionalSequence(
-        conv_layers, num_channels=1, image_size=(28,28),
+        conv_layers, num_channels=40, image_size=(32,32),
         weights_init=IsotropicGaussian(0.1),
         biases_init=Constant(0)
         )

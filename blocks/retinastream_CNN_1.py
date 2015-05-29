@@ -95,6 +95,9 @@ from retinastream import RetinaStream
 from fuel.schemes import SequentialScheme
 from fuel.transformers import Flatten
 
+import os
+import h5py
+
 rng = np.random.RandomState(1)
 
 # LOAD DATA

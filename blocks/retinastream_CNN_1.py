@@ -22,8 +22,8 @@ num_filters = 4
 initial_weight_std = .01
 epochs = 5
 
-x = T.tensor4('features')
-y = T.lmatrix('targets')
+x = T.tensor4('data')
+y = T.lmatrix('rates')
 
 # Convolutional Layers
 conv_layers = [

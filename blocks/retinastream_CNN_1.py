@@ -110,8 +110,8 @@ elif machine_name == 'marr':
     datadir = os.path.expanduser('~/deepretina/datasets/binary_white_noise/')
 filename = 'retina_012314b.hdf5'
 print 'Loading RetinaStream'
-training_stream = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8)
-testing_stream  = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.2)
+training_stream    = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8)
+validation_stream  = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.2)
 
 algorithm = GradientDescent(cost=cost, params=cg.parameters,
         step_rule=Scale(learning_rate=0.1))

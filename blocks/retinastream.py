@@ -76,6 +76,9 @@ class RetinaStream(AbstractDataStream):
         # increment
         self.current_index += 1
 
+        import pdb
+        pdb.set_trace()
+
         return sample
 
     def close(self):

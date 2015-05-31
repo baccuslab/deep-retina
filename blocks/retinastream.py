@@ -19,7 +19,7 @@ class RetinaStream(AbstractDataStream):
 
     """
 
-    def __init__(self, h5filename='retina_012314b.hdf5', datadir='~/experiments/data/012314b', cellidx=1, history=40, fraction=1.0, **kwargs):
+    def __init__(self, h5filename='retina_012314b.hdf5', datadir='~/experiments/data/012314b', cellidx=1, history=40, partition_label='train', fraction=1.0, seed=0, **kwargs):
 
         # ignore axis labels if not given
         kwargs.setdefault('axis_labels', '')
@@ -62,9 +62,19 @@ class RetinaStream(AbstractDataStream):
         self.Y = Y
 
         # shuffle indices, subselect a fraction
+        np.random.seed(seed=seed)
         inds = np.arange(self.Y.size)
-        np.random.shuffle(inds)            # TODO: make this random selection reproducible
-        self.inds = inds[:np.round(fraction * float(inds.size))]
+        np.random.shuffle(inds)
+        num_train = np.round(fraction * float(inds.size))
+        num_val   = np.round((float(inds.size) - num_train)/2)
+        num_test  = num_val
+
+        if partition_label == 'train':
+            self.inds = inds[:num_train]
+        elif partition_label == 'val':
+            self.inds = inds[num_train:num_train+num_val]
+        elif partition_label == 'test':
+            self.inds = inds[num_train+num_val:]
         self.current_index = 0
 
     def get_data(self, request=None):

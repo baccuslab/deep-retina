@@ -30,7 +30,7 @@ class RetinaStream(AbstractDataStream):
         # load the h5py file
         self.datafile = h5py.File(os.path.join(os.path.expanduser(datadir), h5filename))
         self.cellidx = cellidx
-        self.sources = ('rates', 'data')
+        self.sources = ('data', 'rates')
 
         # pre-process
         stim = self.datafile['stimulus/sequence']
@@ -75,9 +75,6 @@ class RetinaStream(AbstractDataStream):
 
         # increment
         self.current_index += 1
-
-        import pdb
-        pdb.set_trace()
 
         return sample
 

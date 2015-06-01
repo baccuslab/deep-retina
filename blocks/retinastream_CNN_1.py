@@ -58,7 +58,23 @@ y_hat = mlp.apply(features)
 # numerically stable softmax
 cost = T.mean(SquaredError().cost_matrix(y.flatten(), y_hat))
 cost.name = 'nll'
-error_rate = MisclassificationRate().apply(y.flatten(), y_hat)
+
+class PearsonCorrelation(Cost):
+    '''Calculates the Pearson's R correlation coefficient
+    for a mini-batch.'''
+
+    def __init__(self):
+        super(PearsonCorrelation, self).__init__()
+
+    @application(outputs=["correlation"])
+    def apply(self, y, y_hat):
+        # support checkpoints
+        correlations = (y - T.mean(y)) * (y_hat - T.mean(y_hat))
+        correlations /= T.std(y) * T.std(y_hat)
+        return T.mean(correlations)
+
+correlation = PearsonCorrelation().apply(y.flatten(), y_hat)
+#error_rate = MisclassificationRate().apply(y.flatten(), y_hat)
 #cost = MisclassificationRate().apply(y, y_hat)
 #cost.name = 'error_rate'
 
@@ -145,7 +161,7 @@ main_loop = MainLoop(
                 prefix='train',
                 after_epoch=True),
             DataStreamMonitoring(
-                [cost, error_rate],
+                [cost, correlation],
                 validation_stream,
                 prefix='valid'),
             Checkpoint('retinastream_model.pkl', after_epoch=True),

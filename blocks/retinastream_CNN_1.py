@@ -106,6 +106,7 @@ from blocks.extensions.plot import Plot
 from blocks.extensions.saveload import Checkpoint, LoadFromDump
 from blocks.extensions.monitoring import DataStreamMonitoring, TrainingDataMonitoring
 from blocks.model import Model
+#from blocks import MainLoopDumpManager
 
 #from fuel.datasets import MNIST
 from fuel.streams import DataStream
@@ -114,6 +115,7 @@ from fuel.schemes import SequentialScheme
 from fuel.transformers import Flatten
 
 import os
+from os.path import expanduser
 import h5py
 
 #rng = np.random.RandomState(1)
@@ -166,8 +168,9 @@ main_loop = MainLoop(
                 [cost, correlation],
                 validation_stream,
                 prefix='valid'),
-            Checkpoint('retinastream_model.pkl', after_epoch=True),
+            #Checkpoint('retinastream_model.pkl', after_epoch=True),
             #EarlyStoppingDump('/Users/jadz/Documents/Micelaneous/Coursework/Blocks/mnist-blocks/', 'valid_error_rate'),
+            #MainLoopDumpManager(expanduser('~/deepretina/blocks/checkpoints'))
             Printing()
             ]
         )

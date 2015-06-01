@@ -16,6 +16,7 @@ from blocks.initialization import IsotropicGaussian, Constant, Uniform
 from blocks.roles import WEIGHT, FILTER, INPUT
 from blocks.graph import ComputationGraph, apply_dropout
 from blocks.bricks.cost import Cost
+from blocks.bricks.base import application
 
 batch_size = 128
 filter_size = 3

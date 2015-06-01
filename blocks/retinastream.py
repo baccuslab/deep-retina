@@ -65,8 +65,8 @@ class RetinaStream(AbstractDataStream):
         np.random.seed(seed=seed)
         inds = np.arange(self.Y.size)
         np.random.shuffle(inds)
-        num_train = np.round(fraction * float(inds.size))
-        num_val   = np.round((float(inds.size) - num_train)/2)
+        num_train = np.round(fraction * np.float32(inds.size))
+        num_val   = np.round((np.float32(inds.size) - num_train)/2)
         num_test  = num_val
 
         if partition_label == 'train':
@@ -88,6 +88,9 @@ class RetinaStream(AbstractDataStream):
             self.current_index += 1
         else:
             sample = (self.X[request,:,:,:], self.Y[request])
+
+            import pdb
+            pdb.set_trace()
 
         return sample
 

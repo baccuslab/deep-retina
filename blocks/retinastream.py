@@ -80,6 +80,9 @@ class RetinaStream(AbstractDataStream):
     def get_data(self, request=None):
         """Get a new sample of data"""
 
+        import pdb
+        pdb.set_trace()
+
         # get this sample
         sample = (self.X[self.current_index,:,:,:], self.Y[self.current_index])
 

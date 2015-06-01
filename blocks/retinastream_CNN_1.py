@@ -8,7 +8,7 @@ import theano.tensor as T
 import numpy as np
 
 from blocks.bricks import Rectifier, Softmax, MLP
-from blocks.bricks.cost import CategoricalCrossEntropy, MisclassificationRate
+from blocks.bricks.cost import SquaredError, MisclassificationRate
 from blocks.bricks.conv import ConvolutionalLayer, ConvolutionalSequence, MaxPooling
 from blocks.bricks.conv import ConvolutionalActivation, Flattener
 from blocks.filter import VariableFilter
@@ -56,7 +56,7 @@ y_hat = mlp.apply(features)
 
 
 # numerically stable softmax
-cost = Softmax().categorical_cross_entropy(y.flatten(), y_hat)
+cost = Softmax().SquaredError(y.flatten(), y_hat)
 cost.name = 'nll'
 error_rate = MisclassificationRate().apply(y.flatten(), y_hat)
 #cost = MisclassificationRate().apply(y, y_hat)

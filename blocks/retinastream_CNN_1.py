@@ -46,7 +46,7 @@ features = Flattener().apply(convnet.apply(x))
 
 mlp = MLP(
         activations=[Rectifier(), None],
-        dims=[output_dim, 100, 10],
+        dims=[output_dim, 100, 1],
         weights_init=IsotropicGaussian(0.01),
         biases_init=Constant(0)
         )
@@ -98,7 +98,8 @@ from fuel.transformers import Flatten
 import os
 import h5py
 
-rng = np.random.RandomState(1)
+#rng = np.random.RandomState(1)
+seed = np.random.randint(100)
 
 # LOAD DATA
 machine_name = 'marr'
@@ -114,9 +115,11 @@ print 'Loading RetinaStream'
 num_total_examples = 299850
 num_train_examples = 239880 # for 80, 10, 10 split
 num_val_examples   = 29985
-training_stream    = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8, partition_label='train',
+training_stream    = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8, seed=seed,
+        partition_label='train',
         iteration_scheme=SequentialScheme(num_train_examples, batch_size=batch_size))
-validation_stream  = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8, partition_label='val',
+validation_stream  = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8, seed=seed,
+        partition_label='val',
         iteration_scheme=SequentialScheme(num_val_examples, batch_size=512))
 
 algorithm = GradientDescent(cost=cost, params=cg.parameters,

@@ -23,7 +23,7 @@ initial_weight_std = .01
 epochs = 5
 
 x = T.tensor4('data')
-y = T.lmatrix('rates')
+y = T.fmatrix('rates')
 
 # Convolutional Layers
 conv_layers = [

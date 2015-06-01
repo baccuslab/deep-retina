@@ -115,9 +115,9 @@ num_total_examples = 299850
 num_train_examples = 239880 # for 80, 10, 10 split
 num_val_examples   = 29985
 training_stream    = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8, partition_label='train',
-        iteration_scheme=SequentialScheme(num_train_examples, batch_size=batch_size)
+        iteration_scheme=SequentialScheme(num_train_examples, batch_size=batch_size))
 validation_stream  = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8, partition_label='val',
-        iteration_scheme=SequentialScheme(num_val_examples, batch_size=512)
+        iteration_scheme=SequentialScheme(num_val_examples, batch_size=512))
 
 algorithm = GradientDescent(cost=cost, params=cg.parameters,
         step_rule=Scale(learning_rate=0.1))

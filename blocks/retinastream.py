@@ -55,7 +55,9 @@ class RetinaStream(AbstractDataStream):
         X = rolling_window(stim_sliced, history)
         X = np.rollaxis(X, 2)
         X = np.rollaxis(X, 3, 1)
-        Y = rates[history:]
+        Y = rates[history:].astype('float32')
+
+        #TODO: smooth rates 
 
         # store references
         self.X = X
@@ -88,9 +90,6 @@ class RetinaStream(AbstractDataStream):
             self.current_index += 1
         else:
             sample = (self.X[request,:,:,:], self.Y[request])
-
-            import pdb
-            pdb.set_trace()
 
         return sample
 

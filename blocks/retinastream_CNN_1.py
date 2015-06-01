@@ -110,8 +110,14 @@ elif machine_name == 'marr':
     datadir = os.path.expanduser('~/deepretina/datasets/binary_white_noise/')
 filename = 'retina_012314b.hdf5'
 print 'Loading RetinaStream'
-training_stream    = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8, partition_label='train')
-validation_stream  = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8, partition_label='val')
+
+num_total_examples = 299850
+num_train_examples = 239880 # for 80, 10, 10 split
+num_val_examples   = 29985
+training_stream    = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8, partition_label='train',
+        iteration_scheme=SequentialScheme(num_train_examples, batch_size=batch_size)
+validation_stream  = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8, partition_label='val',
+        iteration_scheme=SequentialScheme(num_val_examples, batch_size=512)
 
 algorithm = GradientDescent(cost=cost, params=cg.parameters,
         step_rule=Scale(learning_rate=0.1))

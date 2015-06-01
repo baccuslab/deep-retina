@@ -23,7 +23,7 @@ initial_weight_std = .01
 epochs = 5
 
 x = T.tensor4('data')
-y = T.fmatrix('rates')
+y = T.fvector('rates')
 
 # Convolutional Layers
 conv_layers = [
@@ -56,7 +56,7 @@ y_hat = mlp.apply(features)
 
 
 # numerically stable softmax
-cost = SquaredError().cost_matrix(y.flatten(), y_hat)
+cost = T.mean(SquaredError().cost_matrix(y.flatten(), y_hat))
 cost.name = 'nll'
 error_rate = MisclassificationRate().apply(y.flatten(), y_hat)
 #cost = MisclassificationRate().apply(y, y_hat)

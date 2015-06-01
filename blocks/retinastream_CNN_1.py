@@ -56,7 +56,7 @@ y_hat = mlp.apply(features)
 
 
 # numerically stable softmax
-cost = Softmax().SquaredError(y.flatten(), y_hat)
+cost = SquaredError(y.flatten(), y_hat)
 cost.name = 'nll'
 error_rate = MisclassificationRate().apply(y.flatten(), y_hat)
 #cost = MisclassificationRate().apply(y, y_hat)

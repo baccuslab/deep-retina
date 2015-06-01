@@ -25,7 +25,7 @@ initial_weight_std = .01
 epochs = 5
 
 x = T.tensor4('data')
-y = T.fvector('rates')
+y = T.fcol('rates')
 
 # Convolutional Layers
 conv_layers = [
@@ -58,7 +58,7 @@ y_hat = mlp.apply(features)
 
 
 # numerically stable softmax
-cost = T.mean(SquaredError().cost_matrix(y.flatten(), y_hat))
+cost = T.mean(SquaredError().cost_matrix(y, y_hat))
 cost.name = 'nll'
 
 class PearsonCorrelation(Cost):
@@ -75,7 +75,7 @@ class PearsonCorrelation(Cost):
         correlations /= T.std(y) * T.std(y_hat)
         return T.mean(correlations)
 
-correlation = PearsonCorrelation().apply(y.flatten(), y_hat)
+correlation = PearsonCorrelation().apply(y.flatten(), y_hat.flatten())
 #error_rate = MisclassificationRate().apply(y.flatten(), y_hat)
 #cost = MisclassificationRate().apply(y, y_hat)
 #cost.name = 'error_rate'

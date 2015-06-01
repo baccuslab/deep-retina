@@ -61,7 +61,7 @@ class RetinaStream(AbstractDataStream):
 
         # store references
         self.X = X
-        self.Y = Y
+        self.Y = np.expand_dims(Y, axis=1)
 
         # shuffle indices, subselect a fraction
         np.random.seed(seed=seed)

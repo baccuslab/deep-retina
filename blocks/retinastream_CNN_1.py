@@ -18,6 +18,8 @@ from blocks.graph import ComputationGraph, apply_dropout
 from blocks.bricks.cost import Cost
 from blocks.bricks.base import application
 
+from metrics import PearsonCorrelation, ExplainedVariance
+
 batch_size = 128
 filter_size = 3
 num_filters = 4
@@ -60,22 +62,8 @@ y_hat = mlp.apply(features)
 # numerically stable softmax
 cost = T.mean(SquaredError().cost_matrix(y, y_hat))
 cost.name = 'nll'
-
-class PearsonCorrelation(Cost):
-    '''Calculates the Pearson's R correlation coefficient
-    for a mini-batch.'''
-
-    def __init__(self):
-        super(PearsonCorrelation, self).__init__()
-
-    @application(outputs=["correlation"])
-    def apply(self, y, y_hat):
-        # support checkpoints
-        correlations = (y - T.mean(y)) * (y_hat - T.mean(y_hat))
-        correlations /= T.std(y) * T.std(y_hat)
-        return T.mean(correlations)
-
 correlation = PearsonCorrelation().apply(y.flatten(), y_hat.flatten())
+explain_var = ExplainedVariance().apply(y.flatten(), y_hat.flatten())
 #error_rate = MisclassificationRate().apply(y.flatten(), y_hat)
 #cost = MisclassificationRate().apply(y, y_hat)
 #cost.name = 'error_rate'
@@ -165,7 +153,7 @@ main_loop = MainLoop(
                 prefix='train',
                 after_epoch=True),
             DataStreamMonitoring(
-                [cost, correlation],
+                [cost, correlation, explain_var],
                 validation_stream,
                 prefix='valid'),
             #Checkpoint('retinastream_model.pkl', after_epoch=True),

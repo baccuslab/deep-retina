@@ -55,3 +55,11 @@ class ExplainedVariance(Cost):
         mse      = tensor.mean(tensor.sqr(y - y_hat))
         rate_var = tensor.var(y)
         return 1.0 - (mse / rate_var)
+
+class MeanModelRates(Cost):
+    '''Calculates the mean model output,
+    mean(y_hat)'''
+
+    @application(outputs=["mean_model_output"])
+    def apply(self, y_hat):
+        return tensor.mean(y_hat)

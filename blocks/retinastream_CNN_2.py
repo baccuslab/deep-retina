@@ -8,6 +8,7 @@ import theano.tensor as T
 import numpy as np
 
 from blocks.bricks import Rectifier, Softmax, MLP
+from extrabricks import SoftRectifier
 from blocks.bricks.cost import SquaredError, MisclassificationRate
 from blocks.bricks.conv import ConvolutionalLayer, ConvolutionalSequence, MaxPooling
 from blocks.bricks.conv import ConvolutionalActivation, Flattener
@@ -18,9 +19,9 @@ from blocks.graph import ComputationGraph, apply_dropout
 from blocks.bricks.cost import Cost
 from blocks.bricks.base import application
 
-from metrics import PearsonCorrelation, ExplainedVariance, MeanModelRates
+from metrics import PearsonCorrelation, ExplainedVariance, MeanModelRates, PoissonLogLikelihood
 
-batch_size = 128
+batch_size = 256
 filter_size = 3
 num_filters = 4
 initial_weight_std = .01
@@ -48,7 +49,7 @@ print(output_dim)
 features = Flattener().apply(convnet.apply(x))
 
 mlp = MLP(
-        activations=[None],
+        activations=[SoftRectifier()],
         dims=[output_dim, 1],
         weights_init=IsotropicGaussian(0.01),
         biases_init=Constant(0)
@@ -59,8 +60,9 @@ y_hat = mlp.apply(features)
 
 
 # numerically stable softmax
-cost = T.mean(SquaredError().cost_matrix(y, y_hat))
+cost = PoissonLogLikelihood().apply(y.flatten(), y_hat.flatten()) 
 cost.name = 'nll'
+mse         = T.mean(SquaredError().cost_matrix(y, y_hat))
 correlation = PearsonCorrelation().apply(y.flatten(), y_hat.flatten())
 explain_var = ExplainedVariance().apply(y.flatten(), y_hat.flatten())
 mean_y_hat  = MeanModelRates().apply(y_hat.flatten())
@@ -128,10 +130,10 @@ training_stream    = RetinaStream(filename, datadir, cellidx=1, history=40, frac
         iteration_scheme=SequentialScheme(num_train_examples, batch_size=batch_size))
 validation_stream  = RetinaStream(filename, datadir, cellidx=1, history=40, fraction=0.8, seed=seed,
         partition_label='val',
-        iteration_scheme=SequentialScheme(num_val_examples, batch_size=512))
+        iteration_scheme=SequentialScheme(num_val_examples, batch_size=1024))
 
-algorithm = GradientDescent(cost=cost, params=cg.parameters,
-        step_rule=Scale(learning_rate=0.1))
+#algorithm = GradientDescent(cost=cost, params=cg.parameters,
+#        step_rule=Scale(learning_rate=0.1))
 
 model = Model(cost_l2)
 algorithm = GradientDescent(
@@ -153,7 +155,7 @@ main_loop = MainLoop(
                 prefix='train',
                 after_epoch=True),
             DataStreamMonitoring(
-                [cost, correlation, explain_var, mean_y_hat],
+                [cost, correlation, explain_var, mean_y_hat, mse],
                 validation_stream,
                 prefix='valid'),
             #Checkpoint('retinastream_model.pkl', after_epoch=True),

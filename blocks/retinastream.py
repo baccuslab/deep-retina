@@ -57,8 +57,6 @@ class RetinaStream(AbstractDataStream):
         X = np.rollaxis(X, 3, 1)
         Y = rates[history:].astype('float32')
 
-        #TODO: smooth rates 
-
         # store references
         self.X = X
         self.Y = np.expand_dims(Y, axis=1)

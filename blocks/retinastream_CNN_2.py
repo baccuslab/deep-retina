@@ -153,7 +153,7 @@ main_loop = MainLoop(
                 prefix='train',
                 after_epoch=True),
             DataStreamMonitoring(
-                [cost, correlation, explain_var],
+                [cost, correlation, explain_var, mean_y_hat],
                 validation_stream,
                 prefix='valid'),
             #Checkpoint('retinastream_model.pkl', after_epoch=True),

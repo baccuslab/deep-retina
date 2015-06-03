@@ -63,6 +63,7 @@ y_hat = mlp.apply(features)
 cost = PoissonLogLikelihood().apply(y.flatten(), y_hat.flatten()) 
 cost.name = 'nll'
 mse         = T.mean(SquaredError().cost_matrix(y, y_hat))
+mse.name    = 'mean_squared_error'
 correlation = PearsonCorrelation().apply(y.flatten(), y_hat.flatten())
 explain_var = ExplainedVariance().apply(y.flatten(), y_hat.flatten())
 mean_y_hat  = MeanModelRates().apply(y_hat.flatten())

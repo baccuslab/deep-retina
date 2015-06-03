@@ -56,6 +56,7 @@ class ExplainedVariance(Cost):
         rate_var = tensor.var(y)
         return 1.0 - (mse / rate_var)
 
+
 class MeanModelRates(Cost):
     '''Calculates the mean model output,
     mean(y_hat)'''
@@ -63,3 +64,16 @@ class MeanModelRates(Cost):
     @application(outputs=["mean_model_output"])
     def apply(self, y_hat):
         return tensor.mean(y_hat)
+
+
+class PoissonLogLikelihood(Cost):
+    '''Calculates the negative log likelihood of data y
+    given predictions y_hat, according to a Poisson model.
+
+    Assumes that y_hat > 0.'''
+
+    @application(outputs=["neg_log_likelihood"])
+    def apply(self, y, y_hat):
+        aboveZero = (y > 0)
+        losses = y_hat - y * tensor.log(y_hat)
+        return tensor.mean(losses)

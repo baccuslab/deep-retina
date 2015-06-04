@@ -51,7 +51,6 @@ class ExplainedVariance(Cost):
 
     @application(outputs=["explained_variance"])
     def apply(self, y, y_hat):
-        meanrate = tensor.mean(y)
         mse      = tensor.mean(tensor.sqr(y - y_hat))
         rate_var = tensor.var(y)
         return 1.0 - (mse / rate_var)

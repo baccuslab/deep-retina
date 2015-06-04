@@ -32,11 +32,11 @@ y = T.fcol('rates')
 
 # Convolutional Layers
 conv_layers = [
-        ConvolutionalLayer(Rectifier().apply, (3,3), num_filters, (2,2), name='l1')]
+        ConvolutionalLayer(Rectifier().apply, (filter_size,filter_size), num_filters, (2,2), name='l1')]
 
 convnet = ConvolutionalSequence(
         conv_layers, num_channels=40, image_size=(32,32),
-        weights_init=IsotropicGaussian(0.1),
+        weights_init=IsotropicGaussian(initial_weight_std),
         biases_init=Constant(0)
         )
 

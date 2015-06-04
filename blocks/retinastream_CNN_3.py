@@ -49,7 +49,7 @@ y = T.fcol('rates')
 features = Flattener().apply(x)
 
 mlp = MLP(
-        activations=[None],
+        activations=[SoftRectifier()],
         dims=[32*32*40, 1],
         weights_init=IsotropicGaussian(0.01),
         biases_init=Constant(0)

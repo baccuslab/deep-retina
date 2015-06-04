@@ -80,10 +80,6 @@ l2_regularization = 0.005 * sum((W**2).sum() for W in weights)
 cost_l2 = cost + l2_regularization
 cost.name = 'cost_with_regularization'
 
-# Print sizes to check
-print("Representation sizes:")
-for layer in convnet.layers:
-    print(layer.get_dim('input_'))
 
 ##################################################################
 # Training

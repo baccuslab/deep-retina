@@ -61,3 +61,6 @@ target/
 
 # hide images
 *.png
+
+# no pdfs
+*.pdf

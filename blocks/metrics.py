@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 
-import theano
 from theano import tensor
 from six import add_metaclass
 
@@ -46,7 +45,7 @@ class PearsonCorrelation(Cost):
 
 
 class ExplainedVariance(Cost):
-    '''Calculates the percent variance of the data 
+    '''Calculates the percent variance of the data
     that the model explains.'''
 
     @application(outputs=["explained_variance"])

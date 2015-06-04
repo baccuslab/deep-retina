@@ -152,7 +152,7 @@ main_loop = MainLoop(
         extensions = [
             FinishAfter(after_n_epochs=epochs),
             TrainingDataMonitoring(
-                [cost],
+                [cost, correlation, explain_var, mean_y_hat, mse],
                 prefix='train',
                 after_epoch=True),
             DataStreamMonitoring(

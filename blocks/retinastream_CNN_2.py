@@ -22,8 +22,8 @@ from blocks.bricks.base import application
 from metrics import PearsonCorrelation, ExplainedVariance, MeanModelRates, PoissonLogLikelihood
 
 batch_size = 256
-filter_size = 3
-num_filters = 4
+filter_size = 11
+num_filters = 1
 initial_weight_std = .01
 epochs = 5
 
@@ -32,7 +32,7 @@ y = T.fcol('rates')
 
 # Convolutional Layers
 conv_layers = [
-        ConvolutionalLayer(Rectifier().apply, (3,3), 1, (2,2), name='l1')]
+        ConvolutionalLayer(Rectifier().apply, (3,3), num_filters, (2,2), name='l1')]
 
 convnet = ConvolutionalSequence(
         conv_layers, num_channels=40, image_size=(32,32),
@@ -141,7 +141,7 @@ algorithm = GradientDescent(
         cost=cost_l2,
         params=model.parameters,
         step_rule=Momentum(
-            learning_rate=1e-2,
+            learning_rate=0.1,
             momentum=0.9)
         )
 

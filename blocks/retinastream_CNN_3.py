@@ -56,10 +56,10 @@ y_hat = mlp.apply(features)
 
 
 # numerically stable softmax
-cost = PoissonLogLikelihood().apply(y.flatten(), y_hat.flatten())
-cost.name = 'nll'
-mse         = T.mean(SquaredError().cost_matrix(y, y_hat))
-mse.name    = 'mean_squared_error'
+#cost = PoissonLogLikelihood().apply(y.flatten(), y_hat.flatten())
+#cost.name = 'nll'
+cost        = T.mean(SquaredError().cost_matrix(y, y_hat))
+cost.name   = 'nll' #'mean_squared_error'
 correlation = PearsonCorrelation().apply(y.flatten(), y_hat.flatten())
 explain_var = ExplainedVariance().apply(y.flatten(), y_hat.flatten())
 mean_y_hat  = MeanModelRates().apply(y_hat.flatten())
@@ -134,11 +134,11 @@ main_loop = MainLoop(
         extensions=[
             FinishAfter(after_n_epochs=epochs),
             TrainingDataMonitoring(
-                [cost, correlation, explain_var, mean_y_hat, mse],
+                [cost, correlation, explain_var, mean_y_hat],
                 prefix='train',
                 after_epoch=True),
             DataStreamMonitoring(
-                [cost, correlation, explain_var, mean_y_hat, mse],
+                [cost, correlation, explain_var, mean_y_hat],
                 validation_stream,
                 prefix='valid'),
             #Checkpoint('retinastream_model.pkl', after_epoch=True),

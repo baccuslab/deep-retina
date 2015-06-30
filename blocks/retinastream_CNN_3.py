@@ -3,21 +3,17 @@
 ##################################################################
 # Building the model
 ##################################################################
-import pdb
 import theano.tensor as T
 import numpy as np
 
-from blocks.bricks import Rectifier, Softmax, MLP
+from blocks.bricks import MLP
 from extrabricks import SoftRectifier
-from blocks.bricks.cost import SquaredError, MisclassificationRate
-from blocks.bricks.conv import ConvolutionalLayer, ConvolutionalSequence, MaxPooling
-from blocks.bricks.conv import ConvolutionalActivation, Flattener
+from blocks.bricks.cost import SquaredError
+from blocks.bricks.conv import Flattener
 from blocks.filter import VariableFilter
-from blocks.initialization import IsotropicGaussian, Constant, Uniform
-from blocks.roles import WEIGHT, FILTER, INPUT
-from blocks.graph import ComputationGraph, apply_dropout
-from blocks.bricks.cost import Cost
-from blocks.bricks.base import application
+from blocks.initialization import IsotropicGaussian, Constant
+from blocks.roles import WEIGHT, FILTER
+from blocks.graph import ComputationGraph
 
 from metrics import PearsonCorrelation, ExplainedVariance, MeanModelRates, PoissonLogLikelihood
 
@@ -60,7 +56,7 @@ y_hat = mlp.apply(features)
 
 
 # numerically stable softmax
-cost = PoissonLogLikelihood().apply(y.flatten(), y_hat.flatten()) 
+cost = PoissonLogLikelihood().apply(y.flatten(), y_hat.flatten())
 cost.name = 'nll'
 mse         = T.mean(SquaredError().cost_matrix(y, y_hat))
 mse.name    = 'mean_squared_error'
@@ -73,7 +69,6 @@ mean_y_hat  = MeanModelRates().apply(y_hat.flatten())
 
 cg = ComputationGraph(cost)
 
-#pdb.set_trace()
 weights = VariableFilter(roles=[FILTER, WEIGHT])(cg.variables)
 l2_regularization = 0.005 * sum((W**2).sum() for W in weights)
 
@@ -84,28 +79,19 @@ cost.name = 'cost_with_regularization'
 ##################################################################
 # Training
 ##################################################################
-from blocks.dump import load_parameter_values
 from blocks.main_loop import MainLoop
-from blocks.graph import ComputationGraph
-from blocks.extensions import SimpleExtension, FinishAfter, Printing
-from blocks.algorithms import GradientDescent, Scale, Momentum
-from blocks.extensions.plot import Plot
-from blocks.extensions.saveload import Checkpoint, LoadFromDump
+from blocks.extensions import FinishAfter, Printing
+from blocks.algorithms import GradientDescent, Momentum
 from blocks.extensions.monitoring import DataStreamMonitoring, TrainingDataMonitoring
 from blocks.model import Model
 #from blocks import MainLoopDumpManager
 
 #from fuel.datasets import MNIST
-from fuel.streams import DataStream
 from retinastream import RetinaStream
 from fuel.schemes import SequentialScheme
-from fuel.transformers import Flatten
 
 import os
-from os.path import expanduser
-import h5py
 
-#rng = np.random.RandomState(1)
 seed = np.random.randint(100)
 
 # LOAD DATA
@@ -142,10 +128,10 @@ algorithm = GradientDescent(
         )
 
 main_loop = MainLoop(
-        model = model,
-        data_stream = training_stream,
-        algorithm = algorithm,
-        extensions = [
+        model=model,
+        data_stream=training_stream,
+        algorithm=algorithm,
+        extensions=[
             FinishAfter(after_n_epochs=epochs),
             TrainingDataMonitoring(
                 [cost, correlation, explain_var, mean_y_hat, mse],
@@ -163,5 +149,3 @@ main_loop = MainLoop(
         )
 
 main_loop.run()
-
-

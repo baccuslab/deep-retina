@@ -84,7 +84,6 @@ cost.name = 'cost_with_regularization'
 ##################################################################
 # Training
 ##################################################################
-from blocks.dump import load_parameter_values
 from blocks.main_loop import MainLoop
 from blocks.graph import ComputationGraph
 from blocks.extensions import SimpleExtension, FinishAfter, Printing

@@ -6,8 +6,8 @@
 import theano.tensor as T
 import numpy as np
 
-from blocks.bricks import MLP
-from extrabricks import SoftRectifier
+from blocks.bricks import MLP, Rectifier
+#from extrabricks import SoftRectifier
 from blocks.bricks.cost import SquaredError
 from blocks.bricks.conv import Flattener
 from blocks.filter import VariableFilter
@@ -45,7 +45,7 @@ y = T.fcol('rates')
 features = Flattener().apply(x)
 
 mlp = MLP(
-        activations=[SoftRectifier()],
+        activations=[Rectifier()],
         dims=[32*32*40, 1],
         weights_init=IsotropicGaussian(0.01),
         biases_init=Constant(0)

@@ -1,5 +1,5 @@
-# deepRGC
-deepRGC is a project to build a convolutional neural network that can predict retinal ganglion cell responses to natural stimuli with high accuracy.
+# deep retina
+Deep retina is a project to build a convolutional neural network that can predict retinal ganglion cell responses to natural stimuli with high accuracy.
 
 In only three layers of cells, the retina compresses the entire visual scene into the sparse responses of only a million output cells. While simple linear-nonlinear models of the vertebrate retina can approximate how the retina responds to spatiotemporal Gaussian white noise, there are no known models that provide a good description for the retina’s response to natural movies. Despite this, spiking responses are highly stereotyped. 
 

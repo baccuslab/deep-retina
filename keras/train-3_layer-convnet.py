@@ -1,6 +1,6 @@
 # Trains a 3 layer convolutional neural network with the following architecture:
 # conv - relu - pool - affine - relu - affine - softplus
-#Stimulus is binary white noise 32 pixels x 32 pixels x 40 frames
+#Stimulus is binary white noise 32 x 32 x 40 frames
 #Loss: Poisson
 
 from __future__ import absolute_import
@@ -13,19 +13,21 @@ from matplotlib.pyplot import *
 from scipy.optimize import curve_fit
 from scipy.stats import pearsonr
 # Keras imports
+from keras.preprocessing import sequence
+from keras.utils import np_utils
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD, RMSprop, Adagrad
+from keras.layers.embeddings import Embedding
 from keras.regularizers import l1, l2, activity_l1, activity_l2
 #Imports to add Poisson objective (since Keras does not have them)
 import theano
 import theano.tensor as T
-import numpy as np
 from six.moves import range
 
 model_basename = 'three_layer_convnet_weights'
-num_epochs = 10 #set number of epochs for training
+num_epochs = 1 #set number of epochs for training
 
 def gaussian(x=np.linspace(-5,5,50),sigma=1.,mu=0.):
      return np.array([(1./(2.*np.pi*sigma**2))*np.exp((-(xi-mu)**2.)/(2.*sigma**2)) for xi in x])
@@ -125,21 +127,19 @@ def trainNet(X_train, y_train, X_test, y_test):
     #Default values (recommended) of RMSprop are learning rate=0.001, rho=0.9, epsilon=1e-6
     #holds out 500 of the 50000 training examples for validation
     model.compile(loss=poisson_loss, optimizer='rmsprop')
-    history = model.fit(X_train, y_train, nb_epoch=num_epochs, batch_size=50, verbose=1, validation_split=0.01)
+    model.fit(X_train, y_train, batch_size=50, nb_epoch=num_epochs, verbose=1, validation_split=0.01)
     #saves the weights to HDF5 for potential later use
     model.save_weights(model_basename + str(num_epochs))
-    #writes the losses to a file
-    pickle.dump(history, open(model_basename + str(num_epochs) + "_history.p", "wb"))
     #Would not need accuracy since that is for classification (e.g. F1 score), whereas our problem is regression,
     #so likely we will set show_accuracy=False
     score = model.evaluate(X_test, y_test, show_accuracy=False, verbose=1)
-    print('Test score:', score[0])
+    print('Test score:', score)
     #save test score
     pickle.dump(score, open(model_basename + str(num_epochs) + "_testsetscore.p", "wb"))
 
 print "Loading training data and test data..."
 print "(This might take awhile)"
-data_dir = '/Users/Aran/Desktop/deepRetina_testing/white_noise/'
+data_dir = '/farmshare/user_data/anayebi/white_noise/'
 [X, y] = loadData(data_dir)
 cell = 9
 [X_train, y_train, X_test, y_test] = createTrainValTest(X, y, cell)

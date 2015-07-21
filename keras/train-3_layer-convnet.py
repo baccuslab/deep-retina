@@ -21,6 +21,7 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD, RMSprop, Adagrad
 from keras.layers.embeddings import Embedding
 from keras.regularizers import l1, l2, activity_l1, activity_l2
+from keras.callbacks import Callback
 #Imports to add Poisson objective (since Keras does not have them)
 import theano
 import theano.tensor as T
@@ -110,6 +111,14 @@ def poisson_loss(y_true, y_pred):
     return T.mean(y_pred - y_true * T.log(y_pred), axis=-1)
 
 
+class LossHistory(Callback):
+    def on_train_begin(self, logs={}):
+        self.losses = []
+
+    def on_batch_end(self, batch, logs={}):
+        self.losses.append(logs.get('loss'))
+
+
 def trainNet(X_train, y_train, X_test, y_test):
     model = Sequential()
     #border_mode = full is the default scipy.signal.convolve2d value to do a full linear convolution of input
@@ -128,16 +137,37 @@ def trainNet(X_train, y_train, X_test, y_test):
     model.add(Activation('softplus'))
     #Default values (recommended) of RMSprop are learning rate=0.001, rho=0.9, epsilon=1e-6
     #holds out 500 of the 50000 training examples for validation
+    # rho is decay rate, not sure what epsilon is, so keeping that at default.
+    # other hyperparameters taken from python script
+    rmsprop = RMSprop(lr=5e-5, rho=0.99, epsilon=1e-6)
     model.compile(loss=poisson_loss, optimizer='rmsprop')
-    model.fit(X_train, y_train, batch_size=50, nb_epoch=num_epochs, verbose=1, validation_split=0.01)
+
+    # initialize empty list of loss history
+    history = LossHistory()
+    model.fit(X_train, y_train, batch_size=50, nb_epoch=num_epochs, verbose=1, validation_split=0.01, callbacks=[history])
     #saves the weights to HDF5 for potential later use
-    model.save_weights(model_basename + str(num_epochs))
+    model.save_weights(model_basename + str(num_epochs), overwrite=True)
     #Would not need accuracy since that is for classification (e.g. F1 score), whereas our problem is regression,
     #so likely we will set show_accuracy=False
     score = model.evaluate(X_test, y_test, show_accuracy=False, verbose=1)
     print('Test score:', score)
     #save test score
     pickle.dump(score, open(model_basename + str(num_epochs) + "_testsetscore.p", "wb"))
+
+    fig = plt.gcf()
+    fig.set_size_inches((20,24))
+    ax = plt.subplot()
+    ax.plot(history.losses, 'k')
+    ax.set_title('Loss history', fontsize=16)
+    ax.set_xlabel('Iteration', fontsize=16)
+    ax.set_ylabel('Loss', fontsize=14)
+
+    plt.tight_layout()
+    filename = '%dEpochs.png' %(num_epochs)
+    plt.savefig(filename, bbox_inches='tight')
+    plt.close()
+
+
 
 print "Loading training data and test data..."
 print "(This might take awhile)"

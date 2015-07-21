@@ -119,7 +119,12 @@ class LossHistory(Callback):
         self.losses.append(logs.get('loss'))
 
 
-def trainNet(X_train, y_train, X_test, y_test):
+def trainNet(X_train, y_train, X_test, y_test, learning_rate=5e-5, decay_rate=0.99, 
+        batch_size=50, val_split=0.01, filter_size=9, num_filters=16):
+    '''Method to initialize and train convolutional neural network'''
+
+    ########### Constants ###########
+    num_channels = 40
 
     ########### Initialize Feedforward Convnet ###########
     model = Sequential()
@@ -128,7 +133,8 @@ def trainNet(X_train, y_train, X_test, y_test):
     # conv-relu-pool layer
     #border_mode = full is the default scipy.signal.convolve2d value to do a full linear convolution of input
     #subsample=(1,1) gives a stride of 1
-    model.add(Convolution2D(16, 40, 9, 9, init='normal', border_mode='full', subsample=(1,1), W_regularizer=l2(0.0))) 
+    model.add(Convolution2D(num_filters, num_channels, filter_size, filter_size, 
+        init='normal', border_mode='full', subsample=(1,1), W_regularizer=l2(0.0))) 
     model.add(Activation('relu'))
     #ignore_border is the default, since usually not ignoring the border results in weirdness
     model.add(MaxPooling2D(poolsize=(2, 2), ignore_border=True))
@@ -152,14 +158,15 @@ def trainNet(X_train, y_train, X_test, y_test):
     #holds out 500 of the 50000 training examples for validation
     # rho is decay rate, not sure what epsilon is, so keeping that at default.
     # other hyperparameters taken from python script
-    rmsprop = RMSprop(lr=5e-5, rho=0.99, epsilon=1e-6)
+    rmsprop = RMSprop(lr=learning_rate, rho=decay_rate, epsilon=1e-6)
     model.compile(loss=poisson_loss, optimizer='rmsprop')
 
 
     ########### Fit Model with Callbacks ###########    
     # initialize empty list of loss history
     history = LossHistory()
-    model.fit(X_train, y_train, batch_size=50, nb_epoch=num_epochs, verbose=1, validation_split=0.01, callbacks=[history])
+    model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=num_epochs, 
+            verbose=1, validation_split=val_split, callbacks=[history])
 
 
     ########### Post-training Evaluation and Visualization ###########    

@@ -120,7 +120,12 @@ class LossHistory(Callback):
 
 
 def trainNet(X_train, y_train, X_test, y_test):
+
+    ########### Initialize Feedforward Convnet ###########
     model = Sequential()
+
+    ########### Layer 1 ###########
+    # conv-relu-pool layer
     #border_mode = full is the default scipy.signal.convolve2d value to do a full linear convolution of input
     #subsample=(1,1) gives a stride of 1
     model.add(Convolution2D(16, 40, 9, 9, init='normal', border_mode='full', subsample=(1,1), W_regularizer=l2(0.0))) 
@@ -129,12 +134,20 @@ def trainNet(X_train, y_train, X_test, y_test):
     model.add(MaxPooling2D(poolsize=(2, 2), ignore_border=True))
     # model.add(Dropout(0.25)) #example of adding dropout
 
+    ########### Layer 2 ###########    
+    # affine-relu layer
     model.add(Flatten())
     model.add(Dense(6400, 32, init='normal', W_regularizer=l2(0.0)))
     model.add(Activation('relu'))
 
+
+    ########### Layer 3 ###########    
+    # affine-softplus layer
     model.add(Dense(32, 1, init='normal', W_regularizer=l2(0.0)))
     model.add(Activation('softplus'))
+
+
+    ########### Loss Function ###########    
     #Default values (recommended) of RMSprop are learning rate=0.001, rho=0.9, epsilon=1e-6
     #holds out 500 of the 50000 training examples for validation
     # rho is decay rate, not sure what epsilon is, so keeping that at default.
@@ -142,9 +155,14 @@ def trainNet(X_train, y_train, X_test, y_test):
     rmsprop = RMSprop(lr=5e-5, rho=0.99, epsilon=1e-6)
     model.compile(loss=poisson_loss, optimizer='rmsprop')
 
+
+    ########### Fit Model with Callbacks ###########    
     # initialize empty list of loss history
     history = LossHistory()
     model.fit(X_train, y_train, batch_size=50, nb_epoch=num_epochs, verbose=1, validation_split=0.01, callbacks=[history])
+
+
+    ########### Post-training Evaluation and Visualization ###########    
     #saves the weights to HDF5 for potential later use
     model.save_weights(model_basename + str(num_epochs), overwrite=True)
     #Would not need accuracy since that is for classification (e.g. F1 score), whereas our problem is regression,
@@ -154,6 +172,7 @@ def trainNet(X_train, y_train, X_test, y_test):
     #save test score
     pickle.dump(score, open(model_basename + str(num_epochs) + "_testsetscore.p", "wb"))
 
+    # Figure to visualize loss history after each batch
     fig = plt.gcf()
     fig.set_size_inches((20,24))
     ax = plt.subplot()

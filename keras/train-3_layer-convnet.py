@@ -25,6 +25,8 @@ from keras.regularizers import l1, l2, activity_l1, activity_l2
 import theano
 import theano.tensor as T
 from six.moves import range
+import socket
+import getpass
 
 model_basename = 'three_layer_convnet_weights'
 num_epochs = 1 #set number of epochs for training
@@ -139,7 +141,11 @@ def trainNet(X_train, y_train, X_test, y_test):
 
 print "Loading training data and test data..."
 print "(This might take awhile)"
-data_dir = '/farmshare/user_data/anayebi/white_noise/'
+if socket.gethostname() == 'lane.local':
+    data_dir = path.expanduser('~/Git/deepRGC/datasets/white_noise/')
+elif socket.gethostname() in ['rye01.stanford.edu', 'rye02.stanford.edu']:
+    username = getpass.getuser()
+    data_dir = '/farmshare/user_data/%s/white_noise/' %(username)
 [X, y] = loadData(data_dir)
 cell = 9
 [X_train, y_train, X_test, y_test] = createTrainValTest(X, y, cell)

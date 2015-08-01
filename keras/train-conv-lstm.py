@@ -93,7 +93,7 @@ def createTrainValTest(X, y, cell):
 	numTime = 461 #500 frames, 460 + 40 new frames
 	numTest = numTime
 	numTrain = ((X.shape[0] - numTest)/numTime)*numTime
-	X_train = X[:numTrain,:,:,:] #will use validation split to hold out random 500 examples for valset
+	X_train = X[:numTrain,:,:,:] #will use validation split to hold out random examples for valset
 	y_train = y[:numTrain,cell]
 	X_test = X[numTrain:numTrain+numTest,:,:,:]
 	y_test = y[numTrain:numTrain+numTest,cell]

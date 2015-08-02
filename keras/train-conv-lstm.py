@@ -90,10 +90,10 @@ def loadData(data_dir):
 def createTrainValTest(X, y, cell):
 	# Divide examples into training, validation, and test sets
 	# don't need to zero mean data since we loaded stim_norm
-	numTime = 461 #500 frames, 460 + 40 new frames
+	numTime = 152 #191 frames, 151 + 40 new frames: ~1.9 seconds
 	numTest = numTime
 	numTrain = ((X.shape[0] - numTest)/numTime)*numTime
-	X_train = X[:numTrain,:,:,:] #will use validation split to hold out random examples for valset
+	X_train = X[:numTrain,:,:,:] #will use validation split to hold out random 500 examples for valset
 	y_train = y[:numTrain,cell]
 	X_test = X[numTrain:numTrain+numTest,:,:,:]
 	y_test = y[numTrain:numTrain+numTest,cell]
@@ -128,7 +128,7 @@ def trainNet(X_train, y_train, X_test, y_test):
 	#The predictions of the LSTM network across time given the hidden states
 	model.add(TimeDistributedDense(32, 1, activation='softplus', W_regularizer=l2(0.0)))
 	#Default values (recommended) of RMSprop are learning rate=0.001, rho=0.9, epsilon=1e-6
-	#holds out 500 of the 50000 training examples for validation
+	#holds out 1% of training examples for validation
 	model.compile(loss=poisson_loss, optimizer='rmsprop')
 	model.fit(X_train, y_train, batch_size=50, nb_epoch=num_epochs, verbose=1, validation_split=0.01)
 	#saves the weights to HDF5 for potential later use

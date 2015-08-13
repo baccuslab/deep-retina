@@ -118,10 +118,44 @@ class LossHistory(Callback):
     def on_batch_end(self, batch, logs={}):
         self.losses.append(logs.get('loss'))
 
+class CorrelationHistory(Callback):
+    def on_train_begin(self, logs={}):
+        self.train_correlations = []
+        self.test_correlations = []
+
+    def on_batch_end(self, batch, logs={}):
+        #import pdb
+        #pdb.set_trace()
+        train_subset = range(10)
+        test_subset = range(10)
+        train_output = self.model.predict(X_train[train_subset])
+        test_output = self.model.predict(X_test[test_subset])
+        # store just the pearson correlation r, not the p-value
+        self.train_correlations.append(pearsonr(train_output.squeeze(), y_train[train_subset])[0])
+        self.test_correlations.append(pearsonr(test_output.squeeze(), y_test[test_subset])[0])
+
 
 def trainNet(X_train, y_train, X_test, y_test, learning_rate=5e-5, decay_rate=0.99, 
-        batch_size=50, val_split=0.01, filter_size=9, num_filters=16):
-    '''Method to initialize and train convolutional neural network'''
+        batch_size=50, val_split=0.01, filter_sizes=[9], num_filters=[16]):
+    '''
+    Method to initialize and train convolutional neural network.
+    
+    Arguments:
+    X_train:        Numpy array of training data (samples, channels, size, size)
+    y_train:        Numpy array of training labels (samples, labels)    
+    X_test:         Numpy array of test data (samples, channels, size, size)
+    y_test:         Numpy array of test labels (samples, labels)
+    learning_rate:  (Optional) Float, learning rate. Default is 5e-5 
+    decay_rate:     (Optional) Float, decay rate of historic updates. Default is
+                        0.99
+    batch_size:     (Optional) Integer, number of samples in batch. Default is 50
+    val_split:      (Optional) Float in [0,1], fraction of samples for validation.
+                        Default is 0.01
+    filter_sizes:   (Optional) List of filter sizes. Should have len equal to # 
+                        of conv layers. Default is [9]
+    num_filters:    (Optional) List of number of filters. Should have len equal 
+                        to # of conv layers. Default is [16]
+    '''
 
     ########### Constants ###########
     num_channels = 40
@@ -133,7 +167,7 @@ def trainNet(X_train, y_train, X_test, y_test, learning_rate=5e-5, decay_rate=0.
     # conv-relu-pool layer
     #border_mode = full is the default scipy.signal.convolve2d value to do a full linear convolution of input
     #subsample=(1,1) gives a stride of 1
-    model.add(Convolution2D(num_filters, num_channels, filter_size, filter_size, 
+    model.add(Convolution2D(num_filters[0], num_channels, filter_sizes[0], filter_sizes[0], 
         init='normal', border_mode='full', subsample=(1,1), W_regularizer=l2(0.0))) 
     model.add(Activation('relu'))
     #ignore_border is the default, since usually not ignoring the border results in weirdness
@@ -165,8 +199,9 @@ def trainNet(X_train, y_train, X_test, y_test, learning_rate=5e-5, decay_rate=0.
     ########### Fit Model with Callbacks ###########    
     # initialize empty list of loss history
     history = LossHistory()
+    corrs = CorrelationHistory()
     model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=num_epochs, 
-            verbose=1, validation_split=val_split, callbacks=[history])
+            verbose=1, validation_split=val_split, callbacks=[history, corrs])
 
 
     ########### Post-training Evaluation and Visualization ###########    
@@ -182,11 +217,18 @@ def trainNet(X_train, y_train, X_test, y_test, learning_rate=5e-5, decay_rate=0.
     # Figure to visualize loss history after each batch
     fig = plt.gcf()
     fig.set_size_inches((20,24))
-    ax = plt.subplot()
-    ax.plot(history.losses, 'k')
-    ax.set_title('Loss history', fontsize=16)
-    ax.set_xlabel('Iteration', fontsize=16)
-    ax.set_ylabel('Loss', fontsize=14)
+    ax1 = plt.subplot(2,1,1)
+    ax1.plot(history.losses, 'k')
+    ax1.set_title('Loss history', fontsize=16)
+    ax1.set_xlabel('Iteration', fontsize=14)
+    ax1.set_ylabel('Loss', fontsize=14)
+
+    ax2 = plt.subplot(2,1,2)
+    ax2.plot(corrs.train_correlations, 'b')
+    ax2.plot(corrs.test_correlations, 'g')
+    ax2.set_title('Train and Test Pearson Correlations', fontsize=16)
+    ax2.set_xlabel('Iteration', fontsize=14)
+    ax2.set_ylabel('Correlation', fontsize=14)
 
     plt.tight_layout()
     filename = '%dEpochs.png' %(num_epochs)

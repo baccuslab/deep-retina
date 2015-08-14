@@ -214,6 +214,9 @@ class TrainingProgress(Callback):
 
         ax6 = plt.subplot(3,2,6)
         ax6.scatter(y_test[test_subset], test_output)
+        data_ranges = np.linspace(np.min([np.min(y_test[test_subset]), np.min(test_output)]), 
+                np.max([np.max(y_test[test_subset]), np.max(test_output)]), 10)
+        ax6.plot(data_ranges, data_ranges, 'k--')
         ax6.set_title('Test Data vs Predictions', fontsize=16)
         ax6.set_xlabel('Test Data', fontsize=14)
         ax6.set_ylabel('Test Predictions', fontsize=14)

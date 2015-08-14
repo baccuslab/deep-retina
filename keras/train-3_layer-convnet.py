@@ -134,9 +134,98 @@ class CorrelationHistory(Callback):
         self.train_correlations.append(pearsonr(train_output.squeeze(), y_train[train_subset])[0])
         self.test_correlations.append(pearsonr(test_output.squeeze(), y_test[test_subset])[0])
 
+class TrainingProgress(Callback):
+    def on_train_begin(self, logs={}):
+        self.losses = []
+        self.train_correlations = []
+        self.test_correlations = []
+        self.train_mse = []
+        self.test_mse = []
+        self.batch_id = 0
+
+    def on_batch_end(self, batch, logs={}):
+        # Increment batch id
+        self.batch_id += 1
+
+        # Get objective function loss
+        self.losses.append(logs.get('loss'))
+
+        # Get a subset of data to predict on
+        #train_subset = np.random.choice(X_train.shape[0],300)
+        #test_subset = np.random.choice(X_test.shape[0],300)
+        
+        # Get a random set of contiguous samples
+        num_samples = 300
+        train_start = np.random.choice(X_train.shape[0] - num_samples)
+        train_subset = range(train_start, train_start + num_samples)
+        test_start = np.random.choice(X_test.shape[0] - num_samples)
+        test_subset = range(test_start, test_start + num_samples)
+        
+        # Get train and test data subsets
+        train_output = self.model.predict(X_train[train_subset])
+        test_output = self.model.predict(X_test[test_subset])
+
+        # store just the pearson correlation r, not the p-value
+        self.train_correlations.append(pearsonr(train_output.squeeze(), y_train[train_subset])[0])
+        self.test_correlations.append(pearsonr(test_output.squeeze(), y_test[test_subset])[0])
+
+        # store the mean square error
+        self.train_mse.append(np.mean((train_output.squeeze() - y_train[train_subset])**2))
+        self.test_mse.append(np.mean((test_output.squeeze() - y_test[test_subset])**2))
+
+
+        # Plot progress 
+        fig = plt.gcf()
+        fig.set_size_inches((20,24))
+        ax1 = plt.subplot(3,2,1)
+        ax1.plot(self.losses, 'k')
+        ax1.set_title('Loss history', fontsize=16)
+        ax1.set_xlabel('Number of batches', fontsize=14)
+        ax1.set_ylabel('Loss', fontsize=14)
+
+        ax2 = plt.subplot(3,2,2)
+        ax2.plot(self.train_correlations, 'b')
+        ax2.plot(self.test_correlations, 'g')
+        ax2.set_title('Train and Test Pearson Correlations', fontsize=16)
+        ax2.set_xlabel('Number of batches', fontsize=14)
+        ax2.set_ylabel('Correlation', fontsize=14)
+
+        ax3 = plt.subplot(3,2,3)
+        ax3.plot(self.train_mse, 'b')
+        ax3.plot(self.test_mse, 'g')
+        ax3.set_title('Train and Test Mean Squared Error', fontsize=16)
+        ax3.set_xlabel('Number of batches', fontsize=14)
+        ax3.set_ylabel('MSE', fontsize=14)
+
+        # plot num_samples*0.01 seconds of predictions vs data
+        ax4 = plt.subplot(3,2,4)
+        ax4.plot(np.linspace(0, num_samples*0.01, num_samples), y_train[train_subset], 'k', alpha=0.7)
+        ax4.plot(np.linspace(0, num_samples*0.01, num_samples), train_output, 'r', alpha=0.7)
+        ax4.set_title('Training data (black) and predictions (red)', fontsize=16)
+        ax4.set_xlabel('Number of batches', fontsize=14)
+        ax4.set_ylabel('Probability of spiking', fontsize=14)
+
+        ax5 = plt.subplot(3,2,5)
+        ax5.plot(np.linspace(0, num_samples*0.01, num_samples), y_test[test_subset], 'k', alpha=0.7)
+        ax5.plot(np.linspace(0, num_samples*0.01, num_samples), test_output, 'r', alpha=0.7)
+        ax5.set_title('Test data (black) and predictions (red)', fontsize=16)
+        ax5.set_xlabel('Number of batches', fontsize=14)
+        ax5.set_ylabel('Probability of spiking', fontsize=14)
+
+        ax6 = plt.subplot(3,2,6)
+        ax6.scatter(y_test[test_subset], test_output)
+        ax6.set_title('Test Data vs Predictions', fontsize=16)
+        ax6.set_xlabel('Test Data', fontsize=14)
+        ax6.set_ylabel('Test Predictions', fontsize=14)
+
+        plt.tight_layout()
+        filename = '%dBatches.png' %(self.batch_id)
+        plt.savefig(filename, bbox_inches='tight')
+        plt.close()
+
 
 def trainNet(X_train, y_train, X_test, y_test, learning_rate=5e-5, decay_rate=0.99, 
-        batch_size=50, val_split=0.01, filter_sizes=[9], num_filters=[16]):
+        batch_size=128, val_split=0.01, filter_sizes=[9], num_filters=[16]):
     '''
     Method to initialize and train convolutional neural network.
     
@@ -198,10 +287,11 @@ def trainNet(X_train, y_train, X_test, y_test, learning_rate=5e-5, decay_rate=0.
 
     ########### Fit Model with Callbacks ###########    
     # initialize empty list of loss history
-    history = LossHistory()
-    corrs = CorrelationHistory()
+    #history = LossHistory()
+    #corrs = CorrelationHistory()
+    progress = TrainingProgress()
     model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=num_epochs, 
-            verbose=1, validation_split=val_split, callbacks=[history, corrs])
+            verbose=1, validation_split=val_split, callbacks=[progress])
 
 
     ########### Post-training Evaluation and Visualization ###########    
@@ -214,26 +304,7 @@ def trainNet(X_train, y_train, X_test, y_test, learning_rate=5e-5, decay_rate=0.
     #save test score
     pickle.dump(score, open(model_basename + str(num_epochs) + "_testsetscore.p", "wb"))
 
-    # Figure to visualize loss history after each batch
-    fig = plt.gcf()
-    fig.set_size_inches((20,24))
-    ax1 = plt.subplot(2,1,1)
-    ax1.plot(history.losses, 'k')
-    ax1.set_title('Loss history', fontsize=16)
-    ax1.set_xlabel('Iteration', fontsize=14)
-    ax1.set_ylabel('Loss', fontsize=14)
-
-    ax2 = plt.subplot(2,1,2)
-    ax2.plot(corrs.train_correlations, 'b')
-    ax2.plot(corrs.test_correlations, 'g')
-    ax2.set_title('Train and Test Pearson Correlations', fontsize=16)
-    ax2.set_xlabel('Iteration', fontsize=14)
-    ax2.set_ylabel('Correlation', fontsize=14)
-
-    plt.tight_layout()
-    filename = '%dEpochs.png' %(num_epochs)
-    plt.savefig(filename, bbox_inches='tight')
-    plt.close()
+    
 
 
 

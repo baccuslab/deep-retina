@@ -2,7 +2,7 @@
 # conv - relu - pool - affine - relu - LSTM - time distributed affine - softplus
 #Stimulus is binary white noise 32 x 32 x 40 frames
 #Loss: Poisson
-
+# Requires use of extra layers for keras.layers.extra import to work
 from __future__ import absolute_import
 import numpy as np
 import pickle
@@ -20,8 +20,8 @@ from keras.preprocessing import sequence
 from keras.utils import np_utils
 from keras.models import Sequential
 from keras.callbacks import ModelCheckpoint, EarlyStopping
-from keras.layers.core import Dense, Dropout, Activation, TimeDistributedFlatten, TimeDistributedDense, Reshape, Permute
-from keras.layers.convolutional import TimeDistributedConvolution2D, TimeDistributedMaxPooling2D
+from keras.layers.core import Dense, Dropout, Activation, TimeDistributedDense, Reshape, Permute
+from keras.layers.extra import TimeDistributedFlatten, TimeDistributedConvolution2D, TimeDistributedMaxPooling2D
 from keras.layers.recurrent import LSTM, GRU, JZS1, JZS2, JZS3
 from keras.optimizers import SGD, RMSprop, Adagrad
 from keras.layers.embeddings import Embedding

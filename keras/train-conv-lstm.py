@@ -2,7 +2,7 @@
 # conv - relu - pool - affine - relu - LSTM - time distributed affine - softplus
 #Stimulus is binary white noise 32 x 32 x 40 frames
 #Loss: Poisson
-# Requires use of extra layers for keras.layers.extra import to work
+# Requires use of extra layers for Keras: https://github.com/anayebi/keras-extra
 from __future__ import absolute_import
 import numpy as np
 import pickle

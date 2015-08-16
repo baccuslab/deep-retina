@@ -8,7 +8,10 @@ import numpy as np
 import pickle
 from scipy.io import loadmat
 import os.path as path
-# import matplotlib.pyplot as plt
+import matplotlib
+#Force matplotlib to not use any Xwindows else will crash on Rye
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 # from matplotlib.pyplot import *
 from scipy.optimize import curve_fit
 from scipy.stats import pearsonr
@@ -16,19 +19,21 @@ from scipy.stats import pearsonr
 from keras.preprocessing import sequence
 from keras.utils import np_utils
 from keras.models import Sequential
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.layers.core import Dense, Dropout, Activation, TimeDistributedFlatten, TimeDistributedDense, Reshape, Permute
 from keras.layers.convolutional import TimeDistributedConvolution2D, TimeDistributedMaxPooling2D
 from keras.layers.recurrent import LSTM, GRU, JZS1, JZS2, JZS3
 from keras.optimizers import SGD, RMSprop, Adagrad
 from keras.layers.embeddings import Embedding
 from keras.regularizers import l1, l2, activity_l1, activity_l2
+from keras.callbacks import Callback
 #Imports to add Poisson objective (since Keras does not have them)
 import theano
 import theano.tensor as T
 # from six.moves import range
 
 model_basename = 'conv-lstm_weights'
-num_epochs = 1 #set number of epochs for training
+num_epochs = 1200 #set number of epochs for training
 
 def gaussian(x=np.linspace(-5,5,50),sigma=1.,mu=0.):
 	 return np.array([(1./(2.*np.pi*sigma**2))*np.exp((-(xi-mu)**2.)/(2.*sigma**2)) for xi in x])
@@ -87,13 +92,15 @@ def loadData(data_dir):
 	print y.shape
 	return X, y
 
-def createTrainValTest(X, y, cell):
+def createTrainValTest(X, y, cell, ts):
 	# Divide examples into training, validation, and test sets
 	# don't need to zero mean data since we loaded stim_norm
-	numTime = 152 #191 frames, 151 + 40 new frames: ~1.9 seconds
-	numTest = numTime
-	numTrain = ((X.shape[0] - numTest)/numTime)*numTime
-	X_train = X[:numTrain,:,:,:] #will use validation split to hold out random 500 examples for valset
+
+	extent = X.shape[0] #should set this to X.shape[0] when doing full training
+	numTime = ts #191 frames, 151 + 40 new frames: ~1.9 seconds
+	numTest = 60*numTime
+	numTrain = ((extent - numTest)/numTime)*numTime
+	X_train = X[:numTrain,:,:,:] #will use validation split to hold out random examples for valset
 	y_train = y[:numTrain,cell]
 	X_test = X[numTrain:numTrain+numTest,:,:,:]
 	y_test = y[numTrain:numTrain+numTest,cell]
@@ -109,43 +116,135 @@ def poisson_loss(y_true, y_pred):
 
 	return T.mean(y_pred - y_true * T.log(y_pred), axis=-1)
 
+class LossHistory(Callback):
+	def on_train_begin(self, logs={}):
+		self.losses = []
+
+	def on_batch_end(self, batch, logs={}):
+		self.losses.append(logs.get('loss'))
+		fig = plt.gcf()
+		fig.set_size_inches((20,24))
+		ax = plt.subplot()
+		ax.plot(self.losses, 'b')
+		ax.plot(self.losses, 'g')
+		ax.set_title('Training loss history', fontsize=16)
+		ax.set_xlabel('Iteration', fontsize=14)
+		ax.set_ylabel('Training Loss', fontsize=14)
+
+		plt.tight_layout()
+		filename = '%dLoss.png' %(num_epochs)
+		plt.savefig(filename, bbox_inches='tight')
+		plt.close()
+
+class ValLossHistory(Callback):
+	def on_train_begin(self, logs={}):
+		self.losses = []
+
+	def on_batch_end(self, batch, logs={}):
+		self.losses.append(logs.get('val_loss'))
+
+class CorrelationHistory(Callback):
+	def on_train_begin(self, logs={}):
+		self.train_correlations = []
+		self.test_correlations = []
+
+	def on_batch_end(self, batch, logs={}):
+		train_subset = range(10) #np.random.choice(X_train.shape[0], 100, replace=False)
+		test_subset = range(10) #np.random.choice(X_test.shape[0], 100, replace=False)
+		train_pred = self.model.predict(X_train[train_subset])
+		train_pred = train_pred.squeeze()
+		test_pred = self.model.predict(X_test[test_subset])
+		test_pred = test_pred.squeeze()
+		train_true = y_train[train_subset].squeeze()
+		test_true = y_test[test_subset].squeeze()
+		# store just the pearson correlation r averaged over the samples, not the p-value
+		train_pred = train_pred.flatten()
+		train_true = train_true.flatten()
+		test_pred = test_pred.flatten()
+		test_true = test_true.flatten()
+		self.train_correlations.append(pearsonr(train_pred, train_true)[0])
+		self.test_correlations.append(pearsonr(test_pred, test_true)[0])
+		fig = plt.gcf()
+		fig.set_size_inches((20,24))
+		ax = plt.subplot()
+		ax.plot(self.train_correlations, 'b')
+		ax.plot(self.test_correlations, 'g')
+		ax.set_title('Train and Test Pearson Correlations', fontsize=16)
+		ax.set_xlabel('Iteration', fontsize=14)
+		ax.set_ylabel('Correlation', fontsize=14)
+
+		plt.tight_layout()
+		filename = '%dCorrelation.png' %(num_epochs)
+		plt.savefig(filename, bbox_inches='tight')
+		plt.close()
 
 def trainNet(X_train, y_train, X_test, y_test):
+	init_method = 'he_uniform' #He et al. paper initializes both conv and fc layers with this
 	model = Sequential()
-	#border_mode = full is the default scipy.signal.convolve2d value to do a full linear convolution of input
-	#subsample=(1,1) gives a stride of 1
-	model.add(TimeDistributedConvolution2D(16, 40, 9, 9, init='normal', border_mode='full', subsample=(1,1), W_regularizer=l2(0.0))) 
+	reg = 0.0 #could try 0.01
+
+	model.add(TimeDistributedConvolution2D(16, 40, 9, 9, init=init_method, border_mode='full', subsample=(1,1), W_regularizer=l1(reg))) 
 	model.add(Activation('relu'))
-	#ignore_border is the default, since usually not ignoring the border results in weirdness
+
 	model.add(TimeDistributedMaxPooling2D(poolsize=(2, 2), ignore_border=True))
-	# model.add(Dropout(0.25)) #example of adding dropout
 
 	model.add(TimeDistributedFlatten())
-	model.add(TimeDistributedDense(6400, 32, init='normal', W_regularizer=l2(0.0)))
+	#model.add(Dropout(0.25)) #example of adding dropout
+	model.add(TimeDistributedDense(6400, 32, init=init_method, W_regularizer=l1(reg)))
 	model.add(Activation('relu'))
 	#We initialize the bias of the forget gate to be 1, as recommended by Jozefowicz et al.
 	model.add(LSTM(32, 32, forget_bias_init='one', return_sequences=True))
 	#The predictions of the LSTM network across time given the hidden states
-	model.add(TimeDistributedDense(32, 1, activation='softplus', W_regularizer=l2(0.0)))
-	#Default values (recommended) of RMSprop are learning rate=0.001, rho=0.9, epsilon=1e-6
-	#holds out 1% of training examples for validation
+	#model.add(Dropout(0.25)) #example of adding dropout
+	model.add(TimeDistributedDense(32, 1, init=init_method, activation='softplus', W_regularizer=l1(reg)))
+
 	model.compile(loss=poisson_loss, optimizer='rmsprop')
-	model.fit(X_train, y_train, batch_size=50, nb_epoch=num_epochs, verbose=1, validation_split=0.01)
+	history = LossHistory()
+	val_history = ValLossHistory()
+	corrs = CorrelationHistory()
+	checkpointer = ModelCheckpoint(filepath=model_basename+"_bestvallossweights.hdf5", verbose=1, save_best_only=True)
+	#stopearly = EarlyStopping(monitor='loss', patience=100, verbose=0)
+	model.fit(X_train, y_train, batch_size=50, nb_epoch=num_epochs, verbose=1, validation_data = (X_test, y_test), callbacks=[history, val_history, checkpointer, corrs])
 	#saves the weights to HDF5 for potential later use
-	model.save_weights(model_basename + str(num_epochs))
+	model.save_weights(model_basename + str(num_epochs)+".hdf5", overwrite=True)
 	#Would not need accuracy since that is for classification (e.g. F1 score), whereas our problem is regression,
 	#so likely we will set show_accuracy=False
-	score = model.evaluate(X_test, y_test, show_accuracy=False, verbose=1)
-	print('Test score:', score)
+	#score = model.evaluate(X_test, y_test, show_accuracy=False, verbose=1)
+	#print('Test score:', score)
 	#save test score
-	pickle.dump(score, open(model_basename + str(num_epochs) + "_testsetscore.p", "wb"))
+	#pickle.dump(score, open(model_basename + str(num_epochs) + "_testsetscore.p", "wb"))
 	
+	#Figure to visualize loss history after each batch
+	fig = plt.gcf()
+	fig.set_size_inches((20,24))
+	ax1 = plt.subplot(2,1,1)
+	ax1.plot(history.losses, 'k')
+	ax1.set_title('Loss history', fontsize=16)
+	ax1.set_xlabel('Iteration', fontsize=14)
+	ax1.set_ylabel('Loss', fontsize=14)
+
+	ax2 = plt.subplot(2,1,2)
+	ax2.plot(corrs.train_correlations, 'b')
+	ax2.plot(corrs.test_correlations, 'g')
+	ax2.set_title('Train and Test Pearson Correlations', fontsize=16)
+	ax2.set_xlabel('Iteration', fontsize=14)
+	ax2.set_ylabel('Correlation', fontsize=14)
+
+	plt.tight_layout()
+	filename = '%dEpochs.png' %(num_epochs)
+	plt.savefig(filename, bbox_inches='tight')
+	plt.close()
+	
+	pickle.dump(history.losses, open(model_basename + str(num_epochs) + "_losshistory.p", "wb"))
+	pickle.dump(val_history.losses, open(model_basename + str(num_epochs) + "_vallosshistory.p", "wb"))
+
 print "Loading training data and test data..."
 print "(This might take awhile)"
 data_dir = '/farmshare/user_data/anayebi/white_noise/'
 [X, y] = loadData(data_dir)
 cell = 9
-[X_train, y_train, X_test, y_test] = createTrainValTest(X, y, cell)
+ts = 100
+[X_train, y_train, X_test, y_test] = createTrainValTest(X, y, cell, ts)
 print X_train.shape
 print y_train.shape
 print X_test.shape

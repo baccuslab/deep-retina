@@ -104,7 +104,7 @@ def createTrainValTestIndices(X, y, split, subset, batch_size=100):
 
     train_inds = [train_mask[i:i+batch_size] for i in range(0, len(train_mask), batch_size)]
     val_inds = [val_mask[i:i+batch_size] for i in range(0, len(val_mask), batch_size)]
-    test_inds = [test_mask[i:i+batch_size] for i in range(0, len(test_mask, batch_size)]
+    test_inds = [test_mask[i:i+batch_size] for i in range(0, len(test_mask), batch_size)]
     
     return train_inds, val_inds, test_inds
 

@@ -76,7 +76,6 @@ def loadData(data_dir, stim_type='binary'):
         filt = gaussian(x=np.linspace(-5,5,10), sigma=1, mu=0)
         for cell in xrange(rates.shape[1]):
             rates_filt[:,cell] = np.convolve(rates[:,cell], filt, mode='same')
-        y = rates_filt[X.shape[1]:]
         return X, y
 
 
@@ -259,6 +258,7 @@ def trainNet(X_data, Y_data, learning_rate=5e-5, decay_rate=0.99,
 
     ########### Constants ###########
     num_channels = 40
+    subset = 1
 
     ########### Initialize Feedforward Convnet ###########
     model = Sequential()
@@ -303,7 +303,18 @@ def trainNet(X_data, Y_data, learning_rate=5e-5, decay_rate=0.99,
     progress = TrainingProgress()
     #model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=num_epochs, 
     #        verbose=1, validation_split=val_split, callbacks=[progress])
-    model.train_on_batch(
+    train_inds, val_inds, test_inds = createTrainValTestIndices(X_data, y_data, val_split, subset, batch_size)
+    # Training
+    loss = []
+    batch_logs = {}
+    for batch_index, batch in enumerate(train_inds):
+        new_loss = model.train_on_batch(X_data[batch], y_data[batch], accuracy=False)
+        loss.append(new_loss)
+
+        batch_logs['batch'] = batch_index
+        batch_logs['size'] = len(batch)
+        batch_logs['loss'] = new_loss
+        progress.on_batch_end(batch_index, batch_logs)
 
 
     ########### Post-training Evaluation and Visualization ###########    

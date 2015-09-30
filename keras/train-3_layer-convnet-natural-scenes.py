@@ -81,15 +81,16 @@ def loadData(data_dir, stim_type='binary'):
 
 
 
-def createTrainValTestIndices(X, y, split, subset):
+def createTrainValTestIndices(X, y, split, subset, batch_size=100):
     # Divide examples into training, validation, and test sets
     # don't need to zero mean data since we loaded stim_norm
     # INPUTS:
-    #   split   # between 0 and 1
+    #   split       # between 0 and 1
     #       - fraction of data to use for validation. The same fraction
     #           of data is used for creating a test split too.
-    #   subset  # between 0 and 1
+    #   subset      # between 0 and 1
     #       - fraction of data to use. 1 is all data.
+    #   batch_size  number of indices per list item
     #
     num_examples = int(X.shape[0] * subset)
 
@@ -99,10 +100,15 @@ def createTrainValTestIndices(X, y, split, subset):
 
     draw_indices = np.random.choice(total_examples, size=(num_train+num_val+num_test), replace=False)
     train_mask = draw_indices[:num_train]
-    # valMask   = draw_indices[num_train:-num_test]
+    val_mask = draw_indices[num_train:-num_test]
     test_mask = draw_indices[-num_test:]
+
+    train_inds = [train_mask[i:i+batch_size] for i in range(0, len(train_mask), batch_size)]
+    val_inds = [val_mask[i:i+batch_size] for i in range(0, len(val_mask), batch_size)]
+    test_inds = [test_mask[i:i+batch_size] for i in range(0, len(test_mask, batch_size)]
     
-    return X_train, y_train, X_test, y_test
+    return train_inds, val_inds, test_inds
+
 
 def poisson_loss(y_true, y_pred):
     #Negative log likelihood of data y_true given predictions y_pred, according to a Poisson model

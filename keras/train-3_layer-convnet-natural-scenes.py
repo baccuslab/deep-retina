@@ -235,7 +235,8 @@ class TrainingProgress(Callback):
 
 
 def trainNet(X_data, y_data, cell=1, learning_rate=5e-5, decay_rate=0.99, 
-        batch_size=128, val_split=0.01, filter_sizes=[9], num_filters=[16]):
+        batch_size=128, val_split=0.01, filter_sizes=[9], num_filters=[16, 32],
+        pooling_sizes[2]):
     '''
     Method to initialize and train convolutional neural network.
     
@@ -257,33 +258,44 @@ def trainNet(X_data, y_data, cell=1, learning_rate=5e-5, decay_rate=0.99,
     '''
 
     ########### Constants ###########
-    num_channels = 40
+    [num_examples, num_channels, height, width] = X_data.shape
+    if height != width:
+        print('Height %d and width %d of input are different!' %(height,width))
+    else:
+        input_side = height
+    # amount of data to train on  
     subset = 1
 
     ########### Initialize Feedforward Convnet ###########
     model = Sequential()
 
-    ########### Layer 1 ###########
-    # conv-relu-pool layer
+    ########### CONV-RELU-POOL LAYERS ###########
     #border_mode = full is the default scipy.signal.convolve2d value to do a full linear convolution of input
     #subsample=(1,1) gives a stride of 1
-    model.add(Convolution2D(num_filters[0], num_channels, filter_sizes[0], filter_sizes[0], 
-        init='normal', border_mode='full', subsample=(1,1), W_regularizer=l2(0.0))) 
-    model.add(Activation('relu'))
-    #ignore_border is the default, since usually not ignoring the border results in weirdness
-    model.add(MaxPooling2D(poolsize=(2, 2), ignore_border=True))
-    # model.add(Dropout(0.25)) #example of adding dropout
+    for layer_id, filter_size in filter_sizes:
+        model.add(Convolution2D(num_filters[layer_id], num_channels, filter_size, filter_size, 
+            init='normal', border_mode='same', subsample=(1,1), W_regularizer=l2(0.0))) 
+        model.add(Activation('relu'))
+        #ignore_border is the default, since usually not ignoring the border results in weirdness
+        model.add(MaxPooling2D(poolsize=(pooling_sizes[layer_id], pooling_sizes[layer_id]), ignore_border=True))
+        input_side /= pooling_sizes[layer_id]
+        num_channels = num_filters[layer_id]
 
-    ########### Layer 2 ###########    
-    # affine-relu layer
-    model.add(Flatten())
-    model.add(Dense(6400, 32, init='normal', W_regularizer=l2(0.0)))
-    model.add(Activation('relu'))
+        # model.add(Dropout(0.25)) #example of adding dropout
+
+    ########### AFFINE-RELU LAYERS ###########    
+    last_layer = layer_id
+    if len(num_filters) > last_layer + 1:
+        for layer_id in range(last_layer, len(num_filters)-1):
+            model.add(Flatten())
+            model.add(Dense(num_channels * (input_side**2), num_filters[layer_id], init='normal', W_regularizer=l2(0.0)))
+            model.add(Activation('relu'))
+
+            num_channels = num_filters[layer_id]
 
 
-    ########### Layer 3 ###########    
-    # affine-softplus layer
-    model.add(Dense(32, 1, init='normal', W_regularizer=l2(0.0)))
+    ########### AFFINE-SOFTPLUS LAYER ###########    
+    model.add(Dense(num_channels, 1, init='normal', W_regularizer=l2(0.0)))
     model.add(Activation('softplus'))
 
 
@@ -307,6 +319,9 @@ def trainNet(X_data, y_data, cell=1, learning_rate=5e-5, decay_rate=0.99,
     # Training
     loss = []
     batch_logs = {}
+
+    import pdb
+    pdb.set_trace()
     for batch_index, batch in enumerate(train_inds):
         new_loss = model.train_on_batch(X_data[batch], y_data[batch, cell], accuracy=False)
         loss.append(new_loss)
@@ -346,4 +361,4 @@ print y.shape
 print "Training and test data loaded. Onto training for " + str(num_epochs) + " epochs..."
 #trainNet(X_train, y_train, X_test, y_test)
 trainNet(X, y, cell, learning_rate=5e-5, decay_rate=0.99, 
-        batch_size=128, val_split=0.01, filter_sizes=[9], num_filters=[16])
+        batch_size=32, val_split=0.01, filter_sizes=[9], num_filters=[16])

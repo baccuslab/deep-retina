@@ -234,7 +234,7 @@ class TrainingProgress(Callback):
         plt.close()
 
 
-def trainNet(X_data, Y_data, learning_rate=5e-5, decay_rate=0.99, 
+def trainNet(X_data, y_data, cell=1, learning_rate=5e-5, decay_rate=0.99, 
         batch_size=128, val_split=0.01, filter_sizes=[9], num_filters=[16]):
     '''
     Method to initialize and train convolutional neural network.
@@ -303,12 +303,12 @@ def trainNet(X_data, Y_data, learning_rate=5e-5, decay_rate=0.99,
     progress = TrainingProgress()
     #model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=num_epochs, 
     #        verbose=1, validation_split=val_split, callbacks=[progress])
-    train_inds, val_inds, test_inds = createTrainValTestIndices(X_data, y_data, val_split, subset, batch_size)
+    [train_inds, val_inds, test_inds] = createTrainValTestIndices(X_data, y_data, val_split, subset, batch_size)
     # Training
     loss = []
     batch_logs = {}
     for batch_index, batch in enumerate(train_inds):
-        new_loss = model.train_on_batch(X_data[batch], y_data[batch], accuracy=False)
+        new_loss = model.train_on_batch(X_data[batch], y_data[batch, cell], accuracy=False)
         loss.append(new_loss)
 
         batch_logs['batch'] = batch_index
@@ -334,16 +334,16 @@ def trainNet(X_data, Y_data, learning_rate=5e-5, decay_rate=0.99,
 print "Loading training data and test data..."
 print "(This might take awhile)"
 if socket.gethostname() == 'lane.local':
-    data_dir = path.expanduser('~/Git/deepRGC/datasets/white_noise/')
+    #data_dir = path.expanduser('~/Git/deepRGC/datasets/white_noise/')
+    data_dir = path.expanduser('~/Git/natural-scenes/datasets/')
 elif socket.gethostname() in ['rye01.stanford.edu', 'rye02.stanford.edu']:
     username = getpass.getuser()
     data_dir = '/farmshare/user_data/%s/white_noise/' %(username)
-[X, y] = loadData(data_dir)
+[X, y] = loadData(data_dir, stim_type='natural')
 cell = 9
-[X_train, y_train, X_test, y_test] = createTrainValTest(X, y, cell)
-print X_train.shape
-print y_train.shape
-print X_test.shape
-print y_test.shape
+print X.shape
+print y.shape
 print "Training and test data loaded. Onto training for " + str(num_epochs) + " epochs..."
-trainNet(X_train, y_train, X_test, y_test)
+#trainNet(X_train, y_train, X_test, y_test)
+trainNet(X_data, y_data, cell, learning_rate=5e-5, decay_rate=0.99, 
+        batch_size=128, val_split=0.01, filter_sizes=[9], num_filters=[16])

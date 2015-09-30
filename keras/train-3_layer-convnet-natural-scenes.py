@@ -76,7 +76,7 @@ def loadData(data_dir, stim_type='binary'):
         filt = gaussian(x=np.linspace(-5,5,10), sigma=1, mu=0)
         for cell in xrange(rates.shape[1]):
             rates_filt[:,cell] = np.convolve(rates[:,cell], filt, mode='same')
-        return X, y
+        return X, rates_filt
 
 
 

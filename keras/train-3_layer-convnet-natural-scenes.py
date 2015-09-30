@@ -236,7 +236,7 @@ class TrainingProgress(Callback):
 
 def trainNet(X_data, y_data, cell=1, learning_rate=5e-5, decay_rate=0.99, 
         batch_size=128, val_split=0.01, filter_sizes=[9], num_filters=[16, 32],
-        pooling_sizes[2]):
+        pooling_sizes=[2]):
     '''
     Method to initialize and train convolutional neural network.
     
@@ -272,7 +272,7 @@ def trainNet(X_data, y_data, cell=1, learning_rate=5e-5, decay_rate=0.99,
     ########### CONV-RELU-POOL LAYERS ###########
     #border_mode = full is the default scipy.signal.convolve2d value to do a full linear convolution of input
     #subsample=(1,1) gives a stride of 1
-    for layer_id, filter_size in filter_sizes:
+    for layer_id, filter_size in enumerate(filter_sizes):
         model.add(Convolution2D(num_filters[layer_id], num_channels, filter_size, filter_size, 
             init='normal', border_mode='same', subsample=(1,1), W_regularizer=l2(0.0))) 
         model.add(Activation('relu'))

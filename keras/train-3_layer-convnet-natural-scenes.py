@@ -93,11 +93,11 @@ def createTrainValTestIndices(X, y, split, subset, batch_size=100):
     #
     num_examples = int(X.shape[0] * subset)
 
-    num_train = int(np.floor(total_examples * (1. - 2.*split)))
-    num_val   = int(np.floor(total_examples * split))
-    num_test  = total_examples - num_train - num_val
+    num_train = int(np.floor(num_examples * (1. - 2.*split)))
+    num_val   = int(np.floor(num_examples * split))
+    num_test  = num_examples - num_train - num_val
 
-    draw_indices = np.random.choice(total_examples, size=(num_train+num_val+num_test), replace=False)
+    draw_indices = np.random.choice(num_examples, size=(num_train+num_val+num_test), replace=False)
     train_mask = draw_indices[:num_train]
     val_mask = draw_indices[num_train:-num_test]
     test_mask = draw_indices[-num_test:]

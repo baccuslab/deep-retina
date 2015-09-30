@@ -345,5 +345,5 @@ print X.shape
 print y.shape
 print "Training and test data loaded. Onto training for " + str(num_epochs) + " epochs..."
 #trainNet(X_train, y_train, X_test, y_test)
-trainNet(X_data, y_data, cell, learning_rate=5e-5, decay_rate=0.99, 
+trainNet(X, y, cell, learning_rate=5e-5, decay_rate=0.99, 
         batch_size=128, val_split=0.01, filter_sizes=[9], num_filters=[16])

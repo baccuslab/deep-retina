@@ -280,23 +280,29 @@ def trainNet(X_data, y_data, cell=1, learning_rate=5e-5, decay_rate=0.99,
         model.add(MaxPooling2D(poolsize=(pooling_sizes[layer_id], pooling_sizes[layer_id]), ignore_border=True))
         input_side /= pooling_sizes[layer_id]
         num_channels = num_filters[layer_id]
-
         # model.add(Dropout(0.25)) #example of adding dropout
+        print('Added layer %d (convolutional-relu-pool)' %layer_id)
+
+    import pdb
+    pdb.set_trace()
 
     ########### AFFINE-RELU LAYERS ###########    
     last_layer = layer_id
     if len(num_filters) > last_layer + 1:
-        for layer_id in range(last_layer, len(num_filters)-1):
+        for layer_id in range(last_layer + 1, len(num_filters)):
             model.add(Flatten())
             model.add(Dense(num_channels * (input_side**2), num_filters[layer_id], init='normal', W_regularizer=l2(0.0)))
             model.add(Activation('relu'))
 
             num_channels = num_filters[layer_id]
 
+            print('Added layer %d (affine-relu)' %layer_id)
+
 
     ########### AFFINE-SOFTPLUS LAYER ###########    
     model.add(Dense(num_channels, 1, init='normal', W_regularizer=l2(0.0)))
     model.add(Activation('softplus'))
+    print('Added dense-softplus layer')
 
 
     ########### Loss Function ###########    
@@ -331,6 +337,8 @@ def trainNet(X_data, y_data, cell=1, learning_rate=5e-5, decay_rate=0.99,
         batch_logs['loss'] = new_loss
         progress.on_batch_end(batch_index, batch_logs)
 
+        print('Finished batch %d. Loss: %f' %(batch_index, new_loss))
+
 
     ########### Post-training Evaluation and Visualization ###########    
     #saves the weights to HDF5 for potential later use
@@ -361,4 +369,5 @@ print y.shape
 print "Training and test data loaded. Onto training for " + str(num_epochs) + " epochs..."
 #trainNet(X_train, y_train, X_test, y_test)
 trainNet(X, y, cell, learning_rate=5e-5, decay_rate=0.99, 
-        batch_size=32, val_split=0.01, filter_sizes=[9], num_filters=[16])
+        batch_size=32, val_split=0.01, filter_sizes=[9], num_filters=[16, 32],
+        pooling_sizes=[2])

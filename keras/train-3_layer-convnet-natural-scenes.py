@@ -22,6 +22,7 @@ from keras.optimizers import SGD, RMSprop, Adagrad
 from keras.layers.embeddings import Embedding
 from keras.regularizers import l1, l2, activity_l1, activity_l2
 from keras.callbacks import Callback
+from keras.objectives import mse
 #Imports to add Poisson objective (since Keras does not have them)
 import theano
 import theano.tensor as T
@@ -112,6 +113,11 @@ def createTrainValTestIndices(X, y, split, subset, batch_size=100):
 def poisson_loss(y_true, y_pred):
     #Negative log likelihood of data y_true given predictions y_pred, according to a Poisson model
     #Assumes that y_pred is > 0
+    # if y_pred <= 0
+    if T.gt(0, T.min(y_pred)):
+        #import pdb
+        #pdb.set_trace()
+        print('Warning! Model predictions appear to be negative.')
 
     return T.mean(y_pred - y_true * T.log(y_pred), axis=-1)
 
@@ -234,6 +240,119 @@ class TrainingProgress(Callback):
         plt.close()
 
 
+def training_metrics(model, X, y, batch_size, metric_size, train_inds, test_inds, metrics):
+    # get contiguous size of train_inds
+    flattened_train_inds = [val for sublist in train_inds for val in sublist]
+    start_ind = np.random.choice(len(flattened_train_inds)-metric_size)
+    train_inds = [flattened_train_inds[i:i+batch_size] for i in range(start_ind, start_ind+metric_size, batch_size)]
+
+    # get contiguous size of test_inds
+    flattened_test_inds = [val for sublist in test_inds for val in sublist]
+    start_ind = np.random.choice(len(flattened_test_inds)-metric_size)
+    test_inds = [flattened_test_inds[i:i+batch_size] for i in range(start_ind, start_ind+metric_size, batch_size)]
+
+    # Get train and test data subsets
+    train_output = []
+    train_labels = []
+    test_output = []
+    test_labels = []
+    for batch in train_inds:
+        new_predictions = model.predict(X[batch])
+        train_output.extend(new_predictions.squeeze())
+        train_labels.extend(y[batch])
+    for batch in test_inds:
+        new_predictions = model.predict(X[batch])
+        test_output.extend(new_predictions.squeeze())
+        test_labels.extend(y[batch])
+
+    import pdb
+    pdb.set_trace()
+
+    # store just the pearson correlation r, not the p-value
+    train_correlations = pearsonr(train_output, train_labels)[0]
+    test_correlations = pearsonr(test_output, test_labels)[0]
+
+    # store the mean square error
+    train_mse = np.mean((train_output - train_labels)**2)
+    test_mse = np.mean((test_output - test_labels)**2)
+
+    if bool(metric):
+        metrics['train_correlations'].extend(train_correlations)
+        metrics['test_correlations'].extend(test_correlations)
+        metrics['train_mse'].extend(train_mse)
+        metrics['test_mse'].extend(test_mse)
+        metrics['train_output'].extend(train_output)
+        metrics['train_labels'].extend(train_labels)
+        metrics['test_output'].extend(test_output)
+        metrics['test_labels'].extend(test_labels)
+    else:
+        metrics['train_correlations'] = train_correlations
+        metrics['test_correlations'] = test_correlations
+        metrics['train_mse'] = train_mse
+        metrics['test_mse'] = test_mse
+        metrics['train_output'] = train_output
+        metrics['train_labels'] = train_labels
+        metrics['test_output'] = test_output
+        metrics['test_labels'] = test_labels
+
+    return metrics
+
+def plot_metrics(metrics, batch_id):
+    # Plot progress 
+    fig = plt.gcf()
+    fig.set_size_inches((20,24))
+    ax1 = plt.subplot(3,2,1)
+    ax1.plot(metrics['train_losses'], 'k')
+    ax1.set_title('Loss history', fontsize=16)
+    ax1.set_xlabel('Number of batches', fontsize=14)
+    ax1.set_ylabel('Loss', fontsize=14)
+
+    ax2 = plt.subplot(3,2,2)
+    ax2.plot(metrics['train_correlations'], 'b')
+    ax2.plot(metrics['test_correlations'], 'g')
+    ax2.set_title('Train and Test Pearson Correlations', fontsize=16)
+    ax2.set_xlabel('Number of batches', fontsize=14)
+    ax2.set_ylabel('Correlation', fontsize=14)
+
+    ax3 = plt.subplot(3,2,3)
+    ax3.plot(metrics['train_mse'], 'b')
+    ax3.plot(metrics['test_mse'], 'g')
+    ax3.set_title('Train and Test Mean Squared Error', fontsize=16)
+    ax3.set_xlabel('Number of batches', fontsize=14)
+    ax3.set_ylabel('MSE', fontsize=14)
+
+    # plot num_samples*0.01 seconds of predictions vs data
+    num_samples = len(metrics['train_output'])
+    ax4 = plt.subplot(3,2,4)
+    ax4.plot(np.linspace(0, num_samples*0.01, num_samples), metrics['train_labels'], 'k', alpha=0.7)
+    ax4.plot(np.linspace(0, num_samples*0.01, num_samples), metrics['train_output'], 'r', alpha=0.7)
+    ax4.set_title('Training data (black) and predictions (red)', fontsize=16)
+    ax4.set_xlabel('Seconds', fontsize=14)
+    ax4.set_ylabel('Probability of spiking', fontsize=14)
+
+    num_samples = len(metrics['test_output'])
+    ax5 = plt.subplot(3,2,5)
+    ax5.plot(np.linspace(0, num_samples*0.01, num_samples), metrics['test_labels'], 'k', alpha=0.7)
+    ax5.plot(np.linspace(0, num_samples*0.01, num_samples), metrics['test_output'], 'r', alpha=0.7)
+    ax5.set_title('Test data (black) and predictions (red)', fontsize=16)
+    ax5.set_xlabel('Seconds', fontsize=14)
+    ax5.set_ylabel('Probability of spiking', fontsize=14)
+
+    ax6 = plt.subplot(3,2,6)
+    ax6.scatter(metrics['test_labels'], metrics['test_output'])
+    data_ranges = np.linspace(np.min([np.min(metrics['test_labels']), np.min(metrics['test_output'])]), 
+            np.max([np.max(metrics['test_labels']), np.max(metrics['test_output'])]), 10)
+    ax6.plot(data_ranges, data_ranges, 'k--')
+    ax6.set_title('Test Data vs Predictions', fontsize=16)
+    ax6.set_xlabel('Test Data', fontsize=14)
+    ax6.set_ylabel('Test Predictions', fontsize=14)
+
+    filename = '%dBatches.png' %(batch_id)
+    plt.savefig(filename, bbox_inches='tight')
+    plt.close()
+
+
+
 def trainNet(X_data, y_data, cell=1, learning_rate=5e-5, decay_rate=0.99, 
         batch_size=128, val_split=0.01, filter_sizes=[9], num_filters=[16, 32],
         pooling_sizes=[2]):
@@ -268,41 +387,50 @@ def trainNet(X_data, y_data, cell=1, learning_rate=5e-5, decay_rate=0.99,
 
     ########### Initialize Feedforward Convnet ###########
     model = Sequential()
+    
 
+    # Temporary simple network
+    model.add(Convolution2D(num_filters[0], num_channels, filter_sizes[0], filter_sizes[0],
+        init='normal', border_mode='same', subsample=(1,1), W_regularizer=l2(0.0), activation='relu'))
+    model.add(MaxPooling2D(poolsize=(2,2), ignore_border=True))
+
+    model.add(Flatten())
+    model.add(Dense(num_filters[0] * (input_side//2)**2, 1, init='normal', W_regularizer=l2(0.0)))
+    model.add(Activation('softplus'))
+
+    #import pdb
+    #pdb.set_trace()
     ########### CONV-RELU-POOL LAYERS ###########
     #border_mode = full is the default scipy.signal.convolve2d value to do a full linear convolution of input
     #subsample=(1,1) gives a stride of 1
-    for layer_id, filter_size in enumerate(filter_sizes):
-        model.add(Convolution2D(num_filters[layer_id], num_channels, filter_size, filter_size, 
-            init='normal', border_mode='same', subsample=(1,1), W_regularizer=l2(0.0))) 
-        model.add(Activation('relu'))
-        #ignore_border is the default, since usually not ignoring the border results in weirdness
-        model.add(MaxPooling2D(poolsize=(pooling_sizes[layer_id], pooling_sizes[layer_id]), ignore_border=True))
-        input_side /= pooling_sizes[layer_id]
-        num_channels = num_filters[layer_id]
-        # model.add(Dropout(0.25)) #example of adding dropout
-        print('Added layer %d (convolutional-relu-pool)' %layer_id)
-
-    import pdb
-    pdb.set_trace()
-
+    #for layer_id, filter_size in enumerate(filter_sizes):
+    #    model.add(Convolution2D(num_filters[layer_id], num_channels, filter_size, filter_size, 
+    #        init='normal', border_mode='same', subsample=(1,1), W_regularizer=l2(0.0))) 
+    #    model.add(Activation('relu'))
+    #    #ignore_border is the default, since usually not ignoring the border results in weirdness
+    #    model.add(MaxPooling2D(poolsize=(pooling_sizes[layer_id], pooling_sizes[layer_id]), ignore_border=True))
+    #    input_side /= pooling_sizes[layer_id]
+    #    num_channels = num_filters[layer_id]
+    #    # model.add(Dropout(0.25)) #example of adding dropout
+    #    print('Added layer %d (convolutional-relu-pool)' %layer_id)
+#
     ########### AFFINE-RELU LAYERS ###########    
-    last_layer = layer_id
-    if len(num_filters) > last_layer + 1:
-        for layer_id in range(last_layer + 1, len(num_filters)):
-            model.add(Flatten())
-            model.add(Dense(num_channels * (input_side**2), num_filters[layer_id], init='normal', W_regularizer=l2(0.0)))
-            model.add(Activation('relu'))
-
-            num_channels = num_filters[layer_id]
-
-            print('Added layer %d (affine-relu)' %layer_id)
-
-
-    ########### AFFINE-SOFTPLUS LAYER ###########    
-    model.add(Dense(num_channels, 1, init='normal', W_regularizer=l2(0.0)))
-    model.add(Activation('softplus'))
-    print('Added dense-softplus layer')
+#    last_layer = layer_id
+#    if len(num_filters) > last_layer + 1:
+#        for layer_id in range(last_layer + 1, len(num_filters)):
+#            model.add(Flatten())
+#            model.add(Dense(num_channels * (input_side**2), num_filters[layer_id], init='normal', W_regularizer=l2(0.0)))
+#            model.add(Activation('relu'))
+#
+#            num_channels = num_filters[layer_id]
+#
+#            print('Added layer %d (affine-relu)' %layer_id)
+#
+#
+#    ########### AFFINE-SOFTPLUS LAYER ###########    
+#    model.add(Dense(num_channels, 1, init='normal', W_regularizer=l2(0.0)))
+#    model.add(Activation('softplus'))
+#    print('Added dense-softplus layer')
 
 
     ########### Loss Function ###########    
@@ -311,31 +439,44 @@ def trainNet(X_data, y_data, cell=1, learning_rate=5e-5, decay_rate=0.99,
     # rho is decay rate, not sure what epsilon is, so keeping that at default.
     # other hyperparameters taken from python script
     rmsprop = RMSprop(lr=learning_rate, rho=decay_rate, epsilon=1e-6)
-    model.compile(loss=poisson_loss, optimizer='rmsprop')
+    #model.compile(loss=poisson_loss, optimizer='rmsprop')
+    model.compile(loss=mse, optimizer='rmsprop')
 
 
     ########### Fit Model with Callbacks ###########    
     # initialize empty list of loss history
     #history = LossHistory()
     #corrs = CorrelationHistory()
-    progress = TrainingProgress()
+    #progress = TrainingProgress()
     #model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=num_epochs, 
     #        verbose=1, validation_split=val_split, callbacks=[progress])
     [train_inds, val_inds, test_inds] = createTrainValTestIndices(X_data, y_data, val_split, subset, batch_size)
     # Training
     loss = []
     batch_logs = {}
-
-    import pdb
-    pdb.set_trace()
+    metrics = {}
+    metric_size = 16
+    #import pdb
+    #pdb.set_trace()
     for batch_index, batch in enumerate(train_inds):
         new_loss = model.train_on_batch(X_data[batch], y_data[batch, cell], accuracy=False)
-        loss.append(new_loss)
+        try:
+            loss.extend(new_loss)
+        except:
+            loss = new_loss
 
-        batch_logs['batch'] = batch_index
-        batch_logs['size'] = len(batch)
-        batch_logs['loss'] = new_loss
-        progress.on_batch_end(batch_index, batch_logs)
+        #if np.bitwise_and(batch_index > 0, batch_index % 100 == 0):
+        if batch_index % 100 == 5:
+            metrics = training_metrics(model, X_data, y_data[:, cell], batch_size, metric_size,
+                    train_inds, val_inds, metrics)
+            metrics['train_losses'] = loss
+            plot_metrics(metrics, batch_index)
+
+
+        #batch_logs['batch'] = batch_index
+        #batch_logs['size'] = len(batch)
+        #batch_logs['loss'] = new_loss
+        #progress.on_batch_end(batch_index, batch_logs)
 
         print('Finished batch %d. Loss: %f' %(batch_index, new_loss))
 
@@ -369,5 +510,5 @@ print y.shape
 print "Training and test data loaded. Onto training for " + str(num_epochs) + " epochs..."
 #trainNet(X_train, y_train, X_test, y_test)
 trainNet(X, y, cell, learning_rate=5e-5, decay_rate=0.99, 
-        batch_size=32, val_split=0.01, filter_sizes=[9], num_filters=[16, 32],
+        batch_size=3, val_split=0.01, filter_sizes=[9], num_filters=[16, 32],
         pooling_sizes=[2])

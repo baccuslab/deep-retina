@@ -274,10 +274,10 @@ def training_metrics(model, X, y, batch_size, metric_size, train_inds, test_inds
     test_mse = np.mean((np.array(test_output) - np.array(test_labels))**2)
 
     if bool(metrics):
-        metrics['train_correlations'].extend(train_correlations)
-        metrics['test_correlations'].extend(test_correlations)
-        metrics['train_mse'].extend(train_mse)
-        metrics['test_mse'].extend(test_mse)
+        metrics['train_correlations'].extend([train_correlations])
+        metrics['test_correlations'].extend([test_correlations])
+        metrics['train_mse'].extend([train_mse])
+        metrics['test_mse'].extend([test_mse])
         metrics['train_output'].extend(train_output)
         metrics['train_labels'].extend(train_labels)
         metrics['test_output'].extend(test_output)

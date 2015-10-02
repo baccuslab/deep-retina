@@ -265,18 +265,15 @@ def training_metrics(model, X, y, batch_size, metric_size, train_inds, test_inds
         test_output.extend(new_predictions.squeeze())
         test_labels.extend(y[batch])
 
-    import pdb
-    pdb.set_trace()
-
     # store just the pearson correlation r, not the p-value
     train_correlations = pearsonr(train_output, train_labels)[0]
     test_correlations = pearsonr(test_output, test_labels)[0]
 
     # store the mean square error
-    train_mse = np.mean((train_output - train_labels)**2)
-    test_mse = np.mean((test_output - test_labels)**2)
+    train_mse = np.mean((np.array(train_output) - np.array(train_labels))**2)
+    test_mse = np.mean((np.array(test_output) - np.array(test_labels))**2)
 
-    if bool(metric):
+    if bool(metrics):
         metrics['train_correlations'].extend(train_correlations)
         metrics['test_correlations'].extend(test_correlations)
         metrics['train_mse'].extend(train_mse)
@@ -286,10 +283,10 @@ def training_metrics(model, X, y, batch_size, metric_size, train_inds, test_inds
         metrics['test_output'].extend(test_output)
         metrics['test_labels'].extend(test_labels)
     else:
-        metrics['train_correlations'] = train_correlations
-        metrics['test_correlations'] = test_correlations
-        metrics['train_mse'] = train_mse
-        metrics['test_mse'] = test_mse
+        metrics['train_correlations'] = [train_correlations]
+        metrics['test_correlations'] = [test_correlations]
+        metrics['train_mse'] = [train_mse]
+        metrics['test_mse'] = [test_mse]
         metrics['train_output'] = train_output
         metrics['train_labels'] = train_labels
         metrics['test_output'] = test_output
@@ -466,11 +463,13 @@ def trainNet(X_data, y_data, cell=1, learning_rate=5e-5, decay_rate=0.99,
             loss = new_loss
 
         #if np.bitwise_and(batch_index > 0, batch_index % 100 == 0):
-        if batch_index % 100 == 5:
+        if batch_index % 50 == 5:
             metrics = training_metrics(model, X_data, y_data[:, cell], batch_size, metric_size,
                     train_inds, val_inds, metrics)
             metrics['train_losses'] = loss
             plot_metrics(metrics, batch_index)
+            weight_filename = 'trained_weights_batch_%d.h5' %batch_index
+            model.save_weights(weight_filename, overwrite=True)
 
 
         #batch_logs['batch'] = batch_index

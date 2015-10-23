@@ -240,8 +240,10 @@ print "Loading training data and test data..."
 print "(This might take awhile)"
 nat_scene = True
 if nat_scene == True:
+	print "Training on natural scenes"
 	data_dir = '/afs/ir/users/a/n/anayebi/deepRetina/natural-scenes/naturalscene.h5'
 else:
+	print "Training on white noise"
 	data_dir = '/afs/ir/users/a/n/anayebi/deepRetina/natural-scenes/whitenoise.h5'
 [X, y, X_2, y_2] = loadData(data_dir)
 cell = 0

@@ -79,31 +79,35 @@ def loadData(data_dir):
 	#Truncate rates to appropriate time frame
 	y = np.array(scenes['train/response/firing_rate_10ms'])
 	y = y.T
-	y = y[:40,:]
-	stim_test = np.array(scenes['test/stimulus'])
-	stim_test = stim_test.T
-	X_test = rolling_window(stim_test, 40)
-	X_test = np.rollaxis(X_test, 2)
-	X_test = np.rollaxis(X_test, 3, 1)
+	y = y[40:,:]
+	stim_2 = np.array(scenes['test/stimulus'])
+	stim_2 = stim_2.T
+	X_2 = rolling_window(stim_2, 40)
+	X_2 = np.rollaxis(X_2, 2)
+	X_2 = np.rollaxis(X_2, 3, 1)
 	#Truncate rates to appropriate time frame
-	y_test = np.array(scenes['test/response/firing_rate_10ms'])
-	y_test = y_test.T
-	y_test = y_test[:40,:]
+	y_2 = np.array(scenes['test/response/firing_rate_10ms'])
+	y_2 = y_2.T
+	y_2 = y_2[40:,:]
 	print X.shape
 	print y.shape
-	print X_test.shape
-	print y_test.shape
-	return X, y, X_test, y_test
+	print X_2.shape
+	print y_2.shape
+	return X, y, X_2, y_2
 
-def createTrainValTest(X, y, X_train, y_test, cell, ts):
+def createTrainValTest(X, y, X_2, y_2, cell, ts):
 	# Divide examples into training, validation, and test sets
 	# don't need to zero mean data since we loaded stim_norm
 
 	extent = X.shape[0] #should set this to X.shape[0] when doing full training
 	numTime = ts #191 frames, 151 + 40 new frames: ~1.9 seconds
 	numTrain = ((extent)/numTime)*numTime
-	y = y[:,cell]
-	y_test = y_test[:,cell]
+	X_train = X[:numTrain, :, :, :]
+	y_train = y[:numTrain, cell]
+	extent2 = X_2.shape[0]
+	numTest = ((extent2)/numTime)*numTime
+	X_test = X_2[:numTest, :, :, :]
+	y_test = y_2[:numTest, cell]
 	X_train = np.reshape(X_train, (numTrain/numTime, numTime, 40, 50, 50))
 	y_train = np.reshape(y_train, (numTrain/numTime, numTime, 1))
 	X_test = np.reshape(X_test, (numTest/numTime, numTime, 40, 50, 50))

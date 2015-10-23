@@ -253,5 +253,5 @@ print X_train.shape
 print y_train.shape
 print X_test.shape
 print y_test.shape
-print "Training and test data loaded for cell + " str(cell) + ". Onto training for " + str(num_epochs) + " epochs..."
+print "Training and test data loaded for cell " + str(cell) + ". Onto training for " + str(num_epochs) + " epochs..."
 trainNet(X_train, y_train, X_test, y_test)

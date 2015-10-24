@@ -35,7 +35,7 @@ import theano.tensor as T
 # from six.moves import range
 
 model_basename = 'conv-lstm_weights'
-num_epochs = 1 #set number of epochs for training
+num_epochs = 1200 #set number of epochs for training
 
 def rolling_window(array, window):
 	"""
@@ -251,7 +251,7 @@ else:
 	data_dir = '/afs/ir/users/a/n/anayebi/deepRetina/natural-scenes/whitenoise.h5'
 [X, y, X_2, y_2] = loadData(data_dir)
 cell = 0
-ts = 2
+ts = 152
 print "Number of timesteps " + str(ts)
 [X_train, y_train, X_test, y_test] = createTrainValTest(X, y, X_2, y_2, cell, ts)
 print X_train.shape

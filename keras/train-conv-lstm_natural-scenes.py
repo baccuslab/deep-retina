@@ -35,7 +35,7 @@ import theano.tensor as T
 # from six.moves import range
 
 model_basename = 'conv-lstm_weights'
-num_epochs = 1200 #set number of epochs for training
+num_epochs = 1 #set number of epochs for training
 
 def rolling_window(array, window):
 	"""
@@ -193,7 +193,7 @@ def trainNet(X_train, y_train, X_test, y_test):
 	model.add(TimeDistributedMaxPooling2D(poolsize=(2, 2), ignore_border=True))
 
 	model.add(TimeDistributedFlatten())
-	model.add(TimeDistributedDense(6400, 32, init=init_method, W_regularizer=l1(reg)))
+	model.add(TimeDistributedDense(13456, 32, init=init_method, W_regularizer=l1(reg)))
 	model.add(Activation('relu'))
 	#We initialize the bias of the forget gate to be 1, as recommended by Jozefowicz et al.
 	model.add(LSTM(32, 32, forget_bias_init='one', return_sequences=True))
@@ -251,7 +251,8 @@ else:
 	data_dir = '/afs/ir/users/a/n/anayebi/deepRetina/natural-scenes/whitenoise.h5'
 [X, y, X_2, y_2] = loadData(data_dir)
 cell = 0
-ts = 152
+ts = 2
+print "Number of timesteps " + str(ts)
 [X_train, y_train, X_test, y_test] = createTrainValTest(X, y, X_2, y_2, cell, ts)
 print X_train.shape
 print y_train.shape

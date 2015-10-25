@@ -75,7 +75,7 @@ def loadData(data_dir):
 	stim = stim.T
 	X = rolling_window(stim, 40)
 	X = np.rollaxis(X, 2)
-	X = np.rollaxis(X, 3, 1) #need to smooth this? and is it upsampled?
+	X = np.rollaxis(X, 3, 1)
 	#Truncate rates to appropriate time frame
 	y = np.array(scenes['train/response/firing_rate_10ms'])
 	y = y.T

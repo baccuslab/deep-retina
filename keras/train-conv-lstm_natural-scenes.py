@@ -78,6 +78,8 @@ def loadData(data_dir):
 	X = np.rollaxis(X, 3, 1)
 	#Truncate rates to appropriate time frame
 	y = np.array(scenes['train/response/firing_rate_10ms'])
+	for i in xrange(y.shape[0]): #normalize firing rate of each cell to be between 0 and 1
+		y[i] /= np.max(y[i])
 	y = y.T
 	y = y[40:,:]
 	stim_2 = np.array(scenes['test/stimulus'])
@@ -87,6 +89,8 @@ def loadData(data_dir):
 	X_2 = np.rollaxis(X_2, 3, 1)
 	#Truncate rates to appropriate time frame
 	y_2 = np.array(scenes['test/response/firing_rate_10ms'])
+	for i in xrange(y_2.shape[0]): #normalize firing rate of each cell to be between 0 and 1
+		y_2[i] /= np.max(y_2[i])
 	y_2 = y_2.T
 	y_2 = y_2[40:,:]
 	print X.shape

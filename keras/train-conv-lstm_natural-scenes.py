@@ -29,7 +29,6 @@ from keras.layers.embeddings import Embedding
 from keras.regularizers import l1, l2, activity_l1, activity_l2
 from keras.callbacks import Callback
 from keras.objectives import poisson_loss
-#Imports to add Poisson objective (since Keras does not have them)
 import theano
 import theano.tensor as T
 # from six.moves import range
@@ -102,10 +101,6 @@ def loadData(data_dir):
 	return X, y, X_2, y_2
 
 def createTrainValTest(X, y, X_2, y_2, cell, ts):
-	# Divide examples into training, validation, and test sets
-	# don't need to zero mean data since we loaded stim_norm
-
-	#extent = X.shape[0] #should set this to X.shape[0] when doing full training
 	extent = X.shape[0]
 	numTime = ts #191 frames, 151 + 40 new frames: ~1.9 seconds
 	numTrain = ((extent)/numTime)*numTime
@@ -121,12 +116,6 @@ def createTrainValTest(X, y, X_2, y_2, cell, ts):
 	y_test = np.reshape(y_test, (numTest/numTime, numTime, 1))
 	return X_train, y_train, X_test, y_test
 
-# def poisson_loss(y_true, y_pred):
-# 	#Negative log likelihood of data y_true given predictions y_pred, according to a Poisson model
-# 	#Assumes that y_pred is > 0
-
-# 	return T.mean(y_pred - y_true * T.log(y_pred), axis=-1)
-
 class LossHistory(Callback):
 	def on_train_begin(self, logs={}):
 		self.losses = []
@@ -134,19 +123,6 @@ class LossHistory(Callback):
 	def on_batch_end(self, batch, logs={}):
 		self.losses.append(logs.get('loss'))
 		pickle.dump(self.losses, open(model_basename + str(num_epochs) + "_losshistory.p", "wb"))
-		#fig = plt.gcf()
-		#fig.set_size_inches((20,24))
-		#ax = plt.subplot()
-		#ax.plot(self.losses, 'b')
-		#ax.plot(self.losses, 'g')
-		#ax.set_title('Training loss history', fontsize=16)
-		#ax.set_xlabel('Iteration', fontsize=14)
-		#ax.set_ylabel('Training Loss', fontsize=14)
-
-		#plt.tight_layout()
-		#filename = '%dLoss.png' %(num_epochs)
-		#plt.savefig(filename, bbox_inches='tight')
-		#plt.close()
 
 class ValLossHistory(Callback):
 	def on_train_begin(self, logs={}):
@@ -162,11 +138,11 @@ class CorrelationHistory(Callback):
 		self.test_correlations = []
 
 	def on_epoch_end(self, epoch, logs={}):
-		train_subset = range(30) #np.random.choice(X_train.shape[0], 100, replace=False) #around a minute
-		test_subset = range(X_test.shape[0]) #np.random.choice(X_test.shape[0], 100, replace=False)
+		train_subset = range(30)
+		test_subset = range(X_test.shape[0])
 		train_pred = self.model.predict(X_train[train_subset])
 		train_pred = train_pred.squeeze()
-		test_pred = self.model.predict(X_test[test_subset]) #could change this to all?
+		test_pred = self.model.predict(X_test[test_subset])
 		test_pred = test_pred.squeeze()
 		train_true = y_train[train_subset].squeeze()
 		test_true = y_test[test_subset].squeeze()
@@ -217,39 +193,10 @@ def trainNet(X_train, y_train, X_test, y_test):
 	corrs = CorrelationHistory()
 	checkpointer = ModelCheckpoint(filepath=model_basename+"_bestvallossweights.hdf5", verbose=1, save_best_only=True)
 	epochcheckpointer = ModelCheckpoint(filepath=model_basename+"_on_epoch.hdf5", verbose=0, save_best_only=False)
-	stopearly = EarlyStopping(monitor='loss', patience=100, verbose=0)
-	model.fit(X_train, y_train, batch_size=50, nb_epoch=num_epochs, verbose=1, validation_data = (X_test, y_test), callbacks=[history, val_history, checkpointer, corrs, epochcheckpointer, stopearly])
+	#stopearly = EarlyStopping(monitor='loss', patience=100, verbose=0)
+	model.fit(X_train, y_train, batch_size=50, nb_epoch=num_epochs, verbose=1, validation_data = (X_test, y_test), callbacks=[history, val_history, checkpointer, corrs, epochcheckpointer])
 	#saves the weights to HDF5 for potential later use
 	model.save_weights(model_basename + str(num_epochs)+".hdf5", overwrite=True)
-	#Would not need accuracy since that is for classification (e.g. F1 score), whereas our problem is regression,
-	#so likely we will set show_accuracy=False
-	#score = model.evaluate(X_test, y_test, show_accuracy=False, verbose=1)
-	#print('Test score:', score)
-	#save test score
-	#pickle.dump(score, open(model_basename + str(num_epochs) + "_testsetscore.p", "wb"))
-	
-	# fig = plt.gcf()
-	# fig.set_size_inches((20,24))
-	# ax1 = plt.subplot(2,1,1)
-	# ax1.plot(history.losses, 'k')
-	# ax1.set_title('Loss history', fontsize=16)
-	# ax1.set_xlabel('Iteration', fontsize=14)
-	# ax1.set_ylabel('Loss', fontsize=14)
-
-	# ax2 = plt.subplot(2,1,2)
-	# ax2.plot(corrs.train_correlations, 'b')
-	# ax2.plot(corrs.test_correlations, 'g')
-	# ax2.set_title('Train and Test Pearson Correlations', fontsize=16)
-	# ax2.set_xlabel('Iteration', fontsize=14)
-	# ax2.set_ylabel('Correlation', fontsize=14)
-
-	# plt.tight_layout()
-	# filename = '%dEpochs.png' %(num_epochs)
-	# plt.savefig(filename, bbox_inches='tight')
-	# plt.close()
-	
-	# pickle.dump(history.losses, open(model_basename + str(num_epochs) + "_losshistory.p", "wb"))
-	# pickle.dump(val_history.losses, open(model_basename + str(num_epochs) + "_vallosshistory.p", "wb"))
 
 print "Loading training data and test data..."
 print "(This might take awhile)"

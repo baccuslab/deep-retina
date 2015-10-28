@@ -34,7 +34,7 @@ def rolling_window(array, window):
 	strides = array.strides + (array.strides[-1],)
 	return np.lib.stride_tricks.as_strided(array, shape=shape, strides=strides)
 
-def loadData(data_dir):
+def load_data(data_dir):
 	scenes = h5py.File(data_dir, 'r')
 
         # TRAIN DATA
@@ -69,3 +69,4 @@ def loadData(data_dir):
 	print X_test.shape
 	print y_test.shape
 	return X_train, y_train, X_test, y_test
+

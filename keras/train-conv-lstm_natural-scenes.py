@@ -105,7 +105,8 @@ def createTrainValTest(X, y, X_2, y_2, cell, ts):
 	# Divide examples into training, validation, and test sets
 	# don't need to zero mean data since we loaded stim_norm
 
-	extent = X.shape[0] #should set this to X.shape[0] when doing full training
+	#extent = X.shape[0] #should set this to X.shape[0] when doing full training
+	extent = X.shape[0]
 	numTime = ts #191 frames, 151 + 40 new frames: ~1.9 seconds
 	numTrain = ((extent)/numTime)*numTime
 	X_train = X[:numTrain, :, :, :]
@@ -132,33 +133,35 @@ class LossHistory(Callback):
 
 	def on_batch_end(self, batch, logs={}):
 		self.losses.append(logs.get('loss'))
-		fig = plt.gcf()
-		fig.set_size_inches((20,24))
-		ax = plt.subplot()
-		ax.plot(self.losses, 'b')
-		ax.plot(self.losses, 'g')
-		ax.set_title('Training loss history', fontsize=16)
-		ax.set_xlabel('Iteration', fontsize=14)
-		ax.set_ylabel('Training Loss', fontsize=14)
+		pickle.dump(self.losses, open(model_basename + str(num_epochs) + "_losshistory.p", "wb"))
+		#fig = plt.gcf()
+		#fig.set_size_inches((20,24))
+		#ax = plt.subplot()
+		#ax.plot(self.losses, 'b')
+		#ax.plot(self.losses, 'g')
+		#ax.set_title('Training loss history', fontsize=16)
+		#ax.set_xlabel('Iteration', fontsize=14)
+		#ax.set_ylabel('Training Loss', fontsize=14)
 
-		plt.tight_layout()
-		filename = '%dLoss.png' %(num_epochs)
-		plt.savefig(filename, bbox_inches='tight')
-		plt.close()
+		#plt.tight_layout()
+		#filename = '%dLoss.png' %(num_epochs)
+		#plt.savefig(filename, bbox_inches='tight')
+		#plt.close()
 
 class ValLossHistory(Callback):
 	def on_train_begin(self, logs={}):
 		self.losses = []
 
-	def on_batch_end(self, batch, logs={}):
+	def on_epoch_end(self, epoch, logs={}):
 		self.losses.append(logs.get('val_loss'))
+		pickle.dump(self.losses, open(model_basename + str(num_epochs) + "_vallosshistory.p", "wb"))
 
 class CorrelationHistory(Callback):
 	def on_train_begin(self, logs={}):
 		self.train_correlations = []
 		self.test_correlations = []
 
-	def on_batch_end(self, batch, logs={}):
+	def on_epoch_end(self, epoch, logs={}):
 		train_subset = range(30) #np.random.choice(X_train.shape[0], 100, replace=False) #around a minute
 		test_subset = range(X_test.shape[0]) #np.random.choice(X_test.shape[0], 100, replace=False)
 		train_pred = self.model.predict(X_train[train_subset])
@@ -174,6 +177,8 @@ class CorrelationHistory(Callback):
 		test_true = test_true.flatten()
 		self.train_correlations.append(pearsonr(train_pred, train_true)[0])
 		self.test_correlations.append(pearsonr(test_pred, test_true)[0])
+		pickle.dump(self.train_correlations, open(model_basename + str(num_epochs) + "_traincorrelations.p", "wb"))
+		pickle.dump(self.test_correlations, open(model_basename + str(num_epochs) + "_testcorrelations.p", "wb"))
 		fig = plt.gcf()
 		fig.set_size_inches((20,24))
 		ax = plt.subplot()
@@ -211,8 +216,9 @@ def trainNet(X_train, y_train, X_test, y_test):
 	val_history = ValLossHistory()
 	corrs = CorrelationHistory()
 	checkpointer = ModelCheckpoint(filepath=model_basename+"_bestvallossweights.hdf5", verbose=1, save_best_only=True)
-	#stopearly = EarlyStopping(monitor='loss', patience=100, verbose=0)
-	model.fit(X_train, y_train, batch_size=50, nb_epoch=num_epochs, verbose=1, validation_data = (X_test, y_test), callbacks=[history, val_history, checkpointer, corrs])
+	epochcheckpointer = ModelCheckpoint(filepath=model_basename+"_on_epoch.hdf5", verbose=0, save_best_only=False)
+	stopearly = EarlyStopping(monitor='loss', patience=100, verbose=0)
+	model.fit(X_train, y_train, batch_size=50, nb_epoch=num_epochs, verbose=1, validation_data = (X_test, y_test), callbacks=[history, val_history, checkpointer, corrs, epochcheckpointer, stopearly])
 	#saves the weights to HDF5 for potential later use
 	model.save_weights(model_basename + str(num_epochs)+".hdf5", overwrite=True)
 	#Would not need accuracy since that is for classification (e.g. F1 score), whereas our problem is regression,
@@ -222,42 +228,41 @@ def trainNet(X_train, y_train, X_test, y_test):
 	#save test score
 	#pickle.dump(score, open(model_basename + str(num_epochs) + "_testsetscore.p", "wb"))
 	
-	#Figure to visualize loss history after each batch
-	fig = plt.gcf()
-	fig.set_size_inches((20,24))
-	ax1 = plt.subplot(2,1,1)
-	ax1.plot(history.losses, 'k')
-	ax1.set_title('Loss history', fontsize=16)
-	ax1.set_xlabel('Iteration', fontsize=14)
-	ax1.set_ylabel('Loss', fontsize=14)
+	# fig = plt.gcf()
+	# fig.set_size_inches((20,24))
+	# ax1 = plt.subplot(2,1,1)
+	# ax1.plot(history.losses, 'k')
+	# ax1.set_title('Loss history', fontsize=16)
+	# ax1.set_xlabel('Iteration', fontsize=14)
+	# ax1.set_ylabel('Loss', fontsize=14)
 
-	ax2 = plt.subplot(2,1,2)
-	ax2.plot(corrs.train_correlations, 'b')
-	ax2.plot(corrs.test_correlations, 'g')
-	ax2.set_title('Train and Test Pearson Correlations', fontsize=16)
-	ax2.set_xlabel('Iteration', fontsize=14)
-	ax2.set_ylabel('Correlation', fontsize=14)
+	# ax2 = plt.subplot(2,1,2)
+	# ax2.plot(corrs.train_correlations, 'b')
+	# ax2.plot(corrs.test_correlations, 'g')
+	# ax2.set_title('Train and Test Pearson Correlations', fontsize=16)
+	# ax2.set_xlabel('Iteration', fontsize=14)
+	# ax2.set_ylabel('Correlation', fontsize=14)
 
-	plt.tight_layout()
-	filename = '%dEpochs.png' %(num_epochs)
-	plt.savefig(filename, bbox_inches='tight')
-	plt.close()
+	# plt.tight_layout()
+	# filename = '%dEpochs.png' %(num_epochs)
+	# plt.savefig(filename, bbox_inches='tight')
+	# plt.close()
 	
-	pickle.dump(history.losses, open(model_basename + str(num_epochs) + "_losshistory.p", "wb"))
-	pickle.dump(val_history.losses, open(model_basename + str(num_epochs) + "_vallosshistory.p", "wb"))
+	# pickle.dump(history.losses, open(model_basename + str(num_epochs) + "_losshistory.p", "wb"))
+	# pickle.dump(val_history.losses, open(model_basename + str(num_epochs) + "_vallosshistory.p", "wb"))
 
 print "Loading training data and test data..."
 print "(This might take awhile)"
 nat_scene = True
 if nat_scene == True:
 	print "Training on natural scenes"
-	data_dir = '/afs/ir/users/a/n/anayebi/deepRetina/natural-scenes/naturalscene.h5'
+	data_dir = '/home/salamander/data/naturalscene.h5'
 else:
 	print "Training on white noise"
-	data_dir = '/afs/ir/users/a/n/anayebi/deepRetina/natural-scenes/whitenoise.h5'
+	data_dir = '/home/salamander/data/whitenoise.h5'
 [X, y, X_2, y_2] = loadData(data_dir)
 cell = 0
-ts = 152
+ts = 100
 print "Number of timesteps " + str(ts)
 [X_train, y_train, X_test, y_test] = createTrainValTest(X, y, X_2, y_2, cell, ts)
 print X_train.shape

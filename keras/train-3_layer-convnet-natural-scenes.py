@@ -22,7 +22,7 @@ from keras.optimizers import SGD, RMSprop, Adagrad
 from keras.layers.embeddings import Embedding
 from keras.regularizers import l1, l2, activity_l1, activity_l2
 from keras.callbacks import Callback
-from keras.objectives import mse
+from keras.objectives import poisson_loss
 #Imports to add Poisson objective (since Keras does not have them)
 import theano
 import theano.tensor as T
@@ -108,18 +108,6 @@ def createTrainValTestIndices(X, y, split, subset, batch_size=100):
     test_inds = [test_mask[i:i+batch_size] for i in range(0, len(test_mask), batch_size)]
     
     return train_inds, val_inds, test_inds
-
-
-def poisson_loss(y_true, y_pred):
-    #Negative log likelihood of data y_true given predictions y_pred, according to a Poisson model
-    #Assumes that y_pred is > 0
-    # if y_pred <= 0
-    if T.gt(0, T.min(y_pred)):
-        #import pdb
-        #pdb.set_trace()
-        print('Warning! Model predictions appear to be negative.')
-
-    return T.mean(y_pred - y_true * T.log(y_pred), axis=-1)
 
 
 class LossHistory(Callback):
@@ -437,7 +425,7 @@ def trainNet(X_data, y_data, cell=1, learning_rate=5e-5, decay_rate=0.99,
     # other hyperparameters taken from python script
     rmsprop = RMSprop(lr=learning_rate, rho=decay_rate, epsilon=1e-6)
     #model.compile(loss=poisson_loss, optimizer='rmsprop')
-    model.compile(loss=mse, optimizer='rmsprop')
+    model.compile(loss=poisson_loss, optimizer='rmsprop')
 
 
     ########### Fit Model with Callbacks ###########    
@@ -453,8 +441,8 @@ def trainNet(X_data, y_data, cell=1, learning_rate=5e-5, decay_rate=0.99,
     batch_logs = {}
     metrics = {}
     metric_size = 16
-    #import pdb
-    #pdb.set_trace()
+    import pdb
+    pdb.set_trace()
     for batch_index, batch in enumerate(train_inds):
         new_loss = model.train_on_batch(X_data[batch], y_data[batch, cell], accuracy=False)
         try:

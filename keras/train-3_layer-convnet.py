@@ -142,6 +142,8 @@ class TrainingProgress(Callback):
         self.train_mse = []
         self.test_mse = []
         self.batch_id = 0
+        self.epoch_id = 0
+        self.num_samples = 100
 
     def on_batch_end(self, batch, logs={}):
         # Increment batch id
@@ -155,24 +157,25 @@ class TrainingProgress(Callback):
         #test_subset = np.random.choice(X_test.shape[0],300)
         
         # Get a random set of contiguous samples
-        num_samples = 300
-        train_start = np.random.choice(X_train.shape[0] - num_samples)
-        train_subset = range(train_start, train_start + num_samples)
-        test_start = np.random.choice(X_test.shape[0] - num_samples)
-        test_subset = range(test_start, test_start + num_samples)
+        train_start = np.random.choice(X_train.shape[0] - self.num_samples)
+        train_subset = range(train_start, train_start + self.num_samples)
+        test_start = np.random.choice(X_test.shape[0] - self.num_samples)
+        test_subset = range(test_start, test_start + self.num_samples)
         
         # Get train and test data subsets
-        train_output = self.model.predict(X_train[train_subset])
-        test_output = self.model.predict(X_test[test_subset])
+        self.train_output = self.model.predict(X_train[train_subset])
+        self.test_output = self.model.predict(X_test[test_subset])
 
         # store just the pearson correlation r, not the p-value
-        self.train_correlations.append(pearsonr(train_output.squeeze(), y_train[train_subset])[0])
-        self.test_correlations.append(pearsonr(test_output.squeeze(), y_test[test_subset])[0])
+        self.train_correlations.append(pearsonr(self.train_output.squeeze(), y_train[train_subset])[0])
+        self.test_correlations.append(pearsonr(self.test_output.squeeze(), y_test[test_subset])[0])
 
         # store the mean square error
-        self.train_mse.append(np.mean((train_output.squeeze() - y_train[train_subset])**2))
-        self.test_mse.append(np.mean((test_output.squeeze() - y_test[test_subset])**2))
+        self.train_mse.append(np.mean((self.train_output.squeeze() - y_train[train_subset])**2))
+        self.test_mse.append(np.mean((self.test_output.squeeze() - y_test[test_subset])**2))
 
+    def on_epoch_end(self, epoch, logs={}):
+        self.epoch_id += 1
 
         # Plot progress 
         fig = plt.gcf()
@@ -199,30 +202,29 @@ class TrainingProgress(Callback):
 
         # plot num_samples*0.01 seconds of predictions vs data
         ax4 = plt.subplot(3,2,4)
-        ax4.plot(np.linspace(0, num_samples*0.01, num_samples), y_train[train_subset], 'k', alpha=0.7)
-        ax4.plot(np.linspace(0, num_samples*0.01, num_samples), train_output, 'r', alpha=0.7)
+        ax4.plot(np.linspace(0, self.num_samples*0.01, num_samples), y_train[train_subset], 'k', alpha=0.7)
+        ax4.plot(np.linspace(0, self.num_samples*0.01, num_samples), self.train_output, 'r', alpha=0.7)
         ax4.set_title('Training data (black) and predictions (red)', fontsize=16)
-        ax4.set_xlabel('Number of batches', fontsize=14)
+        ax4.set_xlabel('Seconds', fontsize=14)
         ax4.set_ylabel('Probability of spiking', fontsize=14)
 
         ax5 = plt.subplot(3,2,5)
-        ax5.plot(np.linspace(0, num_samples*0.01, num_samples), y_test[test_subset], 'k', alpha=0.7)
-        ax5.plot(np.linspace(0, num_samples*0.01, num_samples), test_output, 'r', alpha=0.7)
+        ax5.plot(np.linspace(0, self.num_samples*0.01, num_samples), y_test[test_subset], 'k', alpha=0.7)
+        ax5.plot(np.linspace(0, self.num_samples*0.01, num_samples), self.test_output, 'r', alpha=0.7)
         ax5.set_title('Test data (black) and predictions (red)', fontsize=16)
-        ax5.set_xlabel('Number of batches', fontsize=14)
+        ax5.set_xlabel('Seconds', fontsize=14)
         ax5.set_ylabel('Probability of spiking', fontsize=14)
 
         ax6 = plt.subplot(3,2,6)
-        ax6.scatter(y_test[test_subset], test_output)
-        data_ranges = np.linspace(np.min([np.min(y_test[test_subset]), np.min(test_output)]), 
-                np.max([np.max(y_test[test_subset]), np.max(test_output)]), 10)
+        ax6.scatter(y_test[test_subset], self.test_output)
+        data_ranges = np.linspace(np.min([np.min(y_test[test_subset]), np.min(self.test_output)]), 
+                np.max([np.max(y_test[test_subset]), np.max(self.test_output)]), 10)
         ax6.plot(data_ranges, data_ranges, 'k--')
         ax6.set_title('Test Data vs Predictions', fontsize=16)
         ax6.set_xlabel('Test Data', fontsize=14)
         ax6.set_ylabel('Test Predictions', fontsize=14)
 
-        plt.tight_layout()
-        filename = '%dBatches.png' %(self.batch_id)
+        filename = '%dEpochs.png' %(self.epoch_id)
         plt.savefig(filename, bbox_inches='tight')
         plt.close()
 
@@ -268,6 +270,7 @@ def trainNet(X_train, y_train, X_test, y_test, learning_rate=5e-5, decay_rate=0.
 
     ########### Layer 2 ###########    
     # affine-relu layer
+    # note that 6400 = 16 * 20 * 20 (num_filters * input_size**2)
     model.add(Flatten())
     model.add(Dense(6400, 32, init='normal', W_regularizer=l2(0.0)))
     model.add(Activation('relu'))

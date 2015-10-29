@@ -1,0 +1,90 @@
+from __future__ import absolute_import
+import numpy as np
+import pickle
+from scipy.io import loadmat
+import os.path as path
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import *
+from scipy.optimize import curve_fit
+from scipy.stats import pearsonr
+# Keras imports
+from keras.preprocessing import sequence
+from keras.utils import np_utils
+from keras.models import Sequential
+from keras.layers.core import Dense, Dropout, Activation, Flatten
+from keras.layers.convolutional import Convolution2D, MaxPooling2D
+from keras.optimizers import SGD, RMSprop, Adagrad
+from keras.layers.embeddings import Embedding
+from keras.regularizers import l1, l2, activity_l1, activity_l2
+from keras.callbacks import Callback
+from keras.objectives import poisson_loss
+#Imports to add Poisson objective (since Keras does not have them)
+import theano
+import theano.tensor as T
+from six.moves import range
+import socket
+import getpass
+
+
+from preprocessing import *
+from models import *
+from callbacks import *
+
+
+# Which cell to train on?
+cell = 1
+
+# Constants
+data_dir = '/Volumes/group/baccus/Lane/2015-10-07/naturalscene.h5'
+batch_size = 128
+val_split = 0.01 # fraction of training data used for validation
+train_subset = 0.1 # subset of training data used
+test_subset = 1.0 # subset of test data used
+nchannels = 40 # time duration of filters learned
+check_every = 100 # monitor training after every N batches
+
+# Hyperparameters
+learning_rate = 5e-5
+decay_rate = 0.99
+l2_reg = 0.0
+
+# Architecture
+model_type = 'convnet' # 'convnet' or 'lstm'
+ts = 100 # if lstm
+nlayers = 3
+filter_sizes = [9]
+num_filters = [16, 32]
+pooling_sizes = [2]
+
+# Load All Data
+X_train, y_train, X_test, y_test = load_data(data_dir, cell, model_type, ts)
+
+# Split Data into Training, Validation, and Test sets.
+# This returns the indices into X_train, y_train, X_test, and y_test for each batch.
+train_inds, val_inds, test_inds = create_data_split(X_train, y_train, X_test,
+        y_test, split=val_split, train_subset=train_subset,
+        test_subset=test_subset, batch_size=batch_size)
+
+# Initialize model
+if model_type == 'convnet':
+    model = convnet(num_layers=nlayers, filter_sizes=filter_sizes,
+            num_filters=num_filters, pooling_sizes=pooling_sizes,
+            num_channels=nchannels, data_height=X_train.shape[-1],
+            l2_regularization=l2_reg)
+elif model_type == 'lstm':
+    model = lstm(num_layers=nlayers, filter_sizes=filter_sizes,
+            num_filters=num_filters, pooling_sizes=pooling_sizes,
+            num_channels=nchannels, data_height=X_train.shape[-1],
+            l2_regularization=l2_reg)
+
+# Choose optimizer and loss function
+rmsprop = RMSprop(lr=learning_rate, rho=decay_rate, epsilon=1e-6)
+model.compile(loss=poisson_loss, optimizer='rmsprop')
+
+# Initialize metrics and callbacks
+losses = []
+
+# Train model
+for batch_idx, batch in enumerate(train_inds):
+    new_loss = model.train_on_batch(X_train[batch], y_train[batch], accuracy=False)
+    looses.append(new_loss)

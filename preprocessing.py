@@ -34,13 +34,15 @@ def rolling_window(array, window):
     strides = array.strides + (array.strides[-1],)
     return np.lib.stride_tricks.as_strided(array, shape=shape, strides=strides)
 
-def load_data(data_dir, cell):
+def load_data(data_dir, cell, model_type, ts=None):
     '''
     Returns training and test data formatted as (samples, num_channels, height, width).
 
     INPUTS
     data_dir            full path to data
     cell                integer of neuron to train/test on
+    model_type          'lstm' or 'convnet'
+    ts                  number of time steps for LSTM
 
     OUTPUS
     X_train
@@ -77,25 +79,35 @@ def load_data(data_dir, cell):
                     y_test[i] /= np.max(y_test[i])
     y_test = y_test.T
     y_test = y_test[40:,cell]
+
+    if model_type == 'lstm':
+        # reshape data for LSTM
+        num_train = X_train.shape[0]
+        num_test = X_test.shape[0]
+        num_channels = X_train.shape[1]
+        height = X_train.shape[2]
+        X_train = np.reshape(X_train, (num_train/ts, ts, num_channels, height, height))
+        y_train = np.reshape(y_train, (num_train/ts, ts, 1))
+        X_test = np.reshape(X_test, (num_test/ts, ts, num_channels, height, height))
+        y_test = np.reshape(y_test, (num_test/ts, ts, 1))
+        
     print X_train.shape
     print y_train.shape
     print X_test.shape
     print y_test.shape
+    
     return X_train, y_train, X_test, y_test
 
-def create_data_split(model_type, X_train, y_train, X_test, y_test, 
-        ts=None, split=0.1, train_subset=1.0, test_subset=1.0, batch_size=128):
+def create_data_split(X_train, y_train, X_test, y_test, split=0.1, 
+        train_subset=1.0, test_subset=1.0, batch_size=128):
     '''
     Divide examples into training, validation, and test sets.
 
     INPUTS
-    model_type          'lstm' or 'convnet'
     X_train             X_train from load_data
     y_train             y_train from load_data
     X_test              X_test from load_data
     y_test              y_test from load_data
-    cell                integer of neuron to train/test on
-    ts                  number of time steps for LSTM
     split               number of validation examples / number of training examples
     train_subset        fraction of total training data to use
     test_subset         fraction of total test data to use
@@ -107,47 +119,23 @@ def create_data_split(model_type, X_train, y_train, X_test, y_test,
     test_inds           indices for test batches
     '''
 
-    if model_type == 'lstm':
-        # Train set
-        num_train_val = int(X_train.shape[0] * train_subset)
-        num_time = ts #191 frames, 151 + 40 new frames: ~1.9 seconds
-        X_train = X_train[:num_train, :, :, :]
-        y_train = y_train[:num_train, cell]
+    num_train_val = int(X_train.shape[0] * train_subset)
+    num_val = int(split * num_train_val)
+    num_train = num_train_val - num_val
+    num_test  = int(X_test.shape[0] * test_subset)
 
-        # Test set
-        num_test = int(X_test.shape[0] * test_subset)
-        X_test = X_test[:num_test, :, :, :]
-        y_test = y_test[:num_test, cell]
+    # train and val indices
+    draw_indices = np.random.choice(num_train_val, size=(num_train+num_val), replace=False)
+    train_mask = draw_indices[:num_train]
+    val_mask = draw_indices[num_train:]
 
-        # reshape data for LSTM
-        X_train = np.reshape(X_train, (num_train/num_time, num_time, 40, 50, 50))
-        y_train = np.reshape(y_train, (num_train/num_time, num_time, 1))
-        X_test = np.reshape(X_test, (num_test/num_time, num_time, 40, 50, 50))
-        y_test = np.reshape(y_test, (num_test/num_time, num_time, 1))
+    # test indices
+    test_mask = np.random.choice(X_test.shape[0], size=num_test, replace=False)
 
-        return X_train, y_train, X_test, y_test
+    # generate batches
+    train_inds = [train_mask[i:i+batch_size] for i in range(0, len(train_mask), batch_size)]
+    val_inds = [val_mask[i:i+batch_size] for i in range(0, len(val_mask), batch_size)]
+    test_inds = [test_mask[i:i+batch_size] for i in range(0, len(test_mask), batch_size)]
 
-    elif model_type == 'convnet':
-        num_train_val = int(X_train.shape[0] * train_subset)
-        num_val = int(split * num_train_val)
-        num_train = num_train_val - num_val
-        num_test  = int(X_test.shape[0] * test_subset)
-
-        # train and val indices
-        draw_indices = np.random.choice(num_train_val, size=(num_train+num_val), replace=False)
-        train_mask = draw_indices[:num_train]
-        val_mask = draw_indices[num_train:]
-
-        # test indices
-        test_mask = np.random.choice(X_test.shape[0], size=num_test, replace=False)
-
-        # generate batches
-        train_inds = [train_mask[i:i+batch_size] for i in range(0, len(train_mask), batch_size)]
-        val_inds = [val_mask[i:i+batch_size] for i in range(0, len(val_mask), batch_size)]
-        test_inds = [test_mask[i:i+batch_size] for i in range(0, len(test_mask), batch_size)]
-
-        return train_inds, val_inds, test_inds
-
-            
-    else:
-        print('Unrecognized model type!')
+    return train_inds, val_inds, test_inds
+        

@@ -42,6 +42,9 @@ def convnet(num_layers=3, filter_sizes=[9], num_filters=[16, 32, 1], pooling_siz
     # Initialize Feedforward Convnet
     model = Sequential()
 
+    # How should we initialize weights?
+    init_method = 'normal'
+
     for layer in range(num_layers):
         # if convolutional layer
         if layer < num_convolutional_layers:

@@ -34,7 +34,7 @@ model_type = 'convnet' # 'convnet' or 'lstm'
 ts = 100 # if lstm
 nlayers = 3
 filter_sizes = [9]
-num_filters = [16, 32]
+num_filters = [16, 32, 1] # length of this should equal nlayers
 pooling_sizes = [2]
 
 # Load All Data
@@ -89,4 +89,4 @@ for epoch_idx in range(nepochs):
             weight_filename = 'trained_weights_epoch%d_batch%d.h5' %(epoch_idx, batch_idx)
             model.save_weights(weight_filename, overwrite=True)
 
-        print('Finished batch %d in epoch %d. Loss: %f.' %(batch_idx, epoch_idx, new_loss)
+        print('Finished batch %d in epoch %d. Loss: %f.' %(batch_idx, epoch_idx, new_loss))

@@ -145,10 +145,10 @@ def lstm(num_layers=3, filter_sizes=[9], num_filters=[16, 32], pooling_sizes=[2]
         if layer == num_convolutional_layers - 1:
             model.add(TimeDistributedFlatten())
 
-    model.add(LSTM(input_height, input_height, forget_bias_init='one',
+    model.add(LSTM(num_filters[-1], num_filters[-1], forget_bias_init='one',
         return_sequences=True))
 
-    model.add(TimeDistributedDense(input_height, 1, init=init_method,
+    model.add(TimeDistributedDense(num_filters[-1], 1, init=init_method,
         W_regularizer=l2(l2_regularization), activation='softplus'))
 
     return model

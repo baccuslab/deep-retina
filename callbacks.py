@@ -122,3 +122,56 @@ def plot_metrics(metrics, batch_id):
     plt.savefig(filename, bbox_inches='tight')
     plt.close()
 
+def training_metrics(model, X, y, batch_size, metric_size, train_inds, test_inds, metrics):
+    # get contiguous size of train_inds
+    flattened_train_inds = [val for sublist in train_inds for val in sublist]
+    start_ind = np.random.choice(len(flattened_train_inds)-metric_size)
+    train_inds = [flattened_train_inds[i:i+batch_size] for i in range(start_ind, start_ind+metric_size, batch_size)]
+
+    # get contiguous size of test_inds
+    flattened_test_inds = [val for sublist in test_inds for val in sublist]
+    start_ind = np.random.choice(len(flattened_test_inds)-metric_size)
+    test_inds = [flattened_test_inds[i:i+batch_size] for i in range(start_ind, start_ind+metric_size, batch_size)]
+
+    # Get train and test data subsets
+    train_output = []
+    train_labels = []
+    test_output = []
+    test_labels = []
+    for batch in train_inds:
+        new_predictions = model.predict(X[batch])
+        train_output.extend(new_predictions.squeeze())
+        train_labels.extend(y[batch])
+    for batch in test_inds:
+        new_predictions = model.predict(X[batch])
+        test_output.extend(new_predictions.squeeze())
+        test_labels.extend(y[batch])
+
+    # store just the pearson correlation r, not the p-value
+    train_correlations = pearsonr(train_output, train_labels)[0]
+    test_correlations = pearsonr(test_output, test_labels)[0]
+
+    # store the mean square error
+    train_mse = np.mean((np.array(train_output) - np.array(train_labels))**2)
+    test_mse = np.mean((np.array(test_output) - np.array(test_labels))**2)
+
+    if bool(metrics):
+        metrics['train_correlations'].extend([train_correlations])
+        metrics['test_correlations'].extend([test_correlations])
+        metrics['train_mse'].extend([train_mse])
+        metrics['test_mse'].extend([test_mse])
+        metrics['train_output'].extend(train_output)
+        metrics['train_labels'].extend(train_labels)
+        metrics['test_output'].extend(test_output)
+        metrics['test_labels'].extend(test_labels)
+    else:
+        metrics['train_correlations'] = [train_correlations]
+        metrics['test_correlations'] = [test_correlations]
+        metrics['train_mse'] = [train_mse]
+        metrics['test_mse'] = [test_mse]
+        metrics['train_output'] = train_output
+        metrics['train_labels'] = train_labels
+        metrics['test_output'] = test_output
+        metrics['test_labels'] = test_labels
+
+    return metrics

@@ -59,6 +59,9 @@ def convnet(num_layers=3, filter_sizes=[9], num_filters=[16, 32, 1], pooling_siz
                 model.add(Dense(num_filters[layer-1] * input_height**2,
                     num_filters[layer], init=init_method,
                     W_regularizer=l2(l2_regularization), activation='relu'))
+                # need to set input_height to 1, since now input is flattened
+                # after this affine layer
+                input_height = 1
             # else it's the last layer and we will add a softplus activation
             else:
                 model.add(Dense(num_filters[layer-1] * input_height**2,

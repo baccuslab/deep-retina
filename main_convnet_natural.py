@@ -32,9 +32,9 @@ l2_reg = 0.0
 # Architecture
 model_type = 'convnet' # 'convnet' or 'lstm'
 ts = 100 # if lstm
-nlayers = 2
+nlayers = 3
 filter_sizes = [4]
-num_filters = [16, 1] # length of this should equal nlayers
+num_filters = [16, 32, 1] # length of this should equal nlayers
 pooling_sizes = [2]
 
 # Load All Data

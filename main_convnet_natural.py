@@ -1,29 +1,9 @@
 from __future__ import absolute_import
 import numpy as np
-import pickle
-from scipy.io import loadmat
 import os.path as path
-import matplotlib.pyplot as plt
-from matplotlib.pyplot import *
-from scipy.optimize import curve_fit
-from scipy.stats import pearsonr
-# Keras imports
-from keras.preprocessing import sequence
-from keras.utils import np_utils
-from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Activation, Flatten
-from keras.layers.convolutional import Convolution2D, MaxPooling2D
-from keras.optimizers import SGD, RMSprop, Adagrad
-from keras.layers.embeddings import Embedding
-from keras.regularizers import l1, l2, activity_l1, activity_l2
-from keras.callbacks import Callback
+
+from keras.optimizers import RMSprop
 from keras.objectives import poisson_loss
-#Imports to add Poisson objective (since Keras does not have them)
-import theano
-import theano.tensor as T
-from six.moves import range
-import socket
-import getpass
 
 
 from preprocessing import *

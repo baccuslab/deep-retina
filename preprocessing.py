@@ -90,15 +90,15 @@ def load_data(data_dir, cell, model_type, ts=None):
         y_train = np.reshape(y_train, (num_train/ts, ts, 1))
         X_test = np.reshape(X_test, (num_test/ts, ts, num_channels, height, height))
         y_test = np.reshape(y_test, (num_test/ts, ts, 1))
-        
+
     print X_train.shape
     print y_train.shape
     print X_test.shape
     print y_test.shape
-    
+
     return X_train, y_train, X_test, y_test
 
-def create_data_split(X_train, y_train, X_test, y_test, split=0.1, 
+def create_data_split(X_train, y_train, X_test, y_test, split=0.1,
         train_subset=1.0, test_subset=1.0, batch_size=128):
     '''
     Divide examples into training, validation, and test sets.
@@ -138,4 +138,4 @@ def create_data_split(X_train, y_train, X_test, y_test, split=0.1,
     test_inds = [test_mask[i:i+batch_size] for i in range(0, len(test_mask), batch_size)]
 
     return train_inds, val_inds, test_inds
-        
+

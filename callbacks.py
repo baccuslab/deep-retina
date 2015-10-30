@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
 from scipy.stats import pearsonr
 from keras.callbacks import Callback
 
@@ -72,7 +71,7 @@ class CorrelationHistory(Callback):
 		plt.close()
 
 def plot_metrics(metrics, batch_id):
-    # Plot progress 
+    # Plot progress
     fig = plt.gcf()
     fig.set_size_inches((20,24))
     ax1 = plt.subplot(3,2,1)
@@ -114,7 +113,7 @@ def plot_metrics(metrics, batch_id):
 
     ax6 = plt.subplot(3,2,6)
     ax6.scatter(metrics['test_labels'], metrics['test_output'])
-    data_ranges = np.linspace(np.min([np.min(metrics['test_labels']), np.min(metrics['test_output'])]), 
+    data_ranges = np.linspace(np.min([np.min(metrics['test_labels']), np.min(metrics['test_output'])]),
             np.max([np.max(metrics['test_labels']), np.max(metrics['test_output'])]), 10)
     ax6.plot(data_ranges, data_ranges, 'k--')
     ax6.set_title('Test Data vs Predictions', fontsize=16)

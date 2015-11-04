@@ -4,7 +4,58 @@ from __future__ import absolute_import
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
+from keras.layers.advanced_activation import ParametricSoftPlus
 from keras.regularizers import l1, l2, activity_l1, activity_l2
+
+from .preprocessing import datagen
+
+class Model(object):
+    """
+    Superclass for managing keras models
+
+    """
+
+    def __init__(self, loss, optimizer):
+
+        # compile the model
+        self.model.compile(loss=loss, optimizer=optimizer)
+
+    def load_data(self, cell_index, batchsize, **kwargs):
+        """
+        loads a generator that yields training data
+
+        """
+
+        self.data = datagen(cell_index, batchsize, **kwargs)
+
+    def train(self, maxiter=1000):
+
+        for k in range(maxiter):
+
+            # load batch of data
+            X, y = next(self.data)
+
+            # train on the batch
+            self.model.train_on_batch(X, y)
+
+
+class ln(Model):
+
+    def __init__(self, filter_shape, loss='poisson_loss', optimizer='sgd'):
+        """
+        Linear-nonlinear model with a parametric softplus nonlinearity
+
+        """
+
+        # build the model
+        self.model = Sequential()
+        self.model.add(Flatten(input_shape=filter_shape))
+        self.model.add(Dense(1))
+        self.model.add(ParametricSoftPlus())
+
+        # compile
+        super(self, loss, optimizer)
+
 
 class convnet(object):
 

@@ -15,7 +15,8 @@ __all__ = ['datagen']
 # custom data directories for different machines based on OS hostname
 datadirs = {
     'mbp': os.path.expanduser('~/experiments/data/'),
-    'lenna': os.path.expanduser('~/experiments/data/')
+    'lenna': os.path.expanduser('~/experiments/data/'),
+    'lane.local': os.path.expanduser('~/Documents/Stanford/00 Baccus Lab/Data 2015_10_07/')
 }
 
 

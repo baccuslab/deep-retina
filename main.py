@@ -3,19 +3,18 @@ Main script for training deep retinal models
 
 """
 
-from keras.optimizers import RMSprop
-from keras.objectives import poisson_loss
-
 from __future__ import absolute_import
 
 from keras.optimizers import RMSprop
 from keras.objectives import poisson_loss
 
-from preprocessing import load_data
+from keras.optimizers import RMSprop
+from keras.objectives import poisson_loss
+
 from models import ln, convnet, lstm
 
 
-def fit_ln(cell=0)
+def fit_ln(cell=0):
     """
     Demo code for fitting an LN model in keras
 

@@ -5,6 +5,7 @@ Helper utilities
 
 from __future__ import print_function
 from contextlib import contextmanager
+import numpy as np
 
 __all__ = ['notify', 'rolling_window']
 

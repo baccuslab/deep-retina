@@ -4,10 +4,10 @@ from __future__ import absolute_import
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
-from keras.layers.advanced_activation import ParametricSoftPlus
+from keras.layers.advanced_activations import ParametricSoftplus
 from keras.regularizers import l1, l2, activity_l1, activity_l2
 
-from .preprocessing import datagen
+from preprocessing import datagen
 
 class Model(object):
     """
@@ -36,7 +36,8 @@ class Model(object):
             X, y = next(self.data)
 
             # train on the batch
-            self.model.train_on_batch(X, y)
+            loss = self.model.train_on_batch(X, y)
+            print('{:03d}: {}'.format(k, loss))
 
 
 class ln(Model):
@@ -51,10 +52,11 @@ class ln(Model):
         self.model = Sequential()
         self.model.add(Flatten(input_shape=filter_shape))
         self.model.add(Dense(1))
-        self.model.add(ParametricSoftPlus())
+        self.model.add(ParametricSoftplus())
 
         # compile
-        super(self, loss, optimizer)
+        self.model.compile(loss=loss, optimizer=optimizer)
+        # super(loss, optimizer)
 
 
 class convnet(object):

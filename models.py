@@ -7,7 +7,7 @@ from __future__ import absolute_import
 
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten, TimeDistributedDense
-from keras.layers.convolutional import Convolution2D, MaxPooling2D, TimeDistributedConvolution2D, TimeDistributedMaxPooling2D
+from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
 from keras.regularizers import l2
 
@@ -75,12 +75,16 @@ class ln(Model):
         # history of the filter
         self.history = filter_shape[0]
 
+        # regularization
+        l2_reg = 0.0
+
         # build the model (flatten the input, followed by a dense layer and
         # softplus activation)
         with notify('Building LN model'):
             self.model = Sequential()
             self.model.add(Flatten(input_shape=filter_shape))
-            self.model.add(Dense(1, activation='softplus'))
+            self.model.add(Dense(1, activation='softplus',
+                                 W_regularizer=l2(l2_reg)))
 
         # compile
         with notify('Compiling'):
@@ -89,7 +93,7 @@ class ln(Model):
 
 class convnet(Model):
 
-    def __init__(self, history=40, loss='poisson_loss', optimizer='sgd'):
+    def __init__(self, filter_shape, loss='poisson_loss', optimizer='sgd'):
         """
         Convolutional neural network
 
@@ -101,7 +105,10 @@ class convnet(Model):
         """
 
         # history of the filter
-        self.history = history
+        self.history = filter_shape[0]
+
+        # regularization
+        l2_reg = 0.0
 
         # build the model
         with notify('Building convnet'):
@@ -109,17 +116,21 @@ class convnet(Model):
             self.model = Sequential()
 
             # first convolutional layer
-            self.model.add(Convolution2D(16, self.history, 9, 9, init='normal', border_mode='same', subsample=(1,1),
-                                         W_regularizer=l2(l2_regularization), activation='relu'))
+            self.model.add(Convolution2D(16, 9, 9, input_shape=filter_shape, init='normal',
+                                         border_mode='same', subsample=(1,1),
+                                         W_regularizer=l2(l2_reg), activation='relu'))
 
             # max pooling layer
-            self.model.add(MaxPooling2D(poolsize=(2, 2), ignore_border=True))
+            self.model.add(MaxPooling2D(pool_size=(2, 2), ignore_border=True))
+
+            # flatten
+            self.model.add(Flatten())
 
             # Add dense (affine) layer with relu activation
-            self.model.add(Dense(32, init='normal', W_regularizer=l2(l2_regularization), activation='relu'))
+            self.model.add(Dense(32, init='normal', W_regularizer=l2(l2_reg), activation='relu'))
 
             # Add a final dense (affine) layer with softplus activation
-            self.model.add(Dense(1, init='normal', W_regularizer=l2(l2_regularization), activation='softplus'))
+            self.model.add(Dense(1, init='normal', W_regularizer=l2(l2_reg), activation='softplus'))
 
         # compile
         with notify('Compiling'):
@@ -142,23 +153,26 @@ class lstm(Model):
         # history of the filter
         self.history = history
 
+        # regularization
+        l2_reg = 0.0
+
         # build the model
         with notify('Building convnet'):
 
             self.model = Sequential()
 
             # First layer is a time distributed convolutional layer
-            self.model.add(TimeDistributedConvolution2D(16, self.history, 9, 9, init='he_uniform',
-                                                        border_mode='full', subsample=(1,1),
-                                                        W_regularizer=l2(l2_regularization), activation='relu'))
+            self.model.add(Convolution2D(16, self.history, 9, 9, init='he_uniform',
+                                         border_mode='full', subsample=(1,1),
+                                         W_regularizer=l2(l2_reg), activation='relu'))
 
 
             # Second layer is a time distributed max pooling layer
-            self.model.add(TimeDistributedMaxPooling2D(poolsize=(2,2), ignore_border=True))
+            self.model.add(MaxPooling2D(poolsize=(2,2), ignore_border=True))
 
             # next we have a dense (affine) layer
             self.model.add(TimeDistributedDense(32, init='he_uniform',
-                                                W_regularizer=l2(l2_regularization), activation='relu'))
+                                                W_regularizer=l2(l2_reg), activation='relu'))
 
             # flatten -- is this necessary?
             # self.model.add(TimeDistributedFlatten())
@@ -167,8 +181,8 @@ class lstm(Model):
             self.model.add(LSTM(32, init='he_uniform', forget_bias_init='one', activation='tanh', return_sequences=True))
 
             # add final layer
-            self.model.add(TimeDistributedDense(1, init='he_uniform',
-                           W_regularizer=l2(l2_regularization), activation='softplus'))
+            self.model.add(Dense(1, init='he_uniform',
+                           W_regularizer=l2(l2_reg), activation='softplus'))
 
         # compile
         with notify('Compiling'):

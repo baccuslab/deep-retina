@@ -3,7 +3,8 @@ Custom model classes
 
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
+from builtins import super
 
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten, TimeDistributedDense
@@ -12,7 +13,9 @@ from keras.layers.recurrent import LSTM
 from keras.regularizers import l2
 
 from preprocessing import datagen
-from utils import notify
+from utils import notify, mksavedir
+
+__all__ = ['Model', 'ln', 'convnet', 'lstm']
 
 
 class Model(object):
@@ -46,20 +49,44 @@ class Model(object):
         self.data = datagen(cell_index, batchsize, history=self.history, **kwargs)
 
     def train(self, maxiter=1000):
+        """
+        Train the network!
 
-        for k in range(maxiter):
+        Parameters
+        ----------
+        maxiter : int, optional
+            Number of iterations to run for (default: 1000)
 
-            # load batch of data
-            X, y = next(self.data)
+        """
 
-            # train on the batch
-            loss = self.model.train_on_batch(X, y)
-            print('{:03d}: {}'.format(k, loss))
+        try:
+            for k in range(maxiter):
 
-            # TODO: run callbacks
+                # load batch of data
+                X, y = next(self.data)
+
+                # train on the batch
+                loss = self.model.train_on_batch(X, y)
+
+                # TODO: run callbacks
+                print('{:03d}: {}'.format(k, loss))
+
+        except KeyboardInterrupt:
+            with notify('Cleaning up'):
+                self.save()
+
+    # def save_model(self):
+
+        # create a new directory to save this model
+        # self.savedir = mksavedir(prefix=
+
+    # def save(self):
 
 
 class ln(Model):
+
+    def __str__(self):
+        return "LN"
 
     def __init__(self, filter_shape, loss='poisson_loss', optimizer='sgd'):
         """
@@ -92,6 +119,9 @@ class ln(Model):
 
 
 class convnet(Model):
+
+    def __str__(self):
+        return "convnet"
 
     def __init__(self, filter_shape, loss='poisson_loss', optimizer='sgd'):
         """
@@ -138,6 +168,9 @@ class convnet(Model):
 
 
 class lstm(Model):
+
+    def __str__(self):
+        return "lstm"
 
     def __init__(self, history=40, loss='poisson_loss', optimizer='sgd'):
         """

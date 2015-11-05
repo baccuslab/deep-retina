@@ -5,9 +5,13 @@ Helper utilities
 
 from __future__ import print_function
 from contextlib import contextmanager
+from os import mkdir
+from os.path import join, expanduser
+from time import strftime
 import numpy as np
+import sys
 
-__all__ = ['notify', 'rolling_window']
+__all__ = ['notify', 'rolling_window', 'mksavedir']
 
 
 @contextmanager
@@ -29,11 +33,40 @@ def notify(title):
 
     """
 
-    print(title + '... ', end='', flush=True)
+    print(title + '... ', end='')
+    sys.stdout.flush()
     try:
         yield
     finally:
         print('Done.')
+
+
+def mksavedir(basedir='~/Dropbox/deep-retina/saved_models', prefix=''):
+    """
+    Makes a new directory for saving models
+
+    Parameters
+    ----------
+    basedir : string, optional
+        Base directory to store model results in
+
+    prefix : string, optional
+        Prefix to add to the folder (name of the model or some other identifier)
+
+    """
+
+    assert type(prefix) is str, "prefix must be a string"
+
+    # get the current date and time
+    now = strftime("%Y-%m-%d %H.%M.%S") + " " + prefix
+
+    # the save directory is the given base directory plus the current date/time
+    savedir = join(expanduser(basedir), now)
+
+    # create the directory
+    mkdir(savedir)
+
+    return savedir
 
 
 def rolling_window(array, window, axis=0):

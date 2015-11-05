@@ -1,3 +1,8 @@
+"""
+Preprocessing utility functions for loading and formatting experimental data
+
+"""
+
 from __future__ import absolute_import
 import numpy as np
 import os
@@ -6,6 +11,12 @@ from scipy.stats import zscore
 from utils import rolling_window
 
 __all__ = ['datagen']
+
+# custom data directories for different machines based on OS hostname
+datadirs = {
+    'mbp': os.path.expanduser('~/experiments/data/'),
+    'lenna': os.path.expanduser('~/experiments/data/')
+}
 
 
 def datagen(cellidx, batchsize, expt='15-10-07', filename='naturalscene', method='train', history=40):
@@ -41,11 +52,6 @@ def datagen(cellidx, batchsize, expt='15-10-07', filename='naturalscene', method
     else:
         raise NotImplementedError('Did not recognize experiment: ' + str(expt))
 
-    # custom data directories for different machines based on OS hostname
-    datadirs = {
-        'mbp': os.path.expanduser('~/experiments/data/'),
-        'lenna': os.path.expanduser('~/experiments/data/')
-    }
 
     # load the hdf5 file
     f = h5py.File(os.path.join(datadirs[os.uname()[1]], expt, filename + '.h5'), 'r')

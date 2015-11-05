@@ -1,21 +1,38 @@
+"""
+Custom model classes
+
+"""
+
 from __future__ import absolute_import
 
-# Keras imports
 from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Activation, Flatten
-from keras.layers.convolutional import Convolution2D, MaxPooling2D
-from keras.layers.advanced_activations import ParametricSoftplus
-from keras.regularizers import l1, l2, activity_l1, activity_l2
+from keras.layers.core import Dense, Dropout, Activation, Flatten, TimeDistributedDense
+from keras.layers.convolutional import Convolution2D, MaxPooling2D, TimeDistributedConvolution2D, TimeDistributedMaxPooling2D
+from keras.layers.recurrent import LSTM
+from keras.regularizers import l2
 
 from preprocessing import datagen
+from utils import notify
+
 
 class Model(object):
-    """
-    Superclass for managing keras models
-
-    """
 
     def __init__(self, loss, optimizer):
+        """
+        Superclass for managing keras models
+
+        Parameters
+        ----------
+
+        loss : string or object, optional
+        The loss function to use. (Default: poisson_loss)
+        See http://keras.io/objectives/ for more information
+
+        optimizer : string or object
+        The optimizer to use. (Default: sgd)
+        See http://keras.io/optimizers/ for more information
+
+        """
 
         # compile the model
         self.model.compile(loss=loss, optimizer=optimizer)
@@ -26,7 +43,7 @@ class Model(object):
 
         """
 
-        self.data = datagen(cell_index, batchsize, **kwargs)
+        self.data = datagen(cell_index, batchsize, history=self.history, **kwargs)
 
     def train(self, maxiter=1000):
 
@@ -39,6 +56,8 @@ class Model(object):
             loss = self.model.train_on_batch(X, y)
             print('{:03d}: {}'.format(k, loss))
 
+            # TODO: run callbacks
+
 
 class ln(Model):
 
@@ -46,168 +65,111 @@ class ln(Model):
         """
         Linear-nonlinear model with a parametric softplus nonlinearity
 
+        Parameters
+        ----------
+        filter_shape : tuple
+            shape of the linear filter (time, space, space)
+
         """
 
-        # build the model
-        self.model = Sequential()
-        self.model.add(Flatten(input_shape=filter_shape))
-        self.model.add(Dense(1, activation='softplus'))
-        # self.model.add(ParametricSoftplus())
+        # history of the filter
+        self.history = filter_shape[0]
+
+        # build the model (flatten the input, followed by a dense layer and
+        # softplus activation)
+        with notify('Building LN model'):
+            self.model = Sequential()
+            self.model.add(Flatten(input_shape=filter_shape))
+            self.model.add(Dense(1, activation='softplus'))
 
         # compile
-        self.model.compile(loss=loss, optimizer=optimizer)
-        # super(loss, optimizer)
+        with notify('Compiling'):
+            super().__init__(loss, optimizer)
 
 
-class convnet(object):
+class convnet(Model):
 
-    def __init__(self, X, y, num_layers=3, filter_sizes=[9],
-                 num_filters=[16, 32, 1], pooling_sizes=[2], num_channels=40,
-                 data_height=50, l2_regularization=0.0):
+    def __init__(self, history=40, loss='poisson_loss', optimizer='sgd'):
+        """
+        Convolutional neural network
 
-        '''
-        Initializes a convolutional neural network model.
+        Parameters
+        ----------
+        history : int
+            Number of steps in the history of the linear filter (Default: 40)
 
-        INPUTS
+        """
 
-        num_layers          integer; number of layers not including input layer
+        # history of the filter
+        self.history = history
 
-        filter_sizes        list of integers; size of convolutional filters. If
-                            len(filter_sizes) < len(num_layers), then remaining
-                            layers will be affine.
+        # build the model
+        with notify('Building convnet'):
 
-        num_filters         list of integers; number of filters learned per layer.
-                            Should have len(num_filters) = len(num_layers).
+            self.model = Sequential()
 
-        pooling_sizes       list of integers; square root of units pooled.
-                            len(pooling_size) = number of pooling layers.
+            # first convolutional layer
+            self.model.add(Convolution2D(16, self.history, 9, 9, init='normal', border_mode='same', subsample=(1,1),
+                                         W_regularizer=l2(l2_regularization), activation='relu'))
 
-        num_channels        integer; X.shape[1]; number of time channels in data
+            # max pooling layer
+            self.model.add(MaxPooling2D(poolsize=(2, 2), ignore_border=True))
 
-        data_height         integer; X.shape[2]; number of pixels on one side of the data
+            # Add dense (affine) layer with relu activation
+            self.model.add(Dense(32, init='normal', W_regularizer=l2(l2_regularization), activation='relu'))
 
-        l2_regularization   float >= 0; strength of L2 regularization
+            # Add a final dense (affine) layer with softplus activation
+            self.model.add(Dense(1, init='normal', W_regularizer=l2(l2_regularization), activation='softplus'))
 
-        '''
-
-        # Determine architecture
-        num_convolutional_layers = len(filter_sizes)
-        num_pooling_layers = len(pooling_sizes)
-        input_height = data_height
-
-        # Initialize Feedforward Convnet
-        self.model = Sequential()
-
-        # How should we initialize weights?
-        init_method = 'normal'
-
-        for layer in range(num_layers):
-            # if convolutional layer
-            if layer < num_convolutional_layers:
-                model.add(Convolution2D(num_filters[layer], num_channels,
-                    filter_sizes[layer], filter_sizes[layer], init='normal',
-                    border_mode='same', subsample=(1,1),
-                    W_regularizer=l2(l2_regularization), activation='relu'))
-            # if not convolutional, then it's an affine layer
-            else:
-                # if not last layer, add relu activation to affine layer
-                if layer != num_layers - 1:
-                    self.model.add(Dense(num_filters[layer-1] * input_height**2,
-                        num_filters[layer], init=init_method,
-                        W_regularizer=l2(l2_regularization), activation='relu'))
-                    # need to set input_height to 1, since now input is flattened
-                    # after this affine layer
-                    input_height = 1
-                # else it's the last layer and we will add a softplus activation
-                else:
-                    self.model.add(Dense(num_filters[layer-1] * input_height**2,
-                        num_filters[layer], init=init_method,
-                        W_regularizer=l2(l2_regularization)))
-
-            # if pooling layer follows convolutional or affine layer
-            if layer < num_pooling_layers:
-                self.model.add(MaxPooling2D(poolsize=(pooling_sizes[layer], pooling_sizes[layer]),
-                    ignore_border=True))
-                input_height = input_height // 2
-
-            # if it's the last convolutional layer, then need to flatten layer
-            if layer == num_convolutional_layers - 1:
-                self.model.add(Flatten())
-
-        # After creating all convolutional, affine, and pooling layers, we're going
-        # to add a softplus activation to the top of the model
-        self.model.add(Activation('softplus'))
+        # compile
+        with notify('Compiling'):
+            super().__init__(loss, optimizer)
 
 
-def lstm(num_layers=3, filter_sizes=[9], num_filters=[16, 32], pooling_sizes=[2],
-        num_channels=40, data_height=50, l2_regularization=0.0):
-    '''
-    Returns a long-short-term-memory (LSTM) network model.
+class lstm(Model):
 
-    INPUTS
-    num_layers          integer; number of layers not including input layer
+    def __init__(self, history=40, loss='poisson_loss', optimizer='sgd'):
+        """
+        Convolutional neural network
 
-    filter_sizes        list of integers; size of convolutional filters. If
-                        len(filter_sizes) < len(num_layers), then remaining
-                        layers will be affine.
+        Parameters
+        ----------
+        history : int
+            Number of steps in the history of the linear filter (Default: 40)
 
-    num_filters         list of integers; number of filters learned per layer.
-                        Should have len(num_filters) = len(num_layers).
+        """
 
-    pooling_sizes       list of integers; square root of units pooled.
-                        len(pooling_size) = number of pooling layers.
+        # history of the filter
+        self.history = history
 
-    num_channels        integer; X.shape[1]; number of time channels in data
+        # build the model
+        with notify('Building convnet'):
 
-    data_height         integer; X.shape[2]; number of pixels on one side of the data
+            self.model = Sequential()
 
-    l2_regularization   float >= 0; strength of L2 regularization
-
-    OUTPUT
-    model               keras model
-    '''
-
-    # Determine architecture
-    num_convolutional_layers = len(filter_sizes)
-    num_pooling_layers = len(pooling_sizes)
-    input_height = data_height
-
-    # Fixed parameters
-    init_method = 'he_uniform'
-
-    # Initialize Feedforward Convnet
-    model = Sequential()
-
-    for layer in range(num_layers)-1:
-        # if convolutional layer
-        if layer < num_convolutional_layers:
-            model.add(TimeDistributedConvolution2D(num_filters[layer], num_channels,
-                filter_sizes[layer], filter_sizes[layer], init=init_method,
-                border_mode='full', subsample=(1,1),
-                W_regularizer=l2(l2_regularization), activation='relu'))
-        # if not convolutional, then it's an affine layer
-        else:
-            # if not last layer, add relu activation to affine layer
-            if layer != num_layers - 1:
-                model.add(TimeDistributedDense(num_filters[layer-1] * input_height**2,
-                    num_filters[layer], init=init_method,
-                    W_regularizer=l2(l2_regularization), activation='relu'))
+            # First layer is a time distributed convolutional layer
+            self.model.add(TimeDistributedConvolution2D(16, self.history, 9, 9, init='he_uniform',
+                                                        border_mode='full', subsample=(1,1),
+                                                        W_regularizer=l2(l2_regularization), activation='relu'))
 
 
-        # if pooling layer follows convolutional or affine layer
-        if layer < num_pooling_layers:
-            model.add(TimeDistributedMaxPooling2D(poolsize=(pooling_sizes[layer], pooling_sizes[layer]),
-                ignore_border=True))
-            input_height = input_height // 2
+            # Second layer is a time distributed max pooling layer
+            self.model.add(TimeDistributedMaxPooling2D(poolsize=(2,2), ignore_border=True))
 
-        # if it's the last convolutional layer, then need to flatten layer
-        if layer == num_convolutional_layers - 1:
-            model.add(TimeDistributedFlatten())
+            # next we have a dense (affine) layer
+            self.model.add(TimeDistributedDense(32, init='he_uniform',
+                                                W_regularizer=l2(l2_regularization), activation='relu'))
 
-    model.add(LSTM(num_filters[-1], num_filters[-1], forget_bias_init='one',
-        return_sequences=True))
+            # flatten -- is this necessary?
+            # self.model.add(TimeDistributedFlatten())
 
-    model.add(TimeDistributedDense(num_filters[-1], 1, init=init_method,
-        W_regularizer=l2(l2_regularization), activation='softplus'))
+            # add LSTM
+            self.model.add(LSTM(32, init='he_uniform', forget_bias_init='one', activation='tanh', return_sequences=True))
 
-    return model
+            # add final layer
+            self.model.add(TimeDistributedDense(1, init='he_uniform',
+                           W_regularizer=l2(l2_regularization), activation='softplus'))
+
+        # compile
+        with notify('Compiling'):
+            super().__init__(loss, optimizer)

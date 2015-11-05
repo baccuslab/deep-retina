@@ -2,6 +2,7 @@ from __future__ import absolute_import
 import numpy as np
 import os
 import h5py
+from scipy.stats import zscore
 
 __all__ = ['datagen']
 
@@ -72,7 +73,7 @@ def datagen(cellidx, batchsize, expt='15-10-07', filename='naturalscene', method
             inds = indices[batch_idx]
 
             # yield data
-            yield stim_reshaped[inds, ...], resp[inds]
+            yield zscore(stim_reshaped[inds, ...]), resp[inds]
 
 
 def rolling_window(array, window, axis=0):

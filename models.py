@@ -51,8 +51,8 @@ class ln(Model):
         # build the model
         self.model = Sequential()
         self.model.add(Flatten(input_shape=filter_shape))
-        self.model.add(Dense(1))
-        self.model.add(ParametricSoftplus())
+        self.model.add(Dense(1, activation='softplus'))
+        # self.model.add(ParametricSoftplus())
 
         # compile
         self.model.compile(loss=loss, optimizer=optimizer)

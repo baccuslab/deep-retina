@@ -13,6 +13,8 @@ from keras.objectives import poisson_loss
 
 from models import ln, convnet, lstm
 
+__all__ = ['fit_ln', 'fit_convnet', 'fit_lstm']
+
 
 def fit_ln(cell=0):
     """
@@ -23,8 +25,10 @@ def fit_ln(cell=0):
     # Train an LN model
     batchsize = 5000
 
-    # initialize model, load data
+    # initialize model
     mdl = ln((40,50,50), optimizer='adam')
+
+    # load data
     mdl.load_data(cell, batchsize, filename='whitenoise')
 
     # train

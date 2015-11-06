@@ -3,7 +3,9 @@ Custom model classes
 
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
+from builtins import super
+from os.path import join
 
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten, TimeDistributedDense
@@ -12,7 +14,9 @@ from keras.layers.recurrent import LSTM
 from keras.regularizers import l2
 
 from preprocessing import datagen
-from utils import notify
+from utils import notify, mksavedir
+
+__all__ = ['Model', 'ln', 'convnet', 'lstm']
 
 
 class Model(object):
@@ -35,7 +39,21 @@ class Model(object):
         """
 
         # compile the model
-        self.model.compile(loss=loss, optimizer=optimizer)
+        with notify('Compiling'):
+            self.model.compile(loss=loss, optimizer=optimizer)
+
+        # save architecture as a json file
+        self.savedir = mksavedir(prefix=str(self))
+        with notify('Saving architecture as json'):
+            with open(join(self.savedir, 'architecture.json'), 'w') as f:
+                f.write(self.model.to_json())
+
+        # initialize training iteration
+        self.iteration = 0
+        self.epoch = 1
+
+        # save initial weights
+        self.save()
 
     def load_data(self, cell_index, batchsize, **kwargs):
         """
@@ -43,37 +61,75 @@ class Model(object):
 
         """
 
+        # load training data generator
         self.data = datagen(cell_index, batchsize, history=self.history, **kwargs)
 
-    def train(self, maxiter=1000):
+        # loads data from h5 file, get the number of batches per epoch
+        self.num_batches_per_epoch = next(self.data)
 
-        for k in range(maxiter):
+    def train(self, maxiter=1000, save_every=2):
+        """
+        Train the network!
 
-            # load batch of data
-            X, y = next(self.data)
+        Parameters
+        ----------
+        maxiter : int, optional
+            Number of iterations to run for (default: 1000)
 
-            # train on the batch
-            loss = self.model.train_on_batch(X, y)
-            print('{:03d}: {}'.format(k, loss))
+        """
 
-            # TODO: run callbacks
+        try:
+            for _ in range(maxiter):
+
+                # update iteration
+                self.iteration += 1
+
+                # update epoch
+                if self.iteration % self.num_batches_per_epoch == 0:
+                    self.epoch += 1
+
+                # load batch of data
+                X, y = next(self.data)
+
+                # train on the batch
+                loss = self.model.train_on_batch(X, y)
+
+                # update display and save
+                print('{:03d}: {}'.format(self.iteration, loss))
+                if self.iteration % save_every == 0:
+                    self.save()
+
+        except KeyboardInterrupt:
+            with notify('Cleaning up'):
+                self.save()
+
+    def save(self):
+        """
+        Save weights to directory
+
+        """
+        filename = join(self.savedir, "epoch{:02d}_iter{:04d}_weights.h5".format(self.epoch, self.iteration))
+        self.model.save_weights(filename)
 
 
 class ln(Model):
 
-    def __init__(self, filter_shape, loss='poisson_loss', optimizer='sgd'):
+    def __str__(self):
+        return "LN"
+
+    def __init__(self, stim_shape, loss='poisson_loss', optimizer='sgd'):
         """
         Linear-nonlinear model with a parametric softplus nonlinearity
 
         Parameters
         ----------
-        filter_shape : tuple
+        stim_shape : tuple
             shape of the linear filter (time, space, space)
 
         """
 
         # history of the filter
-        self.history = filter_shape[0]
+        self.history = stim_shape[0]
 
         # regularization
         l2_reg = 0.0
@@ -82,18 +138,20 @@ class ln(Model):
         # softplus activation)
         with notify('Building LN model'):
             self.model = Sequential()
-            self.model.add(Flatten(input_shape=filter_shape))
+            self.model.add(Flatten(input_shape=stim_shape))
             self.model.add(Dense(1, activation='softplus',
                                  W_regularizer=l2(l2_reg)))
 
         # compile
-        with notify('Compiling'):
-            super().__init__(loss, optimizer)
+        super().__init__(loss, optimizer)
 
 
 class convnet(Model):
 
-    def __init__(self, filter_shape, loss='poisson_loss', optimizer='sgd'):
+    def __str__(self):
+        return "convnet"
+
+    def __init__(self, stim_shape, num_filters=4, filter_size=(9,9), loss='poisson_loss', optimizer='sgd'):
         """
         Convolutional neural network
 
@@ -105,7 +163,7 @@ class convnet(Model):
         """
 
         # history of the filter
-        self.history = filter_shape[0]
+        self.history = stim_shape[0]
 
         # regularization
         l2_reg = 0.0
@@ -116,7 +174,8 @@ class convnet(Model):
             self.model = Sequential()
 
             # first convolutional layer
-            self.model.add(Convolution2D(16, 9, 9, input_shape=filter_shape, init='normal',
+            self.model.add(Convolution2D(num_filters, filter_size[0], filter_size[1],
+                                         input_shape=stim_shape, init='normal',
                                          border_mode='same', subsample=(1,1),
                                          W_regularizer=l2(l2_reg), activation='relu'))
 
@@ -133,11 +192,13 @@ class convnet(Model):
             self.model.add(Dense(1, init='normal', W_regularizer=l2(l2_reg), activation='softplus'))
 
         # compile
-        with notify('Compiling'):
-            super().__init__(loss, optimizer)
+        super().__init__(loss, optimizer)
 
 
 class lstm(Model):
+
+    def __str__(self):
+        return "lstm"
 
     def __init__(self, history=40, loss='poisson_loss', optimizer='sgd'):
         """
@@ -185,5 +246,4 @@ class lstm(Model):
                            W_regularizer=l2(l2_reg), activation='softplus'))
 
         # compile
-        with notify('Compiling'):
-            super().__init__(loss, optimizer)
+        super().__init__(loss, optimizer)

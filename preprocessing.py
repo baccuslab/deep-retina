@@ -8,11 +8,12 @@ import numpy as np
 import os
 import h5py
 from scipy.stats import zscore
-from utils import rolling_window
+from utils import rolling_window, notify
+from time import perf_counter
 
 __all__ = ['datagen']
 
-# custom data directories for different machines based on OS hostname
+# custom data directories for different machines based on os.uname
 datadirs = {
     'mbp': os.path.expanduser('~/experiments/data/'),
     'lenna': os.path.expanduser('~/experiments/data/'),
@@ -53,21 +54,29 @@ def datagen(cellidx, batchsize, expt='15-10-07', filename='naturalscene', method
     else:
         raise NotImplementedError('Did not recognize experiment: ' + str(expt))
 
+    # with notify('Loading experiment'):
 
-    # load the hdf5 file
-    f = h5py.File(os.path.join(datadirs[os.uname()[1]], expt, filename + '.h5'), 'r')
+    from jetpack.timepiece import Stopwatch
 
-    # load the stimulus
-    stim = np.array(f[method]['stimulus']).astype('float32')
+    with notify('Loading experiment'):
 
-    # reshaped stimulus (nsamples, time/channel, space, space)
-    stim_reshaped = np.rollaxis(np.rollaxis(rolling_window(stim, history, axis=0), 2), 3, 1)
+        # load the hdf5 file
+        f = h5py.File(os.path.join(datadirs[os.uname()[1]], expt, filename + '.h5'), 'r')
 
-    # get the response for this cell
-    resp = np.array(f[method]['response/firing_rate_10ms'][cellidx, history:])
+        # load the stimulus
+        stim = zscore(np.array(f[method]['stimulus']).astype('float32'))
+
+        # reshaped stimulus (nsamples, time/channel, space, space)
+        stim_reshaped = np.rollaxis(np.rollaxis(rolling_window(stim, history, axis=0), 2), 3, 1)
+
+        # get the response for this cell
+        resp = np.array(f[method]['response/firing_rate_10ms'][cellidx, history:])
+
+    # first yield the number of batches / epoch
+    num_batches = int(np.floor(float(resp.size) / batchsize))
+    yield num_batches
 
     # keep looping over epochs
-    num_batches = int(np.floor(float(resp.size) / batchsize))
     while True:
 
         # reshuffle indices for this new epoch
@@ -81,4 +90,4 @@ def datagen(cellidx, batchsize, expt='15-10-07', filename='naturalscene', method
             inds = indices[batch_idx]
 
             # yield data
-            yield zscore(stim_reshaped[inds, ...]), resp[inds]
+            yield stim_reshaped[inds, ...], resp[inds]

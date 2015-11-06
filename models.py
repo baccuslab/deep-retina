@@ -5,6 +5,7 @@ Custom model classes
 
 from __future__ import absolute_import, division, print_function
 from builtins import super
+from os.path import join
 
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten, TimeDistributedDense
@@ -38,7 +39,21 @@ class Model(object):
         """
 
         # compile the model
-        self.model.compile(loss=loss, optimizer=optimizer)
+        with notify('Compiling'):
+            self.model.compile(loss=loss, optimizer=optimizer)
+
+        # save architecture as a json file
+        self.savedir = mksavedir(prefix=str(self))
+        with notify('Saving architecture as json'):
+            with open(join(self.savedir, 'architecture.json'), 'w') as f:
+                f.write(self.model.to_json())
+
+        # initialize training iteration
+        self.iteration = 0
+        self.epoch = 1
+
+        # save initial weights
+        self.save()
 
     def load_data(self, cell_index, batchsize, **kwargs):
         """
@@ -46,9 +61,13 @@ class Model(object):
 
         """
 
+        # load training data generator
         self.data = datagen(cell_index, batchsize, history=self.history, **kwargs)
 
-    def train(self, maxiter=1000):
+        # loads data from h5 file, get the number of batches per epoch
+        self.num_batches_per_epoch = next(self.data)
+
+    def train(self, maxiter=1000, save_every=2):
         """
         Train the network!
 
@@ -60,7 +79,14 @@ class Model(object):
         """
 
         try:
-            for k in range(maxiter):
+            for _ in range(maxiter):
+
+                # update iteration
+                self.iteration += 1
+
+                # update epoch
+                if self.iteration % self.num_batches_per_epoch == 0:
+                    self.epoch += 1
 
                 # load batch of data
                 X, y = next(self.data)
@@ -68,19 +94,22 @@ class Model(object):
                 # train on the batch
                 loss = self.model.train_on_batch(X, y)
 
-                # TODO: run callbacks
-                print('{:03d}: {}'.format(k, loss))
+                # update display and save
+                print('{:03d}: {}'.format(self.iteration, loss))
+                if self.iteration % save_every == 0:
+                    self.save()
 
         except KeyboardInterrupt:
             with notify('Cleaning up'):
                 self.save()
 
-    # def save_model(self):
+    def save(self):
+        """
+        Save weights to directory
 
-        # create a new directory to save this model
-        # self.savedir = mksavedir(prefix=
-
-    # def save(self):
+        """
+        filename = join(self.savedir, "epoch{:02d}_iter{:04d}_weights.h5".format(self.epoch, self.iteration))
+        self.model.save_weights(filename)
 
 
 class ln(Model):
@@ -114,8 +143,7 @@ class ln(Model):
                                  W_regularizer=l2(l2_reg)))
 
         # compile
-        with notify('Compiling'):
-            super().__init__(loss, optimizer)
+        super().__init__(loss, optimizer)
 
 
 class convnet(Model):

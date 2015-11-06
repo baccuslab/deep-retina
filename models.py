@@ -117,19 +117,19 @@ class ln(Model):
     def __str__(self):
         return "LN"
 
-    def __init__(self, filter_shape, loss='poisson_loss', optimizer='sgd'):
+    def __init__(self, stim_shape, loss='poisson_loss', optimizer='sgd'):
         """
         Linear-nonlinear model with a parametric softplus nonlinearity
 
         Parameters
         ----------
-        filter_shape : tuple
+        stim_shape : tuple
             shape of the linear filter (time, space, space)
 
         """
 
         # history of the filter
-        self.history = filter_shape[0]
+        self.history = stim_shape[0]
 
         # regularization
         l2_reg = 0.0
@@ -138,7 +138,7 @@ class ln(Model):
         # softplus activation)
         with notify('Building LN model'):
             self.model = Sequential()
-            self.model.add(Flatten(input_shape=filter_shape))
+            self.model.add(Flatten(input_shape=stim_shape))
             self.model.add(Dense(1, activation='softplus',
                                  W_regularizer=l2(l2_reg)))
 
@@ -151,7 +151,7 @@ class convnet(Model):
     def __str__(self):
         return "convnet"
 
-    def __init__(self, filter_shape, loss='poisson_loss', optimizer='sgd'):
+    def __init__(self, stim_shape, num_filters=4, filter_size=(9,9), loss='poisson_loss', optimizer='sgd'):
         """
         Convolutional neural network
 
@@ -163,7 +163,7 @@ class convnet(Model):
         """
 
         # history of the filter
-        self.history = filter_shape[0]
+        self.history = stim_shape[0]
 
         # regularization
         l2_reg = 0.0
@@ -174,7 +174,8 @@ class convnet(Model):
             self.model = Sequential()
 
             # first convolutional layer
-            self.model.add(Convolution2D(16, 9, 9, input_shape=filter_shape, init='normal',
+            self.model.add(Convolution2D(num_filters, filter_size[0], filter_size[1],
+                                         input_shape=stim_shape, init='normal',
                                          border_mode='same', subsample=(1,1),
                                          W_regularizer=l2(l2_reg), activation='relu'))
 
@@ -191,8 +192,7 @@ class convnet(Model):
             self.model.add(Dense(1, init='normal', W_regularizer=l2(l2_reg), activation='softplus'))
 
         # compile
-        with notify('Compiling'):
-            super().__init__(loss, optimizer)
+        super().__init__(loss, optimizer)
 
 
 class lstm(Model):
@@ -246,5 +246,4 @@ class lstm(Model):
                            W_regularizer=l2(l2_reg), activation='softplus'))
 
         # compile
-        with notify('Compiling'):
-            super().__init__(loss, optimizer)
+        super().__init__(loss, optimizer)

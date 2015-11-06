@@ -9,7 +9,6 @@ import os
 import h5py
 from scipy.stats import zscore
 from utils import rolling_window, notify
-from time import perf_counter
 
 __all__ = ['datagen']
 

@@ -5,13 +5,20 @@ Helper utilities
 
 from __future__ import print_function
 from contextlib import contextmanager
-from os import mkdir
+from scipy.stats import pearsonr
+from os import mkdir, uname, getlogin
 from os.path import join, expanduser
 from time import strftime
+from collections import namedtuple
 import numpy as np
 import sys
+import csv
 
-__all__ = ['notify', 'rolling_window', 'mksavedir']
+__all__ = ['notify', 'rolling_window', 'mksavedir', 'tocsv', 'save_markdown',
+           'metric', 'Batch']
+
+
+Batch = namedtuple('Batch', ['X', 'y'])
 
 
 @contextmanager
@@ -41,7 +48,7 @@ def notify(title):
         print('Done.')
 
 
-def mksavedir(basedir='~/Dropbox/deep-retina/saved_models', prefix=''):
+def mksavedir(basedir='~/Dropbox/deep-retina/saved', prefix=''):
     """
     Makes a new directory for saving models
 
@@ -61,12 +68,52 @@ def mksavedir(basedir='~/Dropbox/deep-retina/saved_models', prefix=''):
     now = strftime("%Y-%m-%d %H.%M.%S") + " " + prefix
 
     # the save directory is the given base directory plus the current date/time
-    savedir = join(expanduser(basedir), now)
+    userdir = uname()[1] + '.' + getlogin()
+    savedir = join(expanduser(basedir), userdir, now)
 
     # create the directory
     mkdir(savedir)
 
     return savedir
+
+
+def tocsv(filename, array, fmt=''):
+    """
+    Write the data in the given array to a CSV file
+
+    """
+
+    row = [('{' + fmt + '}').format(x) for x in array]
+
+    # add .csv to the filename if necessary
+    if not filename.endswith('.csv'):
+        filename += '.csv'
+
+    with open(filename, 'a', encoding='utf-8') as f:
+        writer = csv.writer(f, delimiter=',')
+        writer.writerow(row)
+
+
+def tomarkdown(filename, lines):
+    """
+    Write the given lines to a markdown file
+
+    """
+
+    # add .csv to the filename if necessary
+    if not filename.endswith('.md'):
+        filename += '.md'
+
+    with open(filename, 'a', encoding='utf-8') as f:
+        f.write('\n'.join(lines))
+
+
+def metric(yhat,yobs):
+    """
+    Metric for comparing predicted and observed firing rates
+
+    """
+    return pearsonr(yhat, yobs)[0]
 
 
 def rolling_window(array, window, axis=0):

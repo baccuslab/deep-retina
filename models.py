@@ -6,6 +6,7 @@ Custom model classes
 from __future__ import absolute_import, division, print_function
 from builtins import super
 from os.path import join
+from time import strftime
 
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten, TimeDistributedDense
@@ -13,28 +14,35 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
 from keras.regularizers import l2
 
-from preprocessing import datagen
-from utils import notify, mksavedir
+from preprocessing import datagen, loadexpt
+from utils import notify, mksavedir, tocsv, tomarkdown, metric
+from numpy.random import choice
+from functools import partial
 
 __all__ = ['Model', 'ln', 'convnet', 'lstm']
 
 
 class Model(object):
 
-    def __init__(self, loss, optimizer):
+    def __init__(self, cell_index, stimulus_type, loss, optimizer):
         """
         Superclass for managing keras models
 
         Parameters
         ----------
 
+        cell_index : int
+
+        stimulus_type : string
+            Either 'naturalscene' or 'whitenoise'
+
         loss : string or object, optional
-        The loss function to use. (Default: poisson_loss)
-        See http://keras.io/objectives/ for more information
+            The loss function to use. (Default: poisson_loss)
+            See http://keras.io/objectives/ for more information
 
         optimizer : string or object
-        The optimizer to use. (Default: sgd)
-        See http://keras.io/optimizers/ for more information
+            The optimizer to use. (Default: sgd)
+            See http://keras.io/optimizers/ for more information
 
         """
 
@@ -44,71 +52,113 @@ class Model(object):
 
         # save architecture as a json file
         self.savedir = mksavedir(prefix=str(self))
-        with notify('Saving architecture as json'):
+        with notify('Saving architecture'):
             with open(join(self.savedir, 'architecture.json'), 'w') as f:
                 f.write(self.model.to_json())
 
-        # initialize training iteration
-        self.iteration = 0
-        self.epoch = 1
+        # function to write data to a CSV file
+        self.save_csv = partial(tocsv, join(self.savedir, 'performance'))
+        self.save_csv(['Epoch', 'Iteration', 'Training CC', 'Test CC'])
+
+        # load experimental data
+        self.stimulus_type = stimulus_type
+        self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[0])
+        self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[0])
 
         # save initial weights
-        self.save()
+        self.save(0, 0)
 
-    def load_data(self, cell_index, batchsize, **kwargs):
-        """
-        loads a generator that yields training data
+        # save model information to a markdown file
+        if 'architecture' not in self.__dict__:
+            self.architecture = 'No architecture information specified'
 
-        """
+        metadata = ['# ' + str(self), '## ' + strftime('%B %d, %Y'),
+                    'Started training on: ' + strftime('%I:%M:%S %p'),
+                    '### Architecture', self.architecture,
+                    '### Stimulus', 'Experiment 10-07-15', stimulus_type,
+                    'Cell #{}'.format(cell_index),
+                    '### Optimization', str(loss), str(optimizer)]
+        tomarkdown(join(self.savedir, 'README'), metadata)
 
-        # load training data generator
-        self.data = datagen(cell_index, batchsize, history=self.history, **kwargs)
 
-        # loads data from h5 file, get the number of batches per epoch
-        self.num_batches_per_epoch = next(self.data)
-
-    def train(self, maxiter=1000, save_every=2):
+    def train(self, batchsize, num_epochs=20, save_every=5):
         """
         Train the network!
 
         Parameters
         ----------
-        maxiter : int, optional
-            Number of iterations to run for (default: 1000)
+        batchsize : int
+
+        num_epochs : int, optional
+            Default: 20
+
+        save_every : int, optional
+            Default: 5
 
         """
 
-        try:
-            for _ in range(maxiter):
+        # initialize training iteration
+        iteration = 0
+
+        # loop over epochs
+        for epoch in range(num_epochs):
+
+            # save updates for this epoch
+            res = self.test(epoch, iteration)
+
+            # update display
+            print('')
+            print('='*20)
+            print('==== Epoch #{:3d} ===='.format(epoch))
+            print('='*20)
+            print('Train CC: {:4.3f}'.format(res[2]))
+            print(' Test CC: {:4.3f}\n'.format(res[3]))
+
+            # loop over data batches for this epoch
+            for X, y in datagen(batchsize, *self.training):
 
                 # update iteration
-                self.iteration += 1
-
-                # update epoch
-                if self.iteration % self.num_batches_per_epoch == 0:
-                    self.epoch += 1
-
-                # load batch of data
-                X, y = next(self.data)
+                iteration += 1
 
                 # train on the batch
                 loss = self.model.train_on_batch(X, y)
 
                 # update display and save
-                print('{:03d}: {}'.format(self.iteration, loss))
-                if self.iteration % save_every == 0:
-                    self.save()
+                print('{:05d}: {:5.5f}'.format(iteration, loss))
 
-        except KeyboardInterrupt:
-            with notify('Cleaning up'):
-                self.save()
+                # update on save_every
+                if iteration % save_every == 0:
+                    self.save(epoch, iteration)
 
-    def save(self):
+    def predict(self, X):
+        return self.model.predict(X)
+
+    def test(self, epoch, iteration):
+
+        # performance on the entire holdout set
+        yhat_test = self.predict(self.holdout.X)
+        corr_test = metric(yhat_test.ravel(), self.holdout.y)
+
+        # performance on a subset of the training data
+        training_sample_size = yhat_test.size
+        inds = choice(self.training.y.size, training_sample_size, replace=False)
+        yhat_train = self.predict(self.training.X[inds, ...])
+        corr_train = metric(yhat_train.ravel(), self.training.y[inds])
+
+        # save the results to a CSV file
+        results = [epoch, iteration, corr_train, corr_test]
+        self.save_csv(results)
+
+        return results
+
+    def save(self, epoch, iteration):
         """
-        Save weights to directory
+        Save weights and optional test performance to directory
 
         """
-        filename = join(self.savedir, "epoch{:02d}_iter{:04d}_weights.h5".format(self.epoch, self.iteration))
+
+        # store the weights
+        filename = join(self.savedir, "epoch{:03d}_iter{:05d}_weights.h5".format(epoch, iteration))
         self.model.save_weights(filename)
 
 
@@ -117,33 +167,47 @@ class ln(Model):
     def __str__(self):
         return "LN"
 
-    def __init__(self, stim_shape, loss='poisson_loss', optimizer='sgd'):
+
+    def __init__(self, cell_index, stimulus_type, loss='poisson_loss', optimizer='adam', l2_reg=0.):
         """
         Linear-nonlinear model with a parametric softplus nonlinearity
 
         Parameters
         ----------
-        stim_shape : tuple
-            shape of the linear filter (time, space, space)
+
+        cell_index : int
+            Which cell to use
+
+        stimulus_type : string
+            Either 'whitenoise' or 'naturalscene'
+
+        loss : string or object, optional
+            A Keras objective. Default: 'poisson_loss'
+
+        optimizer : string or object, optional
+            A Keras optimizer. Default: 'adam'
+
+        l2_reg : float, optional
+            How much l2 regularization to apply to all filter weights
 
         """
 
-        # history of the filter
-        self.history = stim_shape[0]
-
-        # regularization
-        l2_reg = 0.0
+        self.stim_shape = (40, 50, 50)
 
         # build the model (flatten the input, followed by a dense layer and
         # softplus activation)
         with notify('Building LN model'):
             self.model = Sequential()
-            self.model.add(Flatten(input_shape=stim_shape))
+            self.model.add(Flatten(input_shape=self.stim_shape))
             self.model.add(Dense(1, activation='softplus',
                                  W_regularizer=l2(l2_reg)))
 
+        # save architecture string (for markdown file)
+        self.architecture = '\n'.join(['l2 regularization: {}'.format(l2_reg),
+                                       'stimulus shape: {}'.format(self.stim_shape)])
+
         # compile
-        super().__init__(loss, optimizer)
+        super().__init__(cell_index, stimulus_type, loss, optimizer)
 
 
 class convnet(Model):
@@ -151,22 +215,41 @@ class convnet(Model):
     def __str__(self):
         return "convnet"
 
-    def __init__(self, stim_shape, num_filters=4, filter_size=(9,9), loss='poisson_loss', optimizer='sgd'):
+    def __init__(self, cell_index, stimulus_type, num_filters=(4, 16), filter_size=(9,9),
+                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0.):
         """
         Convolutional neural network
 
         Parameters
         ----------
-        history : int
-            Number of steps in the history of the linear filter (Default: 40)
+
+        cell_index : int
+            Which cell to use
+
+        stimulus_type : string
+            Either 'whitenoise' or 'naturalscene'
+
+        num_filters : tuple, optional
+            Number of filters in each layer. Default: (4, 16)
+
+        filter_size : tuple, optional
+            Convolutional filter size. Default: (9, 9)
+
+        loss : string or object, optional
+            A Keras objective. Default: 'poisson_loss'
+
+        optimizer : string or object, optional
+            A Keras optimizer. Default: 'adam'
+
+        weight_init : string
+            weight initialization. Default: 'normal'
+
+        l2_reg : float, optional
+            How much l2 regularization to apply to all filter weights
 
         """
 
-        # history of the filter
-        self.history = stim_shape[0]
-
-        # regularization
-        l2_reg = 0.0
+        self.stim_shape = (40, 50, 50)
 
         # build the model
         with notify('Building convnet'):
@@ -174,8 +257,8 @@ class convnet(Model):
             self.model = Sequential()
 
             # first convolutional layer
-            self.model.add(Convolution2D(num_filters, filter_size[0], filter_size[1],
-                                         input_shape=stim_shape, init='normal',
+            self.model.add(Convolution2D(num_filters[0], filter_size[0], filter_size[1],
+                                         input_shape=self.stim_shape, init='normal',
                                          border_mode='same', subsample=(1,1),
                                          W_regularizer=l2(l2_reg), activation='relu'))
 
@@ -186,64 +269,17 @@ class convnet(Model):
             self.model.add(Flatten())
 
             # Add dense (affine) layer with relu activation
-            self.model.add(Dense(32, init='normal', W_regularizer=l2(l2_reg), activation='relu'))
+            self.model.add(Dense(num_filters[1], init=weight_init, W_regularizer=l2(l2_reg), activation='relu'))
 
             # Add a final dense (affine) layer with softplus activation
-            self.model.add(Dense(1, init='normal', W_regularizer=l2(l2_reg), activation='softplus'))
+            self.model.add(Dense(1, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))
+
+        # save architecture string (for markdown file)
+        self.architecture = '\n'.join(['{} convolutional filters of size {}'.format(num_filters[0], filter_size),
+                                       '{} filters in the second (fully connected) layer'.format(num_filters[1]),
+                                       'weight initialization: {}'.format(weight_init),
+                                       'l2 regularization: {}'.format(l2_reg),
+                                       'stimulus shape: {}'.format(self.stim_shape)])
 
         # compile
-        super().__init__(loss, optimizer)
-
-
-class lstm(Model):
-
-    def __str__(self):
-        return "lstm"
-
-    def __init__(self, history=40, loss='poisson_loss', optimizer='sgd'):
-        """
-        Convolutional neural network
-
-        Parameters
-        ----------
-        history : int
-            Number of steps in the history of the linear filter (Default: 40)
-
-        """
-
-        # history of the filter
-        self.history = history
-
-        # regularization
-        l2_reg = 0.0
-
-        # build the model
-        with notify('Building convnet'):
-
-            self.model = Sequential()
-
-            # First layer is a time distributed convolutional layer
-            self.model.add(Convolution2D(16, self.history, 9, 9, init='he_uniform',
-                                         border_mode='full', subsample=(1,1),
-                                         W_regularizer=l2(l2_reg), activation='relu'))
-
-
-            # Second layer is a time distributed max pooling layer
-            self.model.add(MaxPooling2D(poolsize=(2,2), ignore_border=True))
-
-            # next we have a dense (affine) layer
-            self.model.add(TimeDistributedDense(32, init='he_uniform',
-                                                W_regularizer=l2(l2_reg), activation='relu'))
-
-            # flatten -- is this necessary?
-            # self.model.add(TimeDistributedFlatten())
-
-            # add LSTM
-            self.model.add(LSTM(32, init='he_uniform', forget_bias_init='one', activation='tanh', return_sequences=True))
-
-            # add final layer
-            self.model.add(Dense(1, init='he_uniform',
-                           W_regularizer=l2(l2_reg), activation='softplus'))
-
-        # compile
-        super().__init__(loss, optimizer)
+        super().__init__(cell_index, stimulus_type, loss, optimizer)

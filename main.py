@@ -46,7 +46,7 @@ def fit_convnet(cell, stimulus_type):
 
     # train
     batchsize = 5000            # number of samples per batch
-    num_epochs = 1              # number of epochs to train for
+    num_epochs = 50             # number of epochs to train for
     save_weights_every = 10     # save weights every n iterations
 
     mdl.train(batchsize, num_epochs=num_epochs, save_every=save_weights_every)

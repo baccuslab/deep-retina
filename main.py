@@ -40,14 +40,13 @@ def fit_convnet(cell, stimulus_type):
     """
 
     # initialize model
-    mdl = convnet(cell, stimulus_type, num_filters=(4, 16), filter_size=(9, 9),
-                  weight_init='normal', l2_reg=0.0)
-
+    mdl = convnet(cell, stimulus_type, num_filters=(4, 16), filter_size=(13, 13),
+                  weight_init='normal', l2_reg=0.01)
 
     # train
     batchsize = 5000            # number of samples per batch
-    num_epochs = 50             # number of epochs to train for
-    save_weights_every = 10     # save weights every n iterations
+    num_epochs = 100            # number of epochs to train for
+    save_weights_every = 50     # save weights every n iterations
 
     mdl.train(batchsize, num_epochs=num_epochs, save_every=save_weights_every)
 

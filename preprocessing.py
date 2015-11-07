@@ -8,10 +8,10 @@ import numpy as np
 import os
 import h5py
 from scipy.stats import zscore
-from utils import rolling_window, notify
+from utils import rolling_window, notify, Batch
 from time import perf_counter
 
-__all__ = ['datagen']
+__all__ = ['datagen', 'loadexpt']
 
 # custom data directories for different machines based on os.uname
 datadirs = {
@@ -21,44 +21,12 @@ datadirs = {
 }
 
 
-def datagen(cellidx, batchsize, expt='15-10-07', filename='naturalscene', method='train', history=40):
-    """
-    Returns a generator that yields batches of data
-
-    Parameters
-    ----------
-
-    cellidx : int
-        Which cell to train on
-
-    batchsize : int
-        How many samples to include in each batch
-
-    expt : string, optional
-        The experiment to load (currently only works with 15-10-07)
-
-    filename : string, optional
-        The name of the file to load ('naturalscene' or 'whitenoise')
-
-    method : string, optional
-        Either 'train' or 'test' for the class/type of data to load
-
-    history : int, optional
-        How many points to include in the filter history
-
-    """
+def loadexpt(cellidx, filename, method, history):
 
     # currently only works with the Oct. 07, 15 experiment
-    if expt == '15-10-07':
-        pass
-    else:
-        raise NotImplementedError('Did not recognize experiment: ' + str(expt))
+    expt = '15-10-07'
 
-    # with notify('Loading experiment'):
-
-    from jetpack.timepiece import Stopwatch
-
-    with notify('Loading experiment'):
+    with notify('Loading {}ing data'.format(method)):
 
         # load the hdf5 file
         f = h5py.File(os.path.join(datadirs[os.uname()[1]], expt, filename + '.h5'), 'r')
@@ -72,22 +40,35 @@ def datagen(cellidx, batchsize, expt='15-10-07', filename='naturalscene', method
         # get the response for this cell
         resp = np.array(f[method]['response/firing_rate_10ms'][cellidx, history:])
 
-    # first yield the number of batches / epoch
-    num_batches = int(np.floor(float(resp.size) / batchsize))
-    yield num_batches
+    return Batch(stim_reshaped, resp)
 
-    # keep looping over epochs
-    while True:
 
-        # reshuffle indices for this new epoch
-        indices = np.arange(resp.size)
-        np.random.shuffle(indices)
-        indices = indices[:(batchsize * num_batches)].reshape(num_batches, batchsize)
+def datagen(batchsize, X, y):
+    """
+    Returns a generator that yields batches of data for one pass through the data
 
-        for batch_idx in range(num_batches):
+    Parameters
+    ----------
+    batchsize : int
 
-            # select random indices for this batch
-            inds = indices[batch_idx]
+    X : array_like
 
-            # yield data
-            yield stim_reshaped[inds, ...], resp[inds]
+    y : array_like
+
+    """
+
+    # number of samples
+    nsamples = y.size
+
+    # compute the number of batches per epoch
+    num_batches = int(np.floor(float(nsamples) / batchsize))
+
+    # reshuffle indices
+    N = num_batches * batchsize
+    indices = np.random.choice(N, N, replace=False).reshape(num_batches, batchsize)
+
+    # for each batch in this epoch
+    for inds in indices:
+
+        # yield data
+        yield X[inds, ...], y[inds]

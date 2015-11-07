@@ -11,49 +11,49 @@ from keras.objectives import poisson_loss
 from keras.optimizers import RMSprop
 from keras.objectives import poisson_loss
 
-from models import ln, convnet, lstm
-
-__all__ = ['fit_ln', 'fit_convnet', 'fit_lstm']
+from models import ln, convnet
 
 
-def fit_ln(cell=0):
+def fit_ln(cell, stimulus_type):
     """
     Demo code for fitting an LN model in keras
 
     """
 
-    # Train an LN model
-    batchsize = 5000
-
     # initialize model
-    mdl = ln((40,50,50), optimizer='adam')
-
-    # load data
-    mdl.load_data(cell, batchsize, filename='whitenoise')
+    mdl = ln(cell, stimulus_type, l2_reg=0.0)
 
     # train
-    mdl.train(maxiter=500)
+    batchsize = 5000            # number of samples per batch
+    num_epochs = 50             # number of epochs to train for
+    save_weights_every = 10     # save weights every n iterations
+
+    mdl.train(batchsize, num_epochs=num_epochs, save_every=save_weights_every)
 
     return mdl
 
 
-def fit_convnet(cell=0):
+def fit_convnet(cell, stimulus_type):
     """
     Demo code for fitting a convnet model
 
     """
-    pass
+
+    # initialize model
+    mdl = convnet(cell, stimulus_type, num_filters=(4, 16), filter_size=(9, 9),
+                  weight_init='normal', l2_reg=0.0)
 
 
-def fit_lstm(cell=0):
-    """
-    Demo code for fitting an LSTM network
+    # train
+    batchsize = 5000            # number of samples per batch
+    num_epochs = 1              # number of epochs to train for
+    save_weights_every = 10     # save weights every n iterations
 
-    """
-    pass
+    mdl.train(batchsize, num_epochs=num_epochs, save_every=save_weights_every)
 
+    return mdl
 
 if __name__ == '__main__':
 
-    # fit an LN model to cell #0
-    mdl = fit_ln()
+    # mdl = fit_ln(0, 'whitenoise')
+    mdl = fit_convnet(0, 'naturalscene')

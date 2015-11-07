@@ -89,7 +89,7 @@ def tocsv(filename, array, fmt=''):
     if not filename.endswith('.csv'):
         filename += '.csv'
 
-    with open(filename, 'a', encoding='utf-8') as f:
+    with open(filename, 'a') as f:
         writer = csv.writer(f, delimiter=',')
         writer.writerow(row)
 
@@ -104,7 +104,7 @@ def tomarkdown(filename, lines):
     if not filename.endswith('.md'):
         filename += '.md'
 
-    with open(filename, 'a', encoding='utf-8') as f:
+    with open(filename, 'a') as f:
         f.write('\n'.join(lines))
 
 

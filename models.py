@@ -124,7 +124,7 @@ class Model(object):
                 loss = self.model.train_on_batch(X, y)
 
                 # update display and save
-                print('{:05d}: {:5.5f}'.format(iteration, loss))
+                print('{:05d}: {}'.format(iteration, loss))
 
                 # update on save_every
                 if iteration % save_every == 0:

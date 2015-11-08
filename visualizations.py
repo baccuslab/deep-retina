@@ -143,7 +143,7 @@ def visualize_affine_weights(weights, num_conv_filters, title='affine', fig_dir=
     
     num_affine_units = weights.shape[1]
     spatial_size = np.sqrt(weights.shape[0]/num_conv_filters)
-    assert(weights.shape[0] % num_conv_filters == 0, 'Incorrect number of convolutional filters')
+    assert weights.shape[0] % num_conv_filters == 0, 'Incorrect number of convolutional filters'
 
     # plot space and time profiles together
     fig = plt.gcf()
@@ -159,7 +159,6 @@ def visualize_affine_weights(weights, num_conv_filters, title='affine', fig_dir=
             plt_idx = y * num_cols + x + 1
             plt.subplot(num_rows, num_cols, plt_idx)
             ax = plt.imshow(one_unit[x], clim=colorlimit, interpolation='nearest', cmap='gray')
-            spatial,temporal = ft.decompose(weights[plt_idx-1])
             plt.grid('off')
             plt.xticks([])
             plt.yticks([])
@@ -167,8 +166,8 @@ def visualize_affine_weights(weights, num_conv_filters, title='affine', fig_dir=
             if x == 0:
                 if y == int(num_rows/2):
                     plt.ylabel('%d Units in Affine Layer' %(num_affine_units), fontsize=20)
-            if y == num_rows-1
-                if x == int(num_cols/2):
+            if y == num_rows-1:
+                if x == 0:
                     plt.xlabel('Weights per Convolutional Filter Type', fontsize=20)
 
     if display:

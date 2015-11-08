@@ -65,9 +65,6 @@ class Model(object):
         self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[0])
         self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[0])
 
-        # save initial weights
-        self.save(0, 0)
-
         # save model information to a markdown file
         if 'architecture' not in self.__dict__:
             self.architecture = 'No architecture information specified'
@@ -117,6 +114,10 @@ class Model(object):
             # loop over data batches for this epoch
             for X, y in datagen(batchsize, *self.training):
 
+                # update on save_every
+                if iteration % save_every == 0:
+                    self.save(epoch, iteration)
+
                 # update iteration
                 iteration += 1
 
@@ -125,10 +126,6 @@ class Model(object):
 
                 # update display and save
                 print('{:05d}: {}'.format(iteration, loss))
-
-                # update on save_every
-                if iteration % save_every == 0:
-                    self.save(epoch, iteration)
 
     def predict(self, X):
         return self.model.predict(X)

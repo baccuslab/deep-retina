@@ -178,5 +178,13 @@ def visualize_affine_weights(weights, num_conv_filters, title='affine', fig_dir=
 
 # TO-DO:
 # - function that checks if filters are low-rank
+def singular_values(weights):
+    '''Returns singular values of 3D filters.
+    Filters should be (time, space, space)
+    '''
+    fk, u, s, v = ft.lowranksta(weights)
+    return s
+
 # - function that plots distribution of linear projections on threshold
+def 
 # - function that plots the receptive field of the interneurons (i.e. affine layer activations)

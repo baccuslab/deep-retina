@@ -175,3 +175,8 @@ def visualize_affine_weights(weights, num_conv_filters, title='affine', fig_dir=
     if save:
         plt.savefig(fig_dir + title + '_weights.png', dpi=dpi)
 
+
+# TO-DO:
+# - function that checks if filters are low-rank
+# - function that plots distribution of linear projections on threshold
+# - function that plots the receptive field of the interneurons (i.e. affine layer activations)

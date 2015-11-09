@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pyret.filtertools as ft
 import pyret.visualizations as viz
+import theano
 import json
 import os
 from keras.models import model_from_json
@@ -188,3 +189,36 @@ def singular_values(weights):
 
 # - function that plots distribution of linear projections on threshold
 # - function that plots the receptive field of the interneurons (i.e. affine layer activations)
+def intermediate_rf(model, layer_id, stimulus):
+    '''
+    Reverse correlation of intermediate unit activity with stimulus.
+    '''
+    # create theano function to generate activations of desired layer
+    get_activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
+    
+    # get intermediate unit response to stimulus
+    response = get_activations(stimulus)
+
+    # get sta
+    sta = get_sta(stimulus, response)
+    return sta
+
+
+
+
+def get_sta(stimulus, response):
+    '''
+    Reverse correlation of stimulus with response. Response not necessarily
+    spiking.
+    '''
+    # get indices of nonzero responses
+    nonzero_inds = np.where(response > 0)[0]
+    
+    # initialize sta
+    sta = np.empty(stimulus[0].shape, dtype='float')
+    
+    # loop over nonzero responses
+    for idx in nonzero_inds:
+        sta += response[idx] * sample[idx]
+    sta /= len(nonzero_inds)
+    return sta

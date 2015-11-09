@@ -4,7 +4,8 @@ import pyret.filtertools as ft
 import pyret.visualizations as viz
 import json
 import os
-#from keras.models import model_from_json
+from keras.models import model_from_json
+from deepretina.preprocessing import datagen, loadexpt
 
 pwd = os.getcwd()
 
@@ -186,5 +187,4 @@ def singular_values(weights):
     return s
 
 # - function that plots distribution of linear projections on threshold
-def 
 # - function that plots the receptive field of the interneurons (i.e. affine layer activations)

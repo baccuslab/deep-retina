@@ -24,7 +24,7 @@ __all__ = ['Model', 'ln', 'convnet', 'lstm']
 
 class Model(object):
 
-    def __init__(self, cell_index, stimulus_type, loss, optimizer):
+    def __init__(self, cell_index, stimulus_type, loss, optimizer, mean_adapt):
         """
         Superclass for managing keras models
 
@@ -62,8 +62,8 @@ class Model(object):
 
         # load experimental data
         self.stimulus_type = stimulus_type
-        self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[0])
-        self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[0])
+        self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[0], mean_adapt=mean_adapt)
+        self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[0], mean_adapt=mean_adapt)
 
         # save model information to a markdown file
         if 'architecture' not in self.__dict__:
@@ -72,7 +72,7 @@ class Model(object):
         metadata = ['# ' + str(self), '## ' + strftime('%B %d, %Y'),
                     'Started training on: ' + strftime('%I:%M:%S %p'),
                     '### Architecture', self.architecture,
-                    '### Stimulus', 'Experiment 10-07-15', stimulus_type,
+                    '### Stimulus', 'Experiment 10-07-15', stimulus_type, 'Mean adaptation: ' + str(mean_adapt),
                     'Cell #{}'.format(cell_index),
                     '### Optimization', str(loss), str(optimizer)]
         tomarkdown(join(self.savedir, 'README'), metadata)
@@ -166,7 +166,7 @@ class ln(Model):
 
 
     def __init__(self, cell_index, stimulus_type, loss='poisson_loss', optimizer='sgd',
-                 weight_init='glorot_normal', l2_reg=0.):
+                 weight_init='glorot_normal', l2_reg=0., mean_adapt=False):
         """
         Linear-nonlinear model with a parametric softplus nonlinearity
 
@@ -209,7 +209,7 @@ class ln(Model):
                                        'weight initialization: {}'.format(weight_init)])
 
         # compile
-        super().__init__(cell_index, stimulus_type, loss, optimizer)
+        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
 
 
 class convnet(Model):
@@ -218,7 +218,7 @@ class convnet(Model):
         return "convnet"
 
     def __init__(self, cell_index, stimulus_type, num_filters=(4, 16), filter_size=(9,9),
-                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0.):
+                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False):
         """
         Convolutional neural network
 
@@ -284,4 +284,4 @@ class convnet(Model):
                                        'stimulus shape: {}'.format(self.stim_shape)])
 
         # compile
-        super().__init__(cell_index, stimulus_type, loss, optimizer)
+        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)

@@ -188,24 +188,50 @@ def singular_values(weights):
     return s
 
 # - function that plots distribution of linear projections on threshold
-# - function that plots the receptive field of the interneurons (i.e. affine layer activations)
-def intermediate_rf(model, layer_id, stimulus):
+def activations(model, layer_id, stimulus):
     '''
-    Reverse correlation of intermediate unit activity with stimulus.
+    Returns the activations of a specified layer.
     '''
     # create theano function to generate activations of desired layer
     get_activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
     
     # get intermediate unit response to stimulus
     response = get_activations(stimulus)
+    return response
 
-    # get sta
-    sta = get_sta(stimulus, response)
-    return sta
+def response_before_threshold(weights, model, layer_id, stimulus):
+    '''
+    Get the activity of a layer before thresholding. For instance
+    could be useful to see where the effective threshold is for each
+    unit.
+
+    INPUT:
+    weights should be dict containing filter weights and biases
+    model is keras model
+    layer_id is integer referring to the particular layer you want the response from
+    stimulus is of size (samples, history, size, size)
+
+    OUTPUT:
+    list of responses; length of list is equal to number of units
+    '''
+    filters = weights['param_0']
+    biases = weights['param_1']
+    if layer_id == 0:
+        flat_stim = stimulus.reshape((stimulus.shape[0], -1))
+        flat_filters = [np.reshape(filt, -1) for filt in filters]
+        responses = [np.dot(flat_stim, flat_filt) + biases[idx] for idx, flat_filt in enumerate(flat_filters)]
+        return responses
+    else:
+        prequel_response = activations(model, layer_id-1, stimulus)
+        flat_stim = prequel_response.reshape((prequel_response.shape[0], -1))
+        flat_filters = [np.reshape(filt, -1) for filt in filters]
+        responses = [np.dot(flat_stim, flat_filt) + biases[idx] for idx, flat_filt in enumerate(flat_filters)]
+        return responses
 
 
 
 
+# function that plots the receptive field of the interneurons (i.e. affine layer activations)
 def get_sta(stimulus, response):
     '''
     Reverse correlation of stimulus with response. Response not necessarily
@@ -221,4 +247,16 @@ def get_sta(stimulus, response):
     for idx in nonzero_inds:
         sta += response[idx] * sample[idx]
     sta /= len(nonzero_inds)
+    return sta
+
+
+def intermediate_rf(model, layer_id, stimulus):
+    '''
+    Reverse correlation of intermediate unit activity with stimulus.
+    '''
+    # get activations
+    response = activations(model, layer_id, stimulus)
+
+    # get sta
+    sta = get_sta(stimulus, response)
     return sta

@@ -165,7 +165,8 @@ class ln(Model):
         return "LN"
 
 
-    def __init__(self, cell_index, stimulus_type, loss='poisson_loss', optimizer='adam', l2_reg=0.):
+    def __init__(self, cell_index, stimulus_type, loss='poisson_loss', optimizer='sgd',
+                 weight_init='glorot_normal', l2_reg=0.):
         """
         Linear-nonlinear model with a parametric softplus nonlinearity
 
@@ -184,6 +185,9 @@ class ln(Model):
         optimizer : string or object, optional
             A Keras optimizer. Default: 'adam'
 
+        weight_init : string or object, optional
+            A Keras weight initialization method. Default: 'glorot_uniform'
+
         l2_reg : float, optional
             How much l2 regularization to apply to all filter weights
 
@@ -196,12 +200,13 @@ class ln(Model):
         with notify('Building LN model'):
             self.model = Sequential()
             self.model.add(Flatten(input_shape=self.stim_shape))
-            self.model.add(Dense(1, activation='softplus',
+            self.model.add(Dense(1, activation='softplus', init=weight_init,
                                  W_regularizer=l2(l2_reg)))
 
         # save architecture string (for markdown file)
         self.architecture = '\n'.join(['l2 regularization: {}'.format(l2_reg),
-                                       'stimulus shape: {}'.format(self.stim_shape)])
+                                       'stimulus shape: {}'.format(self.stim_shape),
+                                       'weight initialization: {}'.format(weight_init)])
 
         # compile
         super().__init__(cell_index, stimulus_type, loss, optimizer)
@@ -255,7 +260,7 @@ class convnet(Model):
 
             # first convolutional layer
             self.model.add(Convolution2D(num_filters[0], filter_size[0], filter_size[1],
-                                         input_shape=self.stim_shape, init='normal',
+                                         input_shape=self.stim_shape, init=weight_init,
                                          border_mode='same', subsample=(1,1),
                                          W_regularizer=l2(l2_reg), activation='relu'))
 

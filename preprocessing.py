@@ -21,6 +21,27 @@ datadirs = {
 
 
 def loadexpt(cellidx, filename, method, history, fraction=1.):
+    """
+    Loads an experiment from disk
+
+    Parameters
+    ----------
+    cellidx : int
+        Index of the cell to load
+
+    filename : string
+        Name of the hdf5 file to load
+
+    method : string
+        The key in the hdf5 file to load ('train' or 'test')
+
+    history : int
+        Number of samples of history to include in the toeplitz stimulus
+
+    fraction : float, optional
+        Fraction of the experiment to load, must be between 0 and 1. (Default: 1.0)
+
+    """
 
     assert fraction > 0 and fraction <= 1, "Fraction of data to load must be between 0 and 1"
 

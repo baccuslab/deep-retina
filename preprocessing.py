@@ -20,7 +20,9 @@ datadirs = {
 }
 
 
-def loadexpt(cellidx, filename, method, history):
+def loadexpt(cellidx, filename, method, history, fraction=1.):
+
+    assert fraction > 0 and fraction <= 1, "Fraction of data to load must be between 0 and 1"
 
     # currently only works with the Oct. 07, 15 experiment
     expt = '15-10-07'
@@ -30,14 +32,18 @@ def loadexpt(cellidx, filename, method, history):
         # load the hdf5 file
         f = h5py.File(os.path.join(datadirs[os.uname()[1]], expt, filename + '.h5'), 'r')
 
+        # length of the experiment
+        expt_length = f[method]['time'].size
+        num_samples = int(np.floor(expt_length * fraction))
+
         # load the stimulus
-        stim = zscore(np.array(f[method]['stimulus']).astype('float32'))
+        stim = zscore(np.array(f[method]['stimulus'][:num_samples]).astype('float32'))
 
         # reshaped stimulus (nsamples, time/channel, space, space)
         stim_reshaped = np.rollaxis(np.rollaxis(rolling_window(stim, history, axis=0), 2), 3, 1)
 
         # get the response for this cell
-        resp = np.array(f[method]['response/firing_rate_10ms'][cellidx, history:])
+        resp = np.array(f[method]['response/firing_rate_10ms'][cellidx, history:num_samples])
 
     return Batch(stim_reshaped, resp)
 

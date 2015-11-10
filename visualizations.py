@@ -231,35 +231,30 @@ def response_before_threshold(weights, model, layer_id, stimulus):
 
 
 
-# function that plots the receptive field of the interneurons (i.e. affine layer activations)
-def get_sta(stimulus, response):
+# function that plots the receptive field of the interneurons (i.e. conv or affine layer activations)
+def get_sta(model, layer_id, samples=50000, batch_size=50):
     '''
-    Reverse correlation of stimulus with response. Response not necessarily
-    spiking.
+    White noise STA of an intermeidate unit.
     '''
-    # get indices of nonzero responses
-    nonzero_inds = np.where(response > 0)[0]
+    # Get function for generating responses of intermediate unit.
+    get_activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
+
+    # Initialize STA
+    sta = np.zeros((40, 50, 50), dtype='float')
+
+    # Generate white noise and map STA
+    for batch in range(int(np.ceil(samples/batch_size))):
+        whitenoise = np.random.randn(batch_size, 40, 50, 50)
+        response = get_activations(whitenoise)
+
+        nonzero_inds = np.where(response > 0)[0]
+        for idx in nonzero_inds:
+            sta += response[idx] * whitenoise[idx]
     
-    # initialize sta
-    sta = np.empty(stimulus[0].shape, dtype='float')
+    sta /= samples
+    return sta
     
-    # loop over nonzero responses
-    for idx in nonzero_inds:
-        sta += response[idx] * sample[idx]
-    sta /= len(nonzero_inds)
-    return sta
 
-
-def intermediate_rf(model, layer_id, stimulus):
-    '''
-    Reverse correlation of intermediate unit activity with stimulus.
-    '''
-    # get activations
-    response = activations(model, layer_id, stimulus)
-
-    # get sta
-    sta = get_sta(stimulus, response)
-    return sta
 
 # a useful visualization of intermediate units may be its STC
 def get_stc(stimulus, response):

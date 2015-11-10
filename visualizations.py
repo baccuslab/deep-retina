@@ -260,3 +260,57 @@ def intermediate_rf(model, layer_id, stimulus):
     # get sta
     sta = get_sta(stimulus, response)
     return sta
+
+# a useful visualization of intermediate units may be its STC
+def get_stc(stimulus, response):
+    """
+    Compute the spike-triggered covariance
+
+    Returns
+    -------
+    stc : ndarray
+        The spike-triggered covariance (STC) matrix
+
+    """
+    sta = get_sta(stimulus, response)
+    flat_sta = sta.ravel()
+
+    nonzero_inds = np.where(response > 0)[0]
+    
+    # initialize stc
+    sta = np.empty(stimulus[0].shape, dtype='float')
+    
+    # loop over nonzero responses
+    for idx in nonzero_inds:
+        sta += response[idx] * sample[idx]
+    sta /= len(nonzero_inds)
+    return sta
+
+
+    
+    # get the blas function for computing the outer product
+    assert stimulus.dtype == 'float64', 'Stimulus must be double precision'
+    outer = get_blas_funcs('syr', dtype='d')
+
+    # get the iterator
+    ste = getste(time, stimulus, spikes, filter_length)
+
+    # reduce, note that this only contains the upper triangular portion
+    try:
+        first_slice = next(ste)
+        stc_init = np.triu(np.outer(first_slice.ravel(), first_slice.ravel()))
+        stc_ut = reduce(lambda C, x: outer(1, x.ravel(), a=C),
+                        ste, stc_init) / float(len(spikes))
+    except StopIteration:
+        ndims = np.prod(stimulus.shape[1:]) * filter_length
+        return np.nan * np.ones((ndims, ndims))
+
+    # make the full STC matrix (copy the upper triangular portion to the lower
+    # triangle)
+    stc = np.triu(stc_ut, 1).T + stc_ut
+
+    # compute the STA (to subtract it)
+    sta = getsta(time, stimulus, spikes, filter_length)[0].ravel()
+
+    return stc - np.outer(sta, sta)
+

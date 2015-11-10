@@ -262,8 +262,10 @@ class convnet(Model):
             self.model.add(Convolution2D(num_filters[0], filter_size[0], filter_size[1],
                                          input_shape=self.stim_shape, init=weight_init,
                                          border_mode='same', subsample=(1,1),
-                                         W_regularizer=l2(l2_reg), activation='relu'))
+                                         W_regularizer=l2(l2_reg)))
 
+            #Add relu activation separately for threshold visualizations
+            self.model.add(Activation('relu'))
             # max pooling layer
             self.model.add(MaxPooling2D(pool_size=(2, 2), ignore_border=True))
 

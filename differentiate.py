@@ -59,7 +59,7 @@ optimal_stimulus = optimal_stimulus[0]
 
 ## SAVE RESULT ##
 save_dir = mksavedir(prefix='Maximal Differentiated Stimuli')
-f = h5py.File('differentiated_stimuli.h5', 'w')
+f = h5py.File(save_dir + 'differentiated_stimuli.h5', 'w')
 f.create_dataset('stimulus', data=optimal_stimulus)
 f.close()
 

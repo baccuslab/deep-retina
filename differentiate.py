@@ -1,10 +1,11 @@
 import numpy as np
-from os.path import expanduser
+from os.path import expanduser, join
 from keras.models import model_from_json
 import h5py
 from scipy.optimize import minimize
 from numpy.linalg import norm
 from utils import mksavedir
+from scipy.stats import zscore
 
 ## FILENAMES AND DIRECTORIES ##
 architecture_filename = 'architecture.json'
@@ -41,26 +42,33 @@ def model_separation(stimulus):
 ## DEFINE CONSTRAINT ##
 constraint = {}
 def unit_norm_constraint(stimulus):
-    return (300. - norm(stimulus))**2
+    full_stimulus = np.outer(stimulus[:40], stimulus[40:])
+    return norm(full_stimulus) - 1.0/np.sqrt(np.prod(full_stimuli.shape[:]))
 constraint['fun'] = unit_norm_constraint
-constraint['type'] = 'eq'
+constraint['type'] = 'ineq'
 
 ## RUN MINIMIZATION ##
-initial_guess = np.random.randn(40 + 50*50)
-res_constrained = minimize(model_separation, x0=initial_guess, constraints=constraint)
+initial_guess = zscore(np.random.randint(0, 2, 40 + 50*50).astype('float32'))
+res_constrained = minimize(model_separation, x0=initial_guess, constraints=constraint, method='COBYLA')
 
 optimal_stimulus = res_constrained.x
+constraint_violation = unit_norm_constraint(optimal_stimulus)
+
 temporal_kernel = optimal_stimulus[:40]
 spatial_profile = optimal_stimulus[40:]
 low_rank_optimal_stimulus = np.outer(temporal_kernel, spatial_profile)
 optimal_stimulus = low_rank_optimal_stimulus.reshape((1,40,50,50))
-optimal_stimulus = optimal_stimulus[0]
 
+ln_response = ln_model.predict(optimal_stimulus)[0][0]
+convnet_response = naturalscenes_model.predict(optimal_stimulus)[0][0]
+responses = np.array([ln_response, convnet_response])
 
 ## SAVE RESULT ##
 save_dir = mksavedir(prefix='Maximal Differentiated Stimuli')
-f = h5py.File(save_dir + 'differentiated_stimuli.h5', 'w')
+f = h5py.File(join(save_dir, 'differentiated_stimuli.h5'), 'w')
 f.create_dataset('stimulus', data=optimal_stimulus)
+f.create_dataset('responses', data=responses)
+f.create_dataset('constraint', data=constraint_violation)
 f.close()
 
 

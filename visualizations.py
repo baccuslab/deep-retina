@@ -239,19 +239,41 @@ def get_sta(model, layer_id, samples=50000, batch_size=50):
     # Get function for generating responses of intermediate unit.
     get_activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
 
+    impulse = np.random.randn(2, 40, 50, 50).astype('uint8')
+    impulse_response = get_activations(impulse)
+    impulse_response_flat = impulse_response.reshape(2, -1).T
+    impulse_flat = impulse.reshape(2, -1)
+    #num_filter_types = impulse_response.shape[1]
+    sta = np.zeros_like(np.dot(impulse_response_flat, impulse_flat))
+
     # Initialize STA
-    sta = np.zeros((40, 50, 50), dtype='float')
+    #stas = [np.zeros((40, 50, 50), dtype='float') for _ in range(num_stas)]
+    stas = {}
 
     # Generate white noise and map STA
     for batch in range(int(np.ceil(samples/batch_size))):
         whitenoise = np.random.randn(batch_size, 40, 50, 50)
         response = get_activations(whitenoise)
+        true_response_shape = response.shape[1:]
 
-        nonzero_inds = np.where(response > 0)[0]
-        for idx in nonzero_inds:
-            sta += response[idx] * whitenoise[idx]
+        response_flat = response.reshape(batch_size, -1).T
+        whitenoise_flat = whitenoise.reshape(batch_size, -1)
+        # sta will be matrix of units x sta dims
+        sta += np.dot(response_flat, whitenoise_flat)
+        #sta = sta.reshape((*true_response_shape, -1))
+
+        #for dim in true_response_shape:
+
+
+        #for filt_type in range(num_stas):
+        #    nonzero_inds = np.where(response
+
+        #nonzero_inds = np.where(response > 0)[0]
+        #for idx in nonzero_inds:
+        #    sta += response[idx] * whitenoise[idx]
     
     sta /= samples
+    sta = sta.reshape((*true_response_shape, -1))
     return sta
     
 

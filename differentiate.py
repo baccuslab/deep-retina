@@ -49,10 +49,18 @@ constraint['type'] = 'eq'
 initial_guess = np.random.randn(40 + 50*50)
 res_constrained = minimize(model_separation, x0=initial_guess, constraints=constraint)
 
+optimal_stimulus = res_constrained.x
+temporal_kernel = optimal_stimulus[:40]
+spatial_profile = optimal_stimulus[40:]
+low_rank_optimal_stimulus = np.outer(temporal_kernel, spatial_profile)
+optimal_stimulus = low_rank_optimal_stimulus.reshape((1,40,50,50))
+optimal_stimulus = optimal_stimulus[0]
+
+
 ## SAVE RESULT ##
 save_dir = mksavedir(prefix='Maximal Differentiated Stimuli')
 f = h5py.File('differentiated_stimuli.h5', 'w')
-f.create_dataset('stimulus', data=res_constrained)
+f.create_dataset('stimulus', data=optimal_stimulus)
 f.close()
 
 

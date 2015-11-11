@@ -43,7 +43,7 @@ def model_separation(stimulus):
 constraint = {}
 def unit_norm_constraint(stimulus):
     full_stimulus = np.outer(stimulus[:40], stimulus[40:])
-    return norm(full_stimulus) - 1.0/np.sqrt(np.prod(full_stimuli.shape[:]))
+    return norm(full_stimulus) - 1.0/np.sqrt(np.prod(full_stimulus.shape[:]))
 constraint['fun'] = unit_norm_constraint
 constraint['type'] = 'ineq'
 

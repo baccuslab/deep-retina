@@ -273,7 +273,10 @@ class convnet(Model):
             self.model.add(Flatten())
 
             # Add dense (affine) layer with relu activation
-            self.model.add(Dense(num_filters[1], init=weight_init, W_regularizer=l2(l2_reg), activation='relu'))
+            self.model.add(Dense(num_filters[1], init=weight_init, W_regularizer=l2(l2_reg)))
+            
+            # Add relu activation separately for threshold visualizations
+            self.model.add(Activation('relu'))
 
             # Add a final dense (affine) layer with softplus activation
             self.model.add(Dense(1, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))

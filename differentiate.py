@@ -6,6 +6,8 @@ from scipy.optimize import minimize
 from numpy.linalg import norm
 from utils import mksavedir
 from scipy.stats import zscore
+import pyret.filtertools as ft
+import matplotlib.pyplot as plt
 
 ## FILENAMES AND DIRECTORIES ##
 architecture_filename = 'architecture.json'
@@ -70,5 +72,11 @@ f.create_dataset('stimulus', data=optimal_stimulus)
 f.create_dataset('responses', data=responses)
 f.create_dataset('constraint', data=constraint_violation)
 f.close()
+
+spatial_profile, time = ft.decompose(optimal_stimulus[0])
+fig_filename = 'differentiated_stimuli.png'
+plt.imshow(spatial_profile, interpolation='nearest')
+plt.grid('off')
+plt.savefig(join(save_dir, fig_filename))
 
 

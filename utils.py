@@ -113,7 +113,7 @@ def metric(yhat,yobs):
     Metric for comparing predicted and observed firing rates
 
     """
-    return pearsonr(yhat, yobs)[0]
+    return pearsonr(yhat.flatten(), yobs.flatten())[0]
 
 
 def rolling_window(array, window, axis=0):

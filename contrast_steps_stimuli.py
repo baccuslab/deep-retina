@@ -1,5 +1,5 @@
 import numpy as np
-from os.path import expanduser
+from os.path import expanduser, join
 import os
 import json
 import theano
@@ -11,6 +11,8 @@ from keras.models import model_from_json
 import h5py
 import matplotlib.pyplot as plt
 from utils import mksavedir
+
+save_dir = mksavedir(prefix='Contrast Steps')
 
 # GET LN AND CNN RESPONSES TO CONTRAST STEPS
 architecture_filename = 'architecture.json'
@@ -65,7 +67,6 @@ for n in range(ntrials):
         ln_responses[n, batch*batch_size:(batch+1)*batch_size] = \
             ln_model.predict(stimulus[batch*batch_size:(batch+1)*batch_size])[:,0]
 
-save_dir = mksavedir(prefix='Contrast Steps')
 f = h5py.File(join(save_dir, 'responses_to_contrast_steps.h5'), 'w')
 f.create_dataset('ln_responses', data=ln_responses)
 f.create_dataset('cnn_responses', data=cnn_responses)

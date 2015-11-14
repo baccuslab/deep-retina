@@ -292,7 +292,10 @@ class convnet(Model):
             self.model.add(Flatten())
 
             # Add dense (affine) layer with relu activation
-            self.model.add(Dense(num_filters[1], init=weight_init, W_regularizer=l2(l2_reg), activation='relu'))
+            self.model.add(Dense(num_filters[1], init=weight_init, W_regularizer=l2(l2_reg)))
+
+            # Add relu activation separately for threshold visualization
+            self.model.add(Activation('relu'))
 
             # Add a final dense (affine) layer with softplus activation
             self.model.add(Dense(1, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))
@@ -457,7 +460,10 @@ class lstm(Model):
             self.model.add(TimeDistributedFlatten())
 
             # Add dense (affine) layer with relu activation
-            self.model.add(TimeDistributedDense(num_filters[1], init=weight_init, W_regularizer=l2(l2_reg), activation='relu'))
+            self.model.add(TimeDistributedDense(num_filters[1], init=weight_init, W_regularizer=l2(l2_reg)))
+
+            # Add relu activation separately for threshold visualization
+            self.model.add(Activation('relu'))
             
             # Add LSTM, forget gate bias automatically initialized to 1, default weight initializations recommended
             self.model.add(LSTM(num_filters[1], forget_bias_init='one', return_sequences=True))

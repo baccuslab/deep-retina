@@ -116,7 +116,7 @@ def metric(yhat,yobs):
     return pearsonr(yhat, yobs)[0]
 
 
-def rolling_window(array, window, axis=0):
+def rolling_window(array, window, time_axis=0):
     """
     Make an ndarray with a rolling window of the last dimension
 
@@ -128,7 +128,7 @@ def rolling_window(array, window, axis=0):
     window : int
         Size of rolling window
 
-    axis : 'first' or 'last', optional
+    time_axis : 'first' or 'last', optional
         The axis of the time dimension (default: 'first')
 
     Returns
@@ -150,10 +150,10 @@ def rolling_window(array, window, axis=0):
     """
 
     # flip array dimensinos if the time axis is the first axis
-    if axis == 0:
+    if time_axis == 0:
         array = array.T
 
-    elif axis == -1:
+    elif time_axis == -1:
         pass
 
     else:

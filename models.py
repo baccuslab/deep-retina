@@ -287,13 +287,81 @@ class convnet(Model):
         super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
 
 
+class twolayer_convnet(Model):
+
+    def __str__(self):
+        return "two layer convnet"
+
+    def __init__(self, cell_index, stimulus_type, num_filters=16, filter_size=(13,13),
+                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False):
+        """
+        Convolutional neural network
+
+        Parameters
+        ----------
+
+        cell_index : int
+            Which cell to use
+
+        stimulus_type : string
+            Either 'whitenoise' or 'naturalscene'
+
+        num_filters : tuple, optional
+            Number of filters in each layer. Default: (4, 16)
+
+        filter_size : tuple, optional
+            Convolutional filter size. Default: (9, 9)
+
+        loss : string or object, optional
+            A Keras objective. Default: 'poisson_loss'
+
+        optimizer : string or object, optional
+            A Keras optimizer. Default: 'adam'
+
+        weight_init : string
+            weight initialization. Default: 'normal'
+
+        l2_reg : float, optional
+            How much l2 regularization to apply to all filter weights
+
+        """
+
+        self.stim_shape = (40, 50, 50)
+
+        # build the model
+        with notify('Building convnet'):
+
+            self.model = Sequential()
+
+            # first convolutional layer
+            self.model.add(Convolution2D(num_filters, filter_size[0], filter_size[1],
+                                         input_shape=self.stim_shape, init=weight_init,
+                                         border_mode='same', subsample=(1,1),
+                                         W_regularizer=l2(l2_reg), activation='relu'))
+
+            # flatten
+            self.model.add(Flatten())
+
+            # Add a final dense (affine) layer with softplus activation
+            self.model.add(Dense(1, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))
+
+        # save architecture string (for markdown file)
+        self.architecture = '\n'.join(['{} convolutional filters of size {}'.format(num_filters, filter_size),
+                                       'weight initialization: {}'.format(weight_init),
+                                       'l2 regularization: {}'.format(l2_reg),
+                                       'stimulus shape: {}'.format(self.stim_shape)])
+
+        # compile
+        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
+
+
 class multilayer_convnet(Model):
 
     def __str__(self):
         return "multilayered_convnet"
 
     def __init__(self, cell_index, stimulus_type, conv_layers=[(12, 9, 9), (12, 9, 9)], dense_layer=64,
-                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., dropout=0.1, mean_adapt=False):
+                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., dropout=0.5, mean_adapt=False):
         """
         Multi-layered Convolutional neural network
 

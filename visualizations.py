@@ -231,16 +231,70 @@ def response_before_threshold(weights, model, layer_id, stimulus):
 
 
 
-# function that plots the receptive field of the interneurons (i.e. affine layer activations)
-def get_sta(stimulus, response):
+# function that plots the receptive field of the interneurons (i.e. conv or affine layer activations)
+def get_sta(model, layer_id, samples=50000, batch_size=50):
     '''
-    Reverse correlation of stimulus with response. Response not necessarily
-    spiking.
+    White noise STA of an intermeidate unit.
     '''
-    # get indices of nonzero responses
+    # Get function for generating responses of intermediate unit.
+    get_activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
+
+    impulse = np.random.randn(2, 40, 50, 50).astype('uint8')
+    impulse_response = get_activations(impulse)
+    impulse_response_flat = impulse_response.reshape(2, -1).T
+    impulse_flat = impulse.reshape(2, -1)
+    #num_filter_types = impulse_response.shape[1]
+    sta = np.zeros_like(np.dot(impulse_response_flat, impulse_flat))
+
+    # Initialize STA
+    #stas = [np.zeros((40, 50, 50), dtype='float') for _ in range(num_stas)]
+    stas = {}
+
+    # Generate white noise and map STA
+    for batch in range(int(np.ceil(samples/batch_size))):
+        whitenoise = np.random.randn(batch_size, 40, 50, 50)
+        response = get_activations(whitenoise)
+        true_response_shape = response.shape[1:]
+
+        response_flat = response.reshape(batch_size, -1).T
+        whitenoise_flat = whitenoise.reshape(batch_size, -1)
+        # sta will be matrix of units x sta dims
+        sta += np.dot(response_flat, whitenoise_flat)
+        #sta = sta.reshape((*true_response_shape, -1))
+
+        #for dim in true_response_shape:
+
+
+        #for filt_type in range(num_stas):
+        #    nonzero_inds = np.where(response
+
+        #nonzero_inds = np.where(response > 0)[0]
+        #for idx in nonzero_inds:
+        #    sta += response[idx] * whitenoise[idx]
+    
+    sta /= samples
+    sta = sta.reshape((*true_response_shape, -1))
+    return sta
+    
+
+
+# a useful visualization of intermediate units may be its STC
+def get_stc(stimulus, response):
+    """
+    Compute the spike-triggered covariance
+
+    Returns
+    -------
+    stc : ndarray
+        The spike-triggered covariance (STC) matrix
+
+    """
+    sta = get_sta(stimulus, response)
+    flat_sta = sta.ravel()
+
     nonzero_inds = np.where(response > 0)[0]
     
-    # initialize sta
+    # initialize stc
     sta = np.empty(stimulus[0].shape, dtype='float')
     
     # loop over nonzero responses
@@ -250,13 +304,30 @@ def get_sta(stimulus, response):
     return sta
 
 
-def intermediate_rf(model, layer_id, stimulus):
-    '''
-    Reverse correlation of intermediate unit activity with stimulus.
-    '''
-    # get activations
-    response = activations(model, layer_id, stimulus)
+    
+    # get the blas function for computing the outer product
+    assert stimulus.dtype == 'float64', 'Stimulus must be double precision'
+    outer = get_blas_funcs('syr', dtype='d')
 
-    # get sta
-    sta = get_sta(stimulus, response)
-    return sta
+    # get the iterator
+    ste = getste(time, stimulus, spikes, filter_length)
+
+    # reduce, note that this only contains the upper triangular portion
+    try:
+        first_slice = next(ste)
+        stc_init = np.triu(np.outer(first_slice.ravel(), first_slice.ravel()))
+        stc_ut = reduce(lambda C, x: outer(1, x.ravel(), a=C),
+                        ste, stc_init) / float(len(spikes))
+    except StopIteration:
+        ndims = np.prod(stimulus.shape[1:]) * filter_length
+        return np.nan * np.ones((ndims, ndims))
+
+    # make the full STC matrix (copy the upper triangular portion to the lower
+    # triangle)
+    stc = np.triu(stc_ut, 1).T + stc_ut
+
+    # compute the STA (to subtract it)
+    sta = getsta(time, stimulus, spikes, filter_length)[0].ravel()
+
+    return stc - np.outer(sta, sta)
+

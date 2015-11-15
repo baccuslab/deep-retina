@@ -89,7 +89,7 @@ def datagen(batchsize, X, y):
     """
 
     # number of samples
-    nsamples = y.size
+    nsamples = y.shape[0] #changed this from y.size to account for lstm labels
 
     # compute the number of batches per epoch
     num_batches = int(np.floor(float(nsamples) / batchsize))

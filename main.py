@@ -92,9 +92,10 @@ def fit_twolayer_convnet(cell, stimulus_type):
 
 
 def fit_lstm(cell, stimulus_type, num_timesteps):
-	mdl = lstm(cell, stimulus_type, num_timesteps=num_timesteps, num_filters=(8,16), filter_size=(13,13), loss='poisson_loss', weight_init='normal', l2_reg=0.01)
+	RMSmod = RMSprop(lr=0.001, rho=0.99, epsilon=1e-6)
+	mdl = lstm(cell, stimulus_type, num_timesteps=num_timesteps, num_filters=(8,16), filter_size=(13,13), loss='poisson_loss', optimizer=RMSmod, weight_init='he_normal', l2_reg=0.01)
 	batchsize = 100
-	num_epochs = 50
+	num_epochs = 150
 	save_weights_every = 50
 	mdl.train(batchsize, num_epochs=num_epochs, save_every=save_weights_every)
 	return mdl

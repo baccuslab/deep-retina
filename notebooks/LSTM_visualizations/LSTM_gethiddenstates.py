@@ -16,7 +16,6 @@ memories = False #set to true if you want to return the memories (hidden states)
 cell_index = 4
 numTime = 152
 weights_dir = '/home/salamander/Dropbox/deep-retina/saved/lenna.salamander/2015-11-17 11.12.13 lstm/epoch100_iter02300_weights.h5'
-weights = h5py.File(weights_dir, 'r')
 
 def load_Data():
     naturalscenes_test = loadexpt(cell_index, 'naturalscene', 'test', 40)
@@ -36,6 +35,7 @@ def get_outputs(X_batch):
     num_filters = (8, 16)
     filter_size = (13, 13)
     weight_init = 'he_normal'
+    batchsize = 100
     model = Sequential()
     # first convolutional layer
     model.add(TimeDistributedConvolution2D(num_filters[0], filter_size[0], filter_size[1],
@@ -62,6 +62,7 @@ def get_outputs(X_batch):
     # # Add a final dense (affine) layer with softplus activation
     model.add(TimeDistributedDense(1, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))
     model.compile(loss='poisson_loss', optimizer=RMSmod)
+    model.load_weights(weights_dir)
     get_outputs = theano.function([model.layers[0].input], model.layers[5].get_output(train=False))
     outputs = get_outputs(X_batch)
     return outputs

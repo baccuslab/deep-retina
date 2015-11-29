@@ -82,8 +82,9 @@ def get_outputs(X_batch):
         model2.add(TimeDistributedDense(num_filters[1], weights=model.layers[4].get_weights(), W_regularizer=l2(l2_reg), activation='relu'))
         # Add LSTM, forget gate bias automatically initialized to 1, default weight initializations recommended
         model2.add(LSTMMem(100*num_filters[1], weights=model.layers[5].get_weights(), return_memories=True))
-	model2.compile(loss='poisson_loss', optimizer=RMSmod)
-	outputs = model2.predict(X_batch)
+        model2.compile(loss='poisson_loss', optimizer=RMSmod)
+        get_outputs = theano.function([model2.layers[0].input], model2.layers[5].get_output(train=False))
+        outputs = get_outputs(X_batch)
     return outputs
 
 X_test, y_test = load_Data()

@@ -10,7 +10,7 @@ import json
 import theano
 import pyret.filtertools as ft
 from preprocessing import datagen, loadexpt
-from utils import rolling_window
+from utils import rolling_window, mksavedir
 import h5py
 from scipy.stats import pearsonr
 import preprocessing

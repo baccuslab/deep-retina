@@ -4,7 +4,7 @@
 # In[1]:
 
 import numpy as np
-from os.path import expanduser
+from os.path import expanduser, join
 import os
 import json
 import theano
@@ -15,6 +15,8 @@ import h5py
 from scipy.stats import pearsonr
 import preprocessing
 
+# make save directory
+save_dir = mksavedir(prefix='Experiment STC')
 
 # # Load white noise data
 
@@ -68,7 +70,6 @@ stc_normalized -= np.outer(sta_cutout.ravel(), sta_cutout.ravel())
 #hist(np.diag(stc_normalized))
 
 ## SAVE RESULT ##
-save_dir = mksavedir(prefix='Experiment STC')
 f = h5py.File(join(save_dir, 'full_stc_experiment_15_10_07.h5'), 'w')
 f.create_dataset('stc', data=stc_normalized)
 f.close()

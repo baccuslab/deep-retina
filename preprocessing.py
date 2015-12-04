@@ -21,7 +21,7 @@ datadirs = {
 }
 
 
-def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False):
+def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False, roll=True):
     """
     Loads an experiment from disk
 
@@ -66,7 +66,10 @@ def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False):
             stim = pr_filter(10e-3, stim)
 
         # reshaped stimulus (nsamples, time/channel, space, space)
-        stim_reshaped = np.rollaxis(np.rollaxis(rolling_window(stim, history, axis=0), 2), 3, 1)
+        if roll=True:
+            stim_reshaped = np.rollaxis(np.rollaxis(rolling_window(stim, history, axis=0), 2), 3, 1)
+        else:
+            stim_reshaped = stim
 
         # get the response for this cell
         resp = np.array(f[method]['response/firing_rate_10ms'][cellidx, history:num_samples])

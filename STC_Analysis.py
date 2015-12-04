@@ -9,12 +9,11 @@ import os
 import json
 import theano
 import pyret.filtertools as ft
-import pyret.visualizations as pyviz
 from preprocessing import datagen, loadexpt
 from utils import rolling_window
 import h5py
-import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
+import preprocessing
 
 
 # # Load white noise data
@@ -24,16 +23,11 @@ from scipy.stats import pearsonr
 whitenoise_train = loadexpt(0, 'whitenoise', 'train', 40, roll=False)
 
 
-# In[4]:
-
-import preprocessing
-
-
 # In[5]:
 
 import os
 #f = h5py.File(os.path.join(preprocessing.datadirs['lane.local'], '15-10-07/whitenoise.h5'), 'r')
-f = h5py.File(os.path.join(preprocessing.datadirs['lenna.salamander'], '15-10-07/whitenoise.h5'), 'r')
+f = h5py.File(os.path.join(preprocessing.datadirs['lenna'], '15-10-07/whitenoise.h5'), 'r')
 
 
 # In[6]:
@@ -41,25 +35,10 @@ f = h5py.File(os.path.join(preprocessing.datadirs['lenna.salamander'], '15-10-07
 spk = f['spikes/cell01']
 
 
-# In[7]:
-
-f['train/time'].shape
-
-
 # In[8]:
 
 time = np.array(f['train/time'])
 sta, tax = ft.getsta(time, whitenoise_train.X, spk, 35)
-
-
-# In[9]:
-
-pyviz.plotsta(tax, sta)
-
-
-# In[10]:
-
-pyviz.plotsta(tax, ft.cutout(sta, idx=np.flipud(ft.filterpeak(sta)[1]), width=5))
 
 
 # In[11]:

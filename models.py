@@ -59,31 +59,12 @@ class Model(object):
         # function to write data to a CSV file
         self.save_csv = partial(tocsv, join(self.savedir, 'performance'))
         self.save_csv(['Epoch', 'Iteration', 'Training CC', 'Test CC'])
+
         # load experimental data
         self.stimulus_type = stimulus_type
-        if str(self) == 'lstm':
-            numTime = self.stim_shape[0]
-            self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[1], mean_adapt=mean_adapt)
-            self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[1], mean_adapt=mean_adapt)
-            X_train = self.training.X
-            y_train = self.training.y
-            X_test = self.holdout.X
-            y_test = self.holdout.y
-            numTrain = (int(X_train.shape[0]/numTime))*numTime
-            numTest = (int(X_test.shape[0]/numTime))*numTime
-            X_train = X_train[:numTrain]
-            y_train = y_train[:numTrain]
-            X_test = X_test[:numTest]
-            y_test = y_test[:numTest]
-            X_train = np.reshape(X_train, (int(numTrain/numTime), numTime, self.stim_shape[1], self.stim_shape[2], self.stim_shape[3]))
-            y_train = np.reshape(y_train, (int(numTrain/numTime), numTime, 1))
-            X_test = np.reshape(X_test, (int(numTest/numTime), numTime, self.stim_shape[1], self.stim_shape[2], self.stim_shape[3]))
-            y_test = np.reshape(y_test, (int(numTest/numTime), numTime, 1))
-	    self.training = Batch(X_train, y_train)
-	    self.holdout = Batch(X_test, y_test)
-        else:
-            self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[0], mean_adapt=mean_adapt)
-            self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[0], mean_adapt=mean_adapt)
+        self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[0], mean_adapt=mean_adapt)
+        self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[0], mean_adapt=mean_adapt)
+
         # save model information to a markdown file
         if 'architecture' not in self.__dict__:
             self.architecture = 'No architecture information specified'
@@ -94,6 +75,8 @@ class Model(object):
                     '### Stimulus', 'Experiment 10-07-15', stimulus_type, 'Mean adaptation: ' + str(mean_adapt),
                     'Cell #{}'.format(cell_index),
                     '### Optimization', str(loss), str(optimizer)]
+
+        # write metadata to a markdown file
         tomarkdown(join(self.savedir, 'README'), metadata)
 
 
@@ -548,3 +531,24 @@ class lstm(Model):
 
         # compile
         super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
+
+        # hack to fix train/test datasets for use with the LSTM architecture
+        numTime = self.stim_shape[0]
+        self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[1], mean_adapt=mean_adapt)
+        self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[1], mean_adapt=mean_adapt)
+        X_train = self.training.X
+        y_train = self.training.y
+        X_test = self.holdout.X
+        y_test = self.holdout.y
+        numTrain = (int(X_train.shape[0]/numTime))*numTime
+        numTest = (int(X_test.shape[0]/numTime))*numTime
+        X_train = X_train[:numTrain]
+        y_train = y_train[:numTrain]
+        X_test = X_test[:numTest]
+        y_test = y_test[:numTest]
+        X_train = np.reshape(X_train, (int(numTrain/numTime), numTime, self.stim_shape[1], self.stim_shape[2], self.stim_shape[3]))
+        y_train = np.reshape(y_train, (int(numTrain/numTime), numTime, 1))
+        X_test = np.reshape(X_test, (int(numTest/numTime), numTime, self.stim_shape[1], self.stim_shape[2], self.stim_shape[3]))
+        y_test = np.reshape(y_test, (int(numTest/numTime), numTime, 1))
+        self.training = Batch(X_train, y_train)
+        self.holdout = Batch(X_test, y_test)

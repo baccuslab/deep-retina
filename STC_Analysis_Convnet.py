@@ -51,10 +51,10 @@ for idx, s in enumerate(ft.getste(time, Xcut, model_spike_times, 35)):
         stc += np.outer(sr, sr)
         
     if idx % 500 == 0:
-        print('{}'.format(100.*idx/len(spk)))
+        print('{}'.format(100.*idx/len(model_spike_times)))
 
 
-stc_normalized = stc/len(spk)
+stc_normalized = stc/len(model_spike_times)
 stc_normalized -= np.outer(sta_cut.ravel(), sta_cut.ravel())
 
 

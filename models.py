@@ -185,7 +185,7 @@ class ln(Model):
 
 
     def __init__(self, cell_index, stimulus_type, loss='poisson_loss', optimizer='sgd',
-                 weight_init='glorot_normal', l2_reg=0., mean_adapt=False):
+                 weight_init='glorot_normal', l2_reg=0., mean_adapt=False, stimulus_shape=(40, 50, 50)):
         """
         Linear-nonlinear model with a parametric softplus nonlinearity
 
@@ -212,7 +212,7 @@ class ln(Model):
 
         """
 
-        self.stim_shape = (40, 50, 50)
+        self.stim_shape = stimulus_shape
 
         # build the model (flatten the input, followed by a dense layer and
         # softplus activation)
@@ -237,7 +237,8 @@ class convnet(Model):
         return "convnet"
 
     def __init__(self, cell_index, stimulus_type, num_filters=(4, 16), filter_size=(9,9),
-                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False):
+                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False,
+                 stimulus_shape=(40, 50, 50)):
         """
         Convolutional neural network
 
@@ -270,7 +271,7 @@ class convnet(Model):
 
         """
 
-        self.stim_shape = (40, 50, 50)
+        self.stim_shape = stimulus_shape
 
         # build the model
         with notify('Building convnet'):
@@ -317,7 +318,8 @@ class twolayer_convnet(Model):
         return "two layer convnet"
 
     def __init__(self, cell_index, stimulus_type, num_filters=16, filter_size=(13,13),
-                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False):
+                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False,
+                 stimulus_shape=(40, 50, 50)):
         """
         Convolutional neural network
 
@@ -350,7 +352,7 @@ class twolayer_convnet(Model):
 
         """
 
-        self.stim_shape = (40, 50, 50)
+        self.stim_shape = stimulus_shape
 
         # build the model
         with notify('Building convnet'):
@@ -385,7 +387,8 @@ class multilayer_convnet(Model):
         return "multilayered_convnet"
 
     def __init__(self, cell_index, stimulus_type, conv_layers=[(12, 9, 9), (12, 9, 9)], dense_layer=64,
-                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., dropout=0.5, mean_adapt=False):
+                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., dropout=0.5,
+                 mean_adapt=False, stimulus_shape=(40, 50, 50)):
         """
         Multi-layered Convolutional neural network
 
@@ -412,7 +415,7 @@ class multilayer_convnet(Model):
 
         """
 
-        self.stim_shape = (40, 50, 50)
+        self.stim_shape = stimulus_shape
 
         # build the model
         with notify('Building convnet'):
@@ -470,7 +473,8 @@ class lstm(Model):
         return "lstm"
 
     def __init__(self, cell_index, stimulus_type, num_timesteps=152, num_filters=(8, 16), filter_size=(13,13),
-                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False):
+                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False,
+                 stimulus_shape=(40, 50, 50)):
         """
         Convolutional neural network
 
@@ -506,7 +510,7 @@ class lstm(Model):
 
         """
         from keras.layers.extra import TimeDistributedConvolution2D, TimeDistributedMaxPooling2D, TimeDistributedFlatten
-        self.stim_shape = (num_timesteps, 40, 50, 50)
+        self.stim_shape = (num_timesteps, stimulus_shape[0], stimulus_shape[1], stimulus_shape[2])
 
         # build the model
         with notify('Building lstm'):

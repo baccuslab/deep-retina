@@ -158,8 +158,8 @@ class Model(object):
         # performance on a subset of the training data
         training_sample_size = yhat_test.shape[0]
         inds = choice(self.training.y.shape[0], training_sample_size, replace=False)
-	yhat_train = self.predict(self.training.X[inds, ...])
-	corr_train = metric(yhat_train.ravel(), self.training.y[inds])
+        yhat_train = self.predict(self.training.X[inds, ...])
+        corr_train = metric(yhat_train.ravel(), self.training.y[inds])
 
         # save the results to a CSV file
         results = [epoch, iteration, corr_train, corr_test]
@@ -532,7 +532,7 @@ class lstm(Model):
 
             # Add relu activation separately for threshold visualization
             self.model.add(Activation('relu'))
-            
+
             # Add LSTM, forget gate bias automatically initialized to 1, default weight initializations recommended
             self.model.add(LSTM(100*num_filters[1], forget_bias_init='one', return_sequences=True))
 

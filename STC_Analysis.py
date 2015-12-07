@@ -55,7 +55,7 @@ for idx, s in enumerate(ft.getste(time, Xcut, spk, 35)):
     sr = s.astype('float').ravel()
     if sr.size == (35*11*11):
         stc += np.outer(sr, sr)
-        
+
     if idx % 500 == 0:
         print('{}'.format(100.*idx/len(spk)))
 

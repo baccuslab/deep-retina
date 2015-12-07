@@ -1,6 +1,6 @@
 from setuptools import setup
 
-setup(name = 'deepretina', 
+setup(name = 'deepretina',
         version = '0.1',
         description = 'Deep learning model of the retina',
         author = 'Niru Maheshwaranathan, Lane McIntosh, Aran Nayebi',
@@ -9,10 +9,10 @@ setup(name = 'deepretina',
         requires = [i.strip() for i in open("requirements.txt").readlines()],
         long_description = '''
             The deepretina package contains methods for learning convolutional
-            and LSTM neural network models of the retina. 
+            and LSTM neural network models of the retina.
             ''',
         classifiers = [
-            'Intended Audience :: Science/Research', 
+            'Intended Audience :: Science/Research',
             'Operating System :: MacOS :: MacOS X',
             'Topic :: Scientific/Engineering :: Information Analysis'],
         packages = ['deepretina'],

@@ -35,7 +35,7 @@ def model_separation(stimulus):
     spatial_profile = stimulus[40:] # length of 50*50
     low_rank_stimulus = np.outer(temporal_kernel, spatial_profile)
     stimulus = low_rank_stimulus.reshape((1,40,50,50))
-    
+
     # get responses
     ln_response = ln_model.predict(stimulus)[0][0]
     convnet_response = naturalscenes_model.predict(stimulus)[0][0]

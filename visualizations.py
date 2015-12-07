@@ -10,11 +10,11 @@ from deepretina.preprocessing import datagen, loadexpt
 
 pwd = os.getcwd()
 
-def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd, 
+def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
         fig_size=(8,10), dpi=500, space=True, time=True, display=False,
         save=True):
     '''
-    Visualize convolutional spatiotemporal filters in a convolutional neural 
+    Visualize convolutional spatiotemporal filters in a convolutional neural
     network.
 
     Computes the spatial and temporal profiles by SVD.
@@ -31,14 +31,14 @@ def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
                     spatial and temporal profiles instead of plotting
     display         bool; display figure?
     save            bool; save figure?
-    
+
     OUTPUT:
     When space or time are true, ouputs are plots saved to fig_dir.
     When neither space nor time are true, output is:
         spatial_profiles        list of spatial profiles of filters
         temporal_profiles       list of temporal profiles of filters
     '''
-    
+
     num_filters = weights.shape[0]
 
     # plot space and time profiles together
@@ -58,7 +58,7 @@ def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
                 ax.imshow(spatial, interpolation='nearest', cmap='gray') #, clim=[np.min(W0), np.max(W0)])
                 plt.grid('off')
                 plt.axis('off')
-                
+
                 ax = plt.subplot2grid((num_rows*4, num_cols), (4*y+3, x), rowspan=1)
                 ax.plot(np.linspace(0,400,40), temporal, 'k', linewidth=2)
                 plt.grid('off')
@@ -118,14 +118,14 @@ def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
             spatial_profiles.append(spatial)
             temporal_profiles.append(temporal)
         return spatial, temporal
-            
-        
 
 
-def visualize_affine_weights(weights, num_conv_filters, title='affine', fig_dir=pwd, 
+
+
+def visualize_affine_weights(weights, num_conv_filters, title='affine', fig_dir=pwd,
         fig_size=(8,10), dpi=500, display=False, save=True):
     '''
-    Visualize convolutional spatiotemporal filters in a convolutional neural 
+    Visualize convolutional spatiotemporal filters in a convolutional neural
     network.
 
     Computes the spatial and temporal profiles by SVD.
@@ -138,11 +138,11 @@ def visualize_affine_weights(weights, num_conv_filters, title='affine', fig_dir=
     dpi             resolution in dots per inch
     display         bool; display figure?
     save            bool; save figure?
-    
+
     OUTPUT:
     saved figure or displayed figure (or both).
     '''
-    
+
     num_affine_units = weights.shape[1]
     spatial_size = np.sqrt(weights.shape[0]/num_conv_filters)
     assert weights.shape[0] % num_conv_filters == 0, 'Incorrect number of convolutional filters'
@@ -194,7 +194,7 @@ def activations(model, layer_id, stimulus):
     '''
     # create theano function to generate activations of desired layer
     get_activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
-    
+
     # get intermediate unit response to stimulus
     response = get_activations(stimulus)
     return response
@@ -271,11 +271,11 @@ def get_sta(model, layer_id, samples=50000, batch_size=50):
         #nonzero_inds = np.where(response > 0)[0]
         #for idx in nonzero_inds:
         #    sta += response[idx] * whitenoise[idx]
-    
+
     sta /= samples
     sta = sta.reshape((*true_response_shape, -1))
     return sta
-    
+
 
 
 # a useful visualization of intermediate units may be its STC
@@ -293,10 +293,10 @@ def get_stc(stimulus, response):
     flat_sta = sta.ravel()
 
     nonzero_inds = np.where(response > 0)[0]
-    
+
     # initialize stc
     sta = np.empty(stimulus[0].shape, dtype='float')
-    
+
     # loop over nonzero responses
     for idx in nonzero_inds:
         sta += response[idx] * sample[idx]
@@ -304,7 +304,7 @@ def get_stc(stimulus, response):
     return sta
 
 
-    
+
     # get the blas function for computing the outer product
     assert stimulus.dtype == 'float64', 'Stimulus must be double precision'
     outer = get_blas_funcs('syr', dtype='d')

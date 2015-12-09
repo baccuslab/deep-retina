@@ -71,7 +71,7 @@ for idx in range(n_samples/batch_size):
         print('{}'.format(100.*idx/n_samples))
 
 stc_normalized = stc/n_samples
-stc_normalized -= np.outer(sta_cut.ravel(), sta_cut.ravel())
+stc_normalized -= np.outer(sta_cut_space.ravel(), sta_cut_space.ravel())
 
 
 ## SAVE RESULT ##

@@ -66,10 +66,9 @@ for idx in range(n_samples/batch_size):
             stc += np.outer(sr, sr)
             
     if idx*batch_size % 500 == 0:
-        print('{}'.format(100.*idx/n_samples)
+        print('{}'.format(100.*idx/n_samples))
 
-
-stc_normalized = stc/len(model_spike_times)
+stc_normalized = stc/len(n_samples)
 stc_normalized -= np.outer(sta_cut.ravel(), sta_cut.ravel())
 
 

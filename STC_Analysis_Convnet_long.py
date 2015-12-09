@@ -9,7 +9,7 @@ from utils import rolling_window, mksavedir
 import h5py
 from scipy.stats import pearsonr
 import preprocessing
-from keras import model_from_json
+from keras.models import model_from_json
 
 
 # make save directory

@@ -59,11 +59,11 @@ batch_size = 100
 for idx in range(n_samples/batch_size):
     stim = np.random.randint(0,2, size=(batch_size,40,50,50)).astype('float32')
     preds = whitenoise_model.predict(stim)
-    for st in stim:
+    for ids, st in enumerate(stim):
         s = ft.cutout(st[5:], idx=np.flipud(ft.filterpeak(sta)[1]), width=5)
         sr = s.astype('float').ravel()
         if sr.size == (35*11*11):
-            stc += np.outer(sr, sr)
+            stc += preds[ids] * np.outer(sr, sr)
             
     if idx*batch_size % 500 == 0:
         print('{}'.format(100.*idx/n_samples))

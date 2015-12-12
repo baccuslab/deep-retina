@@ -21,7 +21,7 @@ datadirs = {
 }
 
 
-def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False, 
+def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False,
     roll=True, cutout=False, cutout_cell=0):
     """
     Loads an experiment from disk
@@ -77,7 +77,7 @@ def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False,
             stim_reshaped = stim
 
         # get the response for this cell
-        resp = np.array(f[method]['response/firing_rate_10ms'][cellidx, history:num_samples])
+        resp = np.array(f[method]['response/firing_rate_10ms'][cellidx, history:num_samples]).T
 
     return Batch(stim_reshaped, resp)
 

@@ -21,7 +21,8 @@ datadirs = {
 }
 
 
-def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False, roll=True):
+def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False, 
+    roll=True, cutout=False, cutout_cell=0):
     """
     Loads an experiment from disk
 
@@ -50,6 +51,10 @@ def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False, 
     expt = '15-10-07'
 
     with notify('Loading {}ing data'.format(method)):
+
+        # select different filename if you want a cutout
+        if cutout:
+            filename = filename + '_cutout_cell%02d' %(cutout_cell+1)
 
         # load the hdf5 file
         f = h5py.File(os.path.join(datadirs[os.uname()[1]], expt, filename + '.h5'), 'r')

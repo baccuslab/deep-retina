@@ -21,7 +21,8 @@ datadirs = {
 }
 
 
-def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False, roll=True):
+def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False, 
+    roll=True, cutout=False, cutout_cell=0):
     """
     Loads an experiment from disk
 
@@ -51,6 +52,10 @@ def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False, 
 
     with notify('Loading {}ing data'.format(method)):
 
+        # select different filename if you want a cutout
+        if cutout:
+            filename = filename + '_cutout_cell%02d' %(cutout_cell+1)
+
         # load the hdf5 file
         f = h5py.File(os.path.join(datadirs[os.uname()[1]], expt, filename + '.h5'), 'r')
 
@@ -67,7 +72,7 @@ def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False, 
 
         # reshaped stimulus (nsamples, time/channel, space, space)
         if roll:
-            stim_reshaped = np.rollaxis(np.rollaxis(rolling_window(stim, history, axis=0), 2), 3, 1)
+            stim_reshaped = np.rollaxis(np.rollaxis(rolling_window(stim, history, time_axis=0), 2), 3, 1)
         else:
             stim_reshaped = stim
 

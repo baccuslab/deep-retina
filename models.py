@@ -256,6 +256,14 @@ class convnet(Model):
 
         self.stim_shape = stimulus_shape
 
+        if type(cell_index) is int:
+            # one output unit
+            nout = 1
+
+        else:
+            # number of output units depends on the expt, hardcoded for now
+            nout = len(cell_index)
+
         # build the model
         with notify('Building convnet'):
 
@@ -264,7 +272,7 @@ class convnet(Model):
             # first convolutional layer
             self.model.add(Convolution2D(num_filters[0], filter_size[0], filter_size[1],
                                          input_shape=self.stim_shape, init=weight_init,
-                                         border_mode='same', subsample=(1,1),
+                                         border_mode='same', subsample=(1, 1),
                                          W_regularizer=l2(l2_reg)))
 
             #Add relu activation separately for threshold visualizations
@@ -282,14 +290,16 @@ class convnet(Model):
             self.model.add(Activation('relu'))
 
             # Add a final dense (affine) layer with softplus activation
-            self.model.add(Dense(1, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))
+            self.model.add(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))
 
         # save architecture string (for markdown file)
         self.architecture = '\n'.join(['{} convolutional filters of size {}'.format(num_filters[0], filter_size),
                                        '{} filters in the second (fully connected) layer'.format(num_filters[1]),
+                                       '{} output units'.format(nout),
                                        'weight initialization: {}'.format(weight_init),
                                        'l2 regularization: {}'.format(l2_reg),
-                                       'stimulus shape: {}'.format(self.stim_shape)])
+                                       'stimulus shape: {}'.format(self.stim_shape),
+                                       ])
 
         # compile
         super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
@@ -347,7 +357,7 @@ class lstm(Model):
             # first convolutional layer
             self.model.add(TimeDistributedConvolution2D(num_filters[0], filter_size[0], filter_size[1],
                                          input_shape=self.stim_shape, init=weight_init,
-                                         border_mode='same', subsample=(1,1),
+                                         border_mode='same', subsample=(1, 1),
                                          W_regularizer=l2(l2_reg)))
 
             #Add relu activation separately for threshold visualizations

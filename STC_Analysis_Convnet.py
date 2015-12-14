@@ -15,7 +15,7 @@ import preprocessing
 save_dir = mksavedir(prefix='Convnet STC')
 
 # Load stimulus
-whitenoise_train_unrolled = loadexpt(0, 'whitenoise', 'train', 40, roll=False)
+whitenoise_train_unrolled = loadexpt(0, 'whitenoise', 'train', history=0)
 
 
 # Load CNN model spikes
@@ -24,7 +24,7 @@ spikes_filename = 'model_predictions.h5'
 g = h5py.File(os.path.join(path_to_spikes, spikes_filename), 'r')
 model_predictions = g['predictions']
 
-                            
+
 # Load real times of stimulus and get time stamps of model spikes
 f = h5py.File(os.path.join(preprocessing.datadirs['lenna'], '15-10-07/whitenoise.h5'), 'r')
 time = np.array(f['train/time'][40:])
@@ -49,7 +49,7 @@ for idx, s in enumerate(ft.getste(time, Xcut, model_spike_times, 35)):
     sr = s.astype('float').ravel()
     if sr.size == (35*11*11):
         stc += np.outer(sr, sr)
-        
+
     if idx % 500 == 0:
         print('{}'.format(100.*idx/len(model_spike_times)))
 

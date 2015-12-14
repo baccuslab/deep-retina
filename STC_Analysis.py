@@ -22,7 +22,7 @@ save_dir = mksavedir(prefix='Experiment STC')
 
 # In[2]:
 
-whitenoise_train = loadexpt(0, 'whitenoise', 'train', 40, roll=False)
+whitenoise_train = loadexpt(0, 'whitenoise', 'train', history=0)
 
 
 # In[5]:

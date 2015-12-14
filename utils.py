@@ -6,7 +6,7 @@ Helper utilities
 from __future__ import print_function
 from contextlib import contextmanager
 from scipy.stats import pearsonr
-from os import mkdir, uname, getlogin
+from os import mkdir, uname, getlogin, getenv
 from os.path import join, expanduser
 from time import strftime
 from collections import namedtuple
@@ -68,7 +68,7 @@ def mksavedir(basedir='~/Dropbox/deep-retina/saved', prefix=''):
     now = strftime("%Y-%m-%d %H.%M.%S") + " " + prefix
 
     # the save directory is the given base directory plus the current date/time
-    userdir = uname()[1] + '.' + getlogin()
+    userdir = uname()[1] + '.' + getenv('USER')
     savedir = join(expanduser(basedir), userdir, now)
 
     # create the directory

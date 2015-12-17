@@ -35,10 +35,10 @@ ln_model.load_weights(ln_data_dir + ln_weight_filename)
 
 def get_full_field_flicker(period=1, low_contrast=0.1, high_contrast=1.0):
     sample_rate = 100
-    flicker_sequence = np.hstack([low_contrast*np.random.randn(period*sample_rate), 
+    flicker_sequence = np.hstack([low_contrast*np.random.randn(period*sample_rate),
                                high_contrast*np.random.randn(period*sample_rate),
                               low_contrast*np.random.randn(period*sample_rate)])
-    
+
     # Convert flicker sequence into full field movie
     full_field_flicker = np.outer(flicker_sequence, np.ones((1,50,50)))
     full_field_flicker = full_field_flicker.reshape((flicker_sequence.shape[0], 50, 50))

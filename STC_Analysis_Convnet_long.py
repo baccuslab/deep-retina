@@ -9,10 +9,11 @@ from utils import rolling_window, mksavedir
 import h5py
 from scipy.stats import pearsonr
 import preprocessing
+from keras.models import model_from_json
 
 
 # make save directory
-save_dir = mksavedir(prefix='Convnet STC')
+save_dir = mksavedir(prefix='Convnet STC Long')
 
 # Load stimulus
 whitenoise_train_unrolled = loadexpt(0, 'whitenoise', 'train', history=0)
@@ -43,23 +44,36 @@ Xcut = ft.cutout(whitenoise_train_unrolled.X[40:], idx=np.flipud(ft.filterpeak(s
 sta_cut = ft.cutout(sta, idx=np.flipud(ft.filterpeak(sta)[1]), width=5)
 
 
-# Do STC
+# load whitenoise model
+architecture_filename = 'architecture.json'
+whitenoise_data_dir = expanduser('~/Dropbox/deep-retina/saved/lenna.salamander/2015-11-08 15.42.33 convnet/')
+whitenoise_weight_filename = 'epoch018_iter01300_weights.h5' # .63 cc on held-out
+whitenoise_architecture_data = open(whitenoise_data_dir + architecture_filename, 'r')
+whitenoise_architecture_string = whitenoise_architecture_data.read()
+whitenoise_model = model_from_json(whitenoise_architecture_string)
+
+# Do long STC
 stc = np.zeros((35*11*11, 35*11*11))
-for idx, s in enumerate(ft.getste(time, Xcut, model_spike_times, 35)):
-    sr = s.astype('float').ravel()
-    if sr.size == (35*11*11):
-        stc += np.outer(sr, sr)
+n_samples = 100000
+batch_size = 100
+for idx in range(n_samples/batch_size):
+    stim = np.random.randint(0,2, size=(batch_size,40,50,50)).astype('float32')
+    preds = whitenoise_model.predict(stim)
+    for ids, st in enumerate(stim):
+        s = ft.cutout(st[5:], idx=np.flipud(ft.filterpeak(sta)[1]), width=5)
+        sr = s.astype('float').ravel()
+        if sr.size == (35*11*11):
+            stc += preds[ids] * np.outer(sr, sr)
 
-    if idx % 500 == 0:
-        print('{}'.format(100.*idx/len(model_spike_times)))
+    if idx*batch_size % 500 == 0:
+        print('{}'.format(100.*idx/n_samples))
 
-
-stc_normalized = stc/len(model_spike_times)
+stc_normalized = stc/n_samples
 stc_normalized -= np.outer(sta_cut.ravel(), sta_cut.ravel())
 
 
 ## SAVE RESULT ##
-h = h5py.File(join(save_dir, 'full_stc_convnet_15_10_07.h5'), 'w')
+h = h5py.File(join(save_dir, 'full_stc_convnet_long_15_10_07.h5'), 'w')
 h.create_dataset('stc', data=stc_normalized)
 h.close()
 

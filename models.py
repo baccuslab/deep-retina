@@ -59,31 +59,12 @@ class Model(object):
         # function to write data to a CSV file
         self.save_csv = partial(tocsv, join(self.savedir, 'performance'))
         self.save_csv(['Epoch', 'Iteration', 'Training CC', 'Test CC'])
+
         # load experimental data
         self.stimulus_type = stimulus_type
-        if str(self) == 'lstm':
-            numTime = self.stim_shape[0]
-            self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[1], mean_adapt=mean_adapt)
-            self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[1], mean_adapt=mean_adapt)
-            X_train = self.training.X
-            y_train = self.training.y
-            X_test = self.holdout.X
-            y_test = self.holdout.y
-            numTrain = (int(X_train.shape[0]/numTime))*numTime
-            numTest = (int(X_test.shape[0]/numTime))*numTime
-            X_train = X_train[:numTrain]
-            y_train = y_train[:numTrain]
-            X_test = X_test[:numTest]
-            y_test = y_test[:numTest]
-            X_train = np.reshape(X_train, (int(numTrain/numTime), numTime, self.stim_shape[1], self.stim_shape[2], self.stim_shape[3]))
-            y_train = np.reshape(y_train, (int(numTrain/numTime), numTime, 1))
-            X_test = np.reshape(X_test, (int(numTest/numTime), numTime, self.stim_shape[1], self.stim_shape[2], self.stim_shape[3]))
-            y_test = np.reshape(y_test, (int(numTest/numTime), numTime, 1))
-	    self.training = Batch(X_train, y_train)
-	    self.holdout = Batch(X_test, y_test)
-        else:
-            self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[0], mean_adapt=mean_adapt)
-            self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[0], mean_adapt=mean_adapt)
+        self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[0], mean_adapt=mean_adapt)
+        self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[0], mean_adapt=mean_adapt)
+
         # save model information to a markdown file
         if 'architecture' not in self.__dict__:
             self.architecture = 'No architecture information specified'
@@ -94,6 +75,8 @@ class Model(object):
                     '### Stimulus', 'Experiment 10-07-15', stimulus_type, 'Mean adaptation: ' + str(mean_adapt),
                     'Cell #{}'.format(cell_index),
                     '### Optimization', str(loss), str(optimizer)]
+
+        # write metadata to a markdown file
         tomarkdown(join(self.savedir, 'README'), metadata)
 
 
@@ -158,8 +141,8 @@ class Model(object):
         # performance on a subset of the training data
         training_sample_size = yhat_test.shape[0]
         inds = choice(self.training.y.shape[0], training_sample_size, replace=False)
-	yhat_train = self.predict(self.training.X[inds, ...])
-	corr_train = metric(yhat_train.ravel(), self.training.y[inds])
+        yhat_train = self.predict(self.training.X[inds, ...])
+        corr_train = metric(yhat_train.ravel(), self.training.y[inds])
 
         # save the results to a CSV file
         results = [epoch, iteration, corr_train, corr_test]
@@ -273,6 +256,14 @@ class convnet(Model):
 
         self.stim_shape = stimulus_shape
 
+        if type(cell_index) is int:
+            # one output unit
+            nout = 1
+
+        else:
+            # number of output units depends on the expt, hardcoded for now
+            nout = len(cell_index)
+
         # build the model
         with notify('Building convnet'):
 
@@ -281,7 +272,7 @@ class convnet(Model):
             # first convolutional layer
             self.model.add(Convolution2D(num_filters[0], filter_size[0], filter_size[1],
                                          input_shape=self.stim_shape, init=weight_init,
-                                         border_mode='same', subsample=(1,1),
+                                         border_mode='same', subsample=(1, 1),
                                          W_regularizer=l2(l2_reg)))
 
             #Add relu activation separately for threshold visualizations
@@ -299,170 +290,16 @@ class convnet(Model):
             self.model.add(Activation('relu'))
 
             # Add a final dense (affine) layer with softplus activation
-            self.model.add(Dense(1, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))
+            self.model.add(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))
 
         # save architecture string (for markdown file)
         self.architecture = '\n'.join(['{} convolutional filters of size {}'.format(num_filters[0], filter_size),
                                        '{} filters in the second (fully connected) layer'.format(num_filters[1]),
+                                       '{} output units'.format(nout),
                                        'weight initialization: {}'.format(weight_init),
                                        'l2 regularization: {}'.format(l2_reg),
-                                       'stimulus shape: {}'.format(self.stim_shape)])
-
-        # compile
-        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
-
-
-class twolayer_convnet(Model):
-
-    def __str__(self):
-        return "two layer convnet"
-
-    def __init__(self, cell_index, stimulus_type, num_filters=16, filter_size=(13,13),
-                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False,
-                 stimulus_shape=(40, 50, 50)):
-        """
-        Convolutional neural network
-
-        Parameters
-        ----------
-
-        cell_index : int
-            Which cell to use
-
-        stimulus_type : string
-            Either 'whitenoise' or 'naturalscene'
-
-        num_filters : tuple, optional
-            Number of filters in each layer. Default: (4, 16)
-
-        filter_size : tuple, optional
-            Convolutional filter size. Default: (9, 9)
-
-        loss : string or object, optional
-            A Keras objective. Default: 'poisson_loss'
-
-        optimizer : string or object, optional
-            A Keras optimizer. Default: 'adam'
-
-        weight_init : string
-            weight initialization. Default: 'normal'
-
-        l2_reg : float, optional
-            How much l2 regularization to apply to all filter weights
-
-        """
-
-        self.stim_shape = stimulus_shape
-
-        # build the model
-        with notify('Building convnet'):
-
-            self.model = Sequential()
-
-            # first convolutional layer
-            self.model.add(Convolution2D(num_filters, filter_size[0], filter_size[1],
-                                         input_shape=self.stim_shape, init=weight_init,
-                                         border_mode='same', subsample=(1,1),
-                                         W_regularizer=l2(l2_reg), activation='relu'))
-
-            # flatten
-            self.model.add(Flatten())
-
-            # Add a final dense (affine) layer with softplus activation
-            self.model.add(Dense(1, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))
-
-        # save architecture string (for markdown file)
-        self.architecture = '\n'.join(['{} convolutional filters of size {}'.format(num_filters, filter_size),
-                                       'weight initialization: {}'.format(weight_init),
-                                       'l2 regularization: {}'.format(l2_reg),
-                                       'stimulus shape: {}'.format(self.stim_shape)])
-
-        # compile
-        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
-
-
-class multilayer_convnet(Model):
-
-    def __str__(self):
-        return "multilayered_convnet"
-
-    def __init__(self, cell_index, stimulus_type, conv_layers=[(12, 9, 9), (12, 9, 9)], dense_layer=64,
-                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., dropout=0.5,
-                 mean_adapt=False, stimulus_shape=(40, 50, 50)):
-        """
-        Multi-layered Convolutional neural network
-
-        Parameters
-        ----------
-
-        cell_index : int
-            Which cell to use
-
-        stimulus_type : string
-            Either 'whitenoise' or 'naturalscene'
-
-        loss : string or object, optional
-            A Keras objective. Default: 'poisson_loss'
-
-        optimizer : string or object, optional
-            A Keras optimizer. Default: 'adam'
-
-        weight_init : string
-            weight initialization. Default: 'normal'
-
-        l2_reg : float, optional
-            How much l2 regularization to apply to all filter weights
-
-        """
-
-        self.stim_shape = stimulus_shape
-
-        # build the model
-        with notify('Building convnet'):
-
-            self.model = Sequential()
-
-            # convolutional layers
-            for ix, layer in enumerate(conv_layers):
-
-                # get parameters for this layer
-                num_filters, row_size, col_size = layer
-
-                # convolutional layer
-                if ix == 0:
-                    self.model.add(Convolution2D(num_filters, row_size, col_size,
-                                                input_shape=self.stim_shape, init=weight_init,
-                                                border_mode='same', subsample=(1,1),
-                                                W_regularizer=l2(l2_reg), activation='relu'))
-
-                else:
-                    self.model.add(Convolution2D(num_filters, row_size, col_size,
-                                                input_shape=self.stim_shape, init=weight_init,
-                                                border_mode='same', subsample=(1,1),
-                                                W_regularizer=l2(l2_reg), activation='relu'))
-
-                # max pooling layer
-                self.model.add(MaxPooling2D(pool_size=(2, 2), ignore_border=True))
-
-                # dropout
-                self.model.add(Dropout(dropout))
-
-            # flatten
-            self.model.add(Flatten())
-
-            # Add dense (affine) layer with relu activation
-            self.model.add(Dense(dense_layer, init=weight_init, W_regularizer=l2(l2_reg), activation='relu'))
-            self.model.add(Dropout(dropout))
-
-            # Add a final dense (affine) layer with softplus activation
-            self.model.add(Dense(1, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))
-
-        # save architecture string (for markdown file)
-        self.architecture = '\n'.join(['Convolutional layers {}'.format(conv_layers),
-                                       '{} filters in the second (fully connected) layer'.format(dense_layer),
-                                       'weight initialization: {}'.format(weight_init),
-                                       'l2 regularization: {}'.format(l2_reg),
-                                       'stimulus shape: {}'.format(self.stim_shape)])
+                                       'stimulus shape: {}'.format(self.stim_shape),
+                                       ])
 
         # compile
         super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
@@ -520,7 +357,7 @@ class lstm(Model):
             # first convolutional layer
             self.model.add(TimeDistributedConvolution2D(num_filters[0], filter_size[0], filter_size[1],
                                          input_shape=self.stim_shape, init=weight_init,
-                                         border_mode='same', subsample=(1,1),
+                                         border_mode='same', subsample=(1, 1),
                                          W_regularizer=l2(l2_reg)))
 
             #Add relu activation separately for threshold visualizations
@@ -536,7 +373,7 @@ class lstm(Model):
 
             # Add relu activation separately for threshold visualization
             self.model.add(Activation('relu'))
-            
+
             # Add LSTM, forget gate bias automatically initialized to 1, default weight initializations recommended
             self.model.add(LSTM(100*num_filters[1], forget_bias_init='one', return_sequences=True))
 
@@ -552,3 +389,24 @@ class lstm(Model):
 
         # compile
         super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
+
+        # hack to fix train/test datasets for use with the LSTM architecture
+        numTime = self.stim_shape[0]
+        self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[1], mean_adapt=mean_adapt)
+        self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[1], mean_adapt=mean_adapt)
+        X_train = self.training.X
+        y_train = self.training.y
+        X_test = self.holdout.X
+        y_test = self.holdout.y
+        numTrain = (int(X_train.shape[0]/numTime))*numTime
+        numTest = (int(X_test.shape[0]/numTime))*numTime
+        X_train = X_train[:numTrain]
+        y_train = y_train[:numTrain]
+        X_test = X_test[:numTest]
+        y_test = y_test[:numTest]
+        X_train = np.reshape(X_train, (int(numTrain/numTime), numTime, self.stim_shape[1], self.stim_shape[2], self.stim_shape[3]))
+        y_train = np.reshape(y_train, (int(numTrain/numTime), numTime, 1))
+        X_test = np.reshape(X_test, (int(numTest/numTime), numTime, self.stim_shape[1], self.stim_shape[2], self.stim_shape[3]))
+        y_test = np.reshape(y_test, (int(numTest/numTime), numTime, 1))
+        self.training = Batch(X_train, y_train)
+        self.holdout = Batch(X_test, y_test)

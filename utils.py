@@ -6,13 +6,14 @@ Helper utilities
 from __future__ import print_function
 from contextlib import contextmanager
 from scipy.stats import pearsonr
-from os import mkdir, uname, getlogin
+from os import mkdir, uname, getlogin, getenv
 from os.path import join, expanduser
 from time import strftime
 from collections import namedtuple
 import numpy as np
 import sys
 import csv
+from keras.models import model_from_json
 
 __all__ = ['notify', 'rolling_window', 'mksavedir', 'tocsv', 'save_markdown',
            'metric', 'Batch']
@@ -68,7 +69,7 @@ def mksavedir(basedir='~/Dropbox/deep-retina/saved', prefix=''):
     now = strftime("%Y-%m-%d %H.%M.%S") + " " + prefix
 
     # the save directory is the given base directory plus the current date/time
-    userdir = uname()[1] + '.' + getlogin()
+    userdir = uname()[1] + '.' + getenv('USER')
     savedir = join(expanduser(basedir), userdir, now)
 
     # create the directory
@@ -166,3 +167,20 @@ def rolling_window(array, window, time_axis=0):
     shape = array.shape[:-1] + (array.shape[-1] - window, window)
     strides = array.strides + (array.strides[-1],)
     return np.lib.stride_tricks.as_strided(array, shape=shape, strides=strides)
+
+def load_model(model_path, weight_filename):
+	''' Loads a Keras model using:
+			- an architecture.json file
+			- an h5 weight file, for instance 'epoch018_iter01300_weights.h5'
+			
+		INPUT:
+			model_path		the full path to the saved weight and architecture files
+			weight_filename	an h5 file with the weights
+	'''
+	architecture_filename = 'architecture.json'
+	architecture_data = open(model_path + architecture_filename, 'r')
+	architecture_string = architecture_data.read()
+	model = model_from_json(architecture_string)
+	model.load_weights(model_path + weight_filename)
+	
+	return model

@@ -21,7 +21,8 @@ datadirs = {
 }
 
 
-def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False, roll=True):
+def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False,
+    cutout=False, cutout_cell=0):
     """
     Loads an experiment from disk
 
@@ -51,6 +52,10 @@ def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False, 
 
     with notify('Loading {}ing data'.format(method)):
 
+        # select different filename if you want a cutout
+        if cutout:
+            filename = filename + '_cutout_cell%02d' %(cutout_cell+1)
+
         # load the hdf5 file
         f = h5py.File(os.path.join(datadirs[os.uname()[1]], expt, filename + '.h5'), 'r')
 
@@ -66,13 +71,14 @@ def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False, 
             stim = pr_filter(10e-3, stim)
 
         # reshaped stimulus (nsamples, time/channel, space, space)
-        if roll:
-            stim_reshaped = np.rollaxis(np.rollaxis(rolling_window(stim, history, time_axis=0), 2), 3, 1)
-        else:
+        if history == 0:
+            # don't create the toeplitz matrix
             stim_reshaped = stim
+        else:
+            stim_reshaped = np.rollaxis(np.rollaxis(rolling_window(stim, history, time_axis=0), 2), 3, 1)
 
         # get the response for this cell
-        resp = np.array(f[method]['response/firing_rate_10ms'][cellidx, history:num_samples])
+        resp = np.array(f[method]['response/firing_rate_10ms'][cellidx, history:num_samples]).T
 
     return Batch(stim_reshaped, resp)
 

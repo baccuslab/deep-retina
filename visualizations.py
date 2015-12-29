@@ -6,7 +6,7 @@ import theano
 import json
 import os
 from keras.models import model_from_json
-from deepretina.preprocessing import datagen, loadexpt
+from preprocessing import datagen, loadexpt
 
 pwd = os.getcwd()
 
@@ -252,7 +252,7 @@ def get_sta(model, layer_id, samples=50000, batch_size=50):
 
     # Generate white noise and map STA
     for batch in range(int(np.ceil(samples/batch_size))):
-        whitenoise = np.random.randn(batch_size, 40, 50, 50)
+        whitenoise = np.random.randn(batch_size, 40, 50, 50).astype('float32')
         response = get_activations(whitenoise)
         true_response_shape = response.shape[1:]
 
@@ -273,7 +273,10 @@ def get_sta(model, layer_id, samples=50000, batch_size=50):
         #    sta += response[idx] * whitenoise[idx]
 
     sta /= samples
-    sta = sta.reshape((*true_response_shape, -1))
+    #sta = sta.reshape((*(list(true_response_shape) + [-1])))
+    #sta = sta.reshape((*true_response_shape, -1))
+    assert len(true_response_shape.shape) == 3
+    sta = sta.reshape(true_response_shape[0], true_response_shape[1], true_response_shape[2], -1)
     return sta
 
 

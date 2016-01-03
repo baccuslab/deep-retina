@@ -275,7 +275,7 @@ def get_sta(model, layer_id, samples=50000, batch_size=50):
     sta /= samples
     #sta = sta.reshape((*(list(true_response_shape) + [-1])))
     #sta = sta.reshape((*true_response_shape, -1))
-    assert len(true_response_shape.shape) == 3
+    assert len(true_response_shape) == 3
     sta = sta.reshape(true_response_shape[0], true_response_shape[1], true_response_shape[2], -1)
     return sta
 

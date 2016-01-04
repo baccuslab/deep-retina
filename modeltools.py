@@ -45,10 +45,20 @@ def list_layers(model_path, weight_filename):
     '''
     weights = h5py.File(model_path + weight_filename, 'r')
     layer_names = list(weights)
+
+    # print header
+    print(tableprint.hr(3))
+    print(tableprint.header(['layer', 'weights', 'biases']))
+    print(tableprint.hr(3))
+
     params = []
     for l in layer_names:
         params.append(list(weights[l]))
+        if params[-1]:
+            print(tableprint.row([l.encode('ascii','ignore'), params[-1][0].encode('ascii','ignore'),
+                params[-1][1].encode('ascii','ignore')]))
+        else:
+            print(tableprint.row([l.encode('ascii','ignore'), '', '']))
 
-    print([layer_names, params])
-    #tableprint.table([layer_names, params], ['layers', 'params'])
+    print(tableprint.hr(3))
 

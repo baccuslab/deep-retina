@@ -129,7 +129,7 @@ def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
 
 
 
-def visualize_affine_weights(weights, num_conv_filters, layer_name='layer_4', title='affine', 
+def visualize_affine_weights(weights, num_conv_filters, layer_name='layer_4', title='affine units', 
         fig_dir=pwd, fig_size=(8,10), dpi=300, display=True, save=False, cmap='seismic'):
     '''
     Visualize convolutional spatiotemporal filters in a convolutional neural
@@ -161,8 +161,7 @@ def visualize_affine_weights(weights, num_conv_filters, layer_name='layer_4', ti
     assert weights.shape[0] % num_conv_filters == 0, 'Incorrect number of convolutional filters'
 
     # plot all filters on same color axis
-    if normalize:
-        colorlimit = [-np.max(abs(weights[:])), np.max(abs(weights[:]))]
+    colorlimit = [-np.max(abs(weights[:])), np.max(abs(weights[:]))]
 
     # plot space and time profiles together
     fig = plt.gcf()

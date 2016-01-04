@@ -42,7 +42,7 @@ def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
     '''
 
     # if user supplied path instead of array of weights
-    if type(weights) == 'str':
+    if type(weights) is str:
         weight_file = h5py.File(weights, 'r')
         weights = weight_file['layer_0']['param_0']
 
@@ -129,8 +129,8 @@ def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
 
 
 
-def visualize_affine_weights(weights, num_conv_filters, title='affine', fig_dir=pwd,
-        fig_size=(8,10), dpi=300, display=True, save=False):
+def visualize_affine_weights(weights, num_conv_filters, layer_name='layer_4', title='affine', 
+        fig_dir=pwd, fig_size=(8,10), dpi=300, display=True, save=False):
     '''
     Visualize convolutional spatiotemporal filters in a convolutional neural
     network.
@@ -139,6 +139,7 @@ def visualize_affine_weights(weights, num_conv_filters, title='affine', fig_dir=
 
     INPUTS:
     weights         weight array of shape (num_filters, history, space, space)
+                        or full path to weight file
     title           title of plots; also the saved plot file base name
     fig_dir         where to save figures
     fig_size        figure size in inches
@@ -149,6 +150,11 @@ def visualize_affine_weights(weights, num_conv_filters, title='affine', fig_dir=
     OUTPUT:
     saved figure or displayed figure (or both).
     '''
+
+    # if user supplied path instead of array of weights
+    if type(weights) is str:
+        weight_file = h5py.File(weights, 'r')
+        weights = weight_file[layer_name]['param_0']
 
     num_affine_units = weights.shape[1]
     spatial_size = np.sqrt(weights.shape[0]/num_conv_filters)
@@ -350,3 +356,51 @@ def get_stc(stimulus, response):
 
     return stc - np.outer(sta, sta)
 
+
+def visualize_sta(sta, fig_size=(8,10), display=True, save=False): 
+    '''
+    Visualize one or many STAs of deep-retina interunits.
+
+    Computes the spatial and temporal profiles by SVD.
+
+    INPUTS:
+    sta             weight array of shape (time, space, space) 
+                        or (num_units, time, space, space)
+    fig_size        figure size in inches
+    display         bool; display figure?
+    save            bool; save figure?
+    '''
+
+    if len(sta) == 3:
+        num_units = 1
+    else:
+        num_units = sta.shape[0]
+
+    # plot space and time profiles together
+    fig = plt.gcf()
+    fig.set_size_inches(fig_size)
+    plt.title('STA', fontsize=20)
+    num_cols = int(np.sqrt(num_units))
+    num_rows = int(np.ceil(num_units/num_cols))
+    idxs = range(num_cols)
+    for x in range(num_cols):
+        for y in range(num_rows):
+            plt_idx = y * num_cols + x + 1
+            if num_units > 1:
+                spatial,temporal = ft.decompose(sta[plt_idx-1])
+            else:
+                spatial,temporal = ft.decompose(sta)
+            #plt.subplot(num_rows, num_cols, plt_idx)
+            ax = plt.subplot2grid((num_rows*4, num_cols), (4*y, x), rowspan=3)
+            ax.imshow(spatial, interpolation='nearest', cmap='seismic') #, clim=[np.min(W0), np.max(W0)])
+            plt.grid('off')
+            plt.axis('off')
+
+            ax = plt.subplot2grid((num_rows*4, num_cols), (4*y+3, x), rowspan=1)
+            ax.plot(np.linspace(0,400,40), temporal, 'k', linewidth=2)
+            plt.grid('off')
+            plt.axis('off')
+    if display:
+        plt.show()
+    if save:
+        plt.savefig(fig_dir + title + '.png', dpi=300)

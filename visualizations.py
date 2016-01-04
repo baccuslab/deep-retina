@@ -13,7 +13,7 @@ pwd = os.getcwd()
 
 def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
         fig_size=(8,10), dpi=300, space=True, time=True, display=True,
-        save=False):
+        save=False, cmap='seismic'):
     '''
     Visualize convolutional spatiotemporal filters in a convolutional neural
     network.
@@ -62,7 +62,7 @@ def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
                 spatial,temporal = ft.decompose(weights[plt_idx-1])
                 #plt.subplot(num_rows, num_cols, plt_idx)
                 ax = plt.subplot2grid((num_rows*4, num_cols), (4*y, x), rowspan=3)
-                ax.imshow(spatial, interpolation='nearest', cmap='gray') #, clim=[np.min(W0), np.max(W0)])
+                ax.imshow(spatial, interpolation='nearest', cmap=cmap) #, clim=[np.min(W0), np.max(W0)])
                 plt.grid('off')
                 plt.axis('off')
 
@@ -87,7 +87,7 @@ def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
                 plt_idx = y * num_cols + x + 1
                 spatial, temporal = ft.decompose(weights[plt_idx-1])
                 plt.subplot(num_rows, num_cols, plt_idx)
-                plt.imshow(spatial, interpolation='nearest', cmap='gray')
+                plt.imshow(spatial, interpolation='nearest', cmap=cmap)
                 plt.colorbar()
                 plt.grid('off')
                 plt.axis('off')
@@ -130,7 +130,7 @@ def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
 
 
 def visualize_affine_weights(weights, num_conv_filters, layer_name='layer_4', title='affine', 
-        fig_dir=pwd, fig_size=(8,10), dpi=300, display=True, save=False):
+        fig_dir=pwd, fig_size=(8,10), dpi=300, display=True, save=False, cmap='seismic'):
     '''
     Visualize convolutional spatiotemporal filters in a convolutional neural
     network.
@@ -160,30 +160,34 @@ def visualize_affine_weights(weights, num_conv_filters, layer_name='layer_4', ti
     spatial_size = np.sqrt(weights.shape[0]/num_conv_filters)
     assert weights.shape[0] % num_conv_filters == 0, 'Incorrect number of convolutional filters'
 
+    # plot all filters on same color axis
+    if normalize:
+        colorlimit = [-np.max(abs(weights[:])), np.max(abs(weights[:]))]
+
     # plot space and time profiles together
     fig = plt.gcf()
     fig.set_size_inches(fig_size)
     plt.title(title, fontsize=20)
     num_cols = int(num_conv_filters)
     num_rows = int(num_affine_units)
+
+    # create one grid that we'll plot at the end
+    G = np.zeros((num_affine_units * (1 + spatial_size), num_conv_filters * (1 + spatial_size)))
+
     idxs = range(num_cols)
     for y in range(num_rows):
         one_unit = weights[:,y].reshape((num_conv_filters, spatial_size, spatial_size))
-        colorlimit = [np.min(one_unit), np.max(one_unit)]
         for x in range(num_cols):
             plt_idx = y * num_cols + x + 1
-            plt.subplot(num_rows, num_cols, plt_idx)
-            ax = plt.imshow(one_unit[x], clim=colorlimit, interpolation='nearest', cmap='gray')
-            plt.grid('off')
-            plt.xticks([])
-            plt.yticks([])
+            G[y*(spatial_size)+y:(y+1)*spatial_size+y,x*(spatial_size)+x:(x+1)*spatial_size+x] = one_unit[x]
 
-            if x == 0:
-                if y == int(num_rows/2):
-                    plt.ylabel('%d Units in Affine Layer' %(num_affine_units), fontsize=20)
-            if y == num_rows-1:
-                if x == 0:
-                    plt.xlabel('Weights per Convolutional Filter Type', fontsize=20)
+    plt.imshow(G, cmap=cmap, clim=colorlimit)
+    plt.grid('off')
+    plt.xticks([])
+    plt.yticks([])
+    plt.ylabel('%d Units in Affine Layer' %(num_affine_units), fontsize=20)
+    plt.xlabel('Weights per Convolutional Filter Type', fontsize=20)
+
 
     if display:
         plt.show()
@@ -357,7 +361,7 @@ def get_stc(stimulus, response):
     return stc - np.outer(sta, sta)
 
 
-def visualize_sta(sta, fig_size=(8,10), display=True, save=False): 
+def visualize_sta(sta, fig_size=(8,10), display=True, save=False, normalize=True): 
     '''
     Visualize one or many STAs of deep-retina interunits.
 
@@ -376,6 +380,9 @@ def visualize_sta(sta, fig_size=(8,10), display=True, save=False):
     else:
         num_units = sta.shape[0]
 
+    if normalize:
+        colorlimit = [-np.max(abs(sta[:])), np.max(abs(sta[:]))]
+
     # plot space and time profiles together
     fig = plt.gcf()
     fig.set_size_inches(fig_size)
@@ -392,7 +399,10 @@ def visualize_sta(sta, fig_size=(8,10), display=True, save=False):
                 spatial,temporal = ft.decompose(sta)
             #plt.subplot(num_rows, num_cols, plt_idx)
             ax = plt.subplot2grid((num_rows*4, num_cols), (4*y, x), rowspan=3)
-            ax.imshow(spatial, interpolation='nearest', cmap='seismic') #, clim=[np.min(W0), np.max(W0)])
+            if not normalize:
+                ax.imshow(spatial, interpolation='nearest', cmap='seismic') 
+            else:
+                ax.imshow(spatial, interpolation='nearest', cmap='seismic', clim=colorlimit) 
             plt.grid('off')
             plt.axis('off')
 

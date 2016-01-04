@@ -5,14 +5,15 @@ import pyret.visualizations as viz
 import theano
 import json
 import os
+import h5py
 from keras.models import model_from_json
 from preprocessing import datagen, loadexpt
 
 pwd = os.getcwd()
 
 def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
-        fig_size=(8,10), dpi=500, space=True, time=True, display=False,
-        save=True):
+        fig_size=(8,10), dpi=300, space=True, time=True, display=True,
+        save=False):
     '''
     Visualize convolutional spatiotemporal filters in a convolutional neural
     network.
@@ -20,7 +21,8 @@ def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
     Computes the spatial and temporal profiles by SVD.
 
     INPUTS:
-    weights         weight array of shape (num_filters, history, space, space)
+    weights         weight array of shape (num_filters, history, space, space) 
+                        or full path to weight file
     title           title of plots; also the saved plot file base name
     fig_dir         where to save figures
     fig_size        figure size in inches
@@ -38,6 +40,11 @@ def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
         spatial_profiles        list of spatial profiles of filters
         temporal_profiles       list of temporal profiles of filters
     '''
+
+    # if user supplied path instead of array of weights
+    if type(weights) == 'str':
+        weight_file = h5py.File(weights, 'r')
+        weights = weight_file['layer_0']['param_0']
 
     num_filters = weights.shape[0]
 
@@ -123,7 +130,7 @@ def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
 
 
 def visualize_affine_weights(weights, num_conv_filters, title='affine', fig_dir=pwd,
-        fig_size=(8,10), dpi=500, display=False, save=True):
+        fig_size=(8,10), dpi=300, display=True, save=False):
     '''
     Visualize convolutional spatiotemporal filters in a convolutional neural
     network.
@@ -234,7 +241,7 @@ def response_before_threshold(weights, model, layer_id, stimulus):
 # function that plots the receptive field of the interneurons (i.e. conv or affine layer activations)
 def get_sta(model, layer_id, samples=50000, batch_size=50):
     '''
-    White noise STA of an intermeidate unit.
+    White noise STA of an intermedate unit.
     '''
     # Get function for generating responses of intermediate unit.
     get_activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
@@ -275,9 +282,18 @@ def get_sta(model, layer_id, samples=50000, batch_size=50):
     sta /= samples
     #sta = sta.reshape((*(list(true_response_shape) + [-1])))
     #sta = sta.reshape((*true_response_shape, -1))
-    assert len(true_response_shape) == 3
-    sta = sta.reshape(true_response_shape[0], true_response_shape[1], true_response_shape[2], -1)
-    return sta
+
+    # when the sta is of a conv layer
+    if len(true_response_shape) == 3:
+        sta = sta.reshape(true_response_shape[0], true_response_shape[1], true_response_shape[2], -1)
+        return sta
+    # when the sta is of an affine layer
+    elif len(true_response_shape) == 1:
+        sta = sta.reshape(true_response_shape[0], 40, 50, 50)
+        return sta
+    else:
+        print('STA shape not recognized. Returning [sta, shape of response].')
+        return [sta, true_response_shape]
 
 
 

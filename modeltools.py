@@ -2,6 +2,7 @@ import theano
 import h5py
 import tableprint
 from keras.models import model_from_json
+from scipy.stats import pearsonr
 
 def load_model(model_path, weight_filename):
 	''' Loads a Keras model using:
@@ -72,4 +73,25 @@ def list_layers(model_path, weight_filename):
             print(tableprint.row([l.encode('ascii','ignore'), '', '']))
 
     print(tableprint.hr(3))
+
+def get_performance(model, stim_type='natural', cells=[0]):
+    '''
+    Get correlation coefficient on held-out data for deep-retina.
+    '''
+    if stim_type is 'natural':
+        test_data = loadexpt(cells, 'naturalscene', 'test', 40)
+    elif stim_type is 'white':
+        test_data = loadexpt(cells, 'whitenoise', 'test', 40)
+
+    truth = []
+    predictions = []
+    for X, y in datagen(50, *test_data):
+        truth.extend(y)
+        predictions.extend(model.predict(X))
+
+    test_cc = []
+    for c in cells:
+        test_cc.append(pearsonr(truth[:,c], predictions[:,c])[0])
+
+    return test_cc
 

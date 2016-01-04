@@ -41,7 +41,18 @@ def load_partial_model(model, layer_id):
 
 def list_layers(model_path, weight_filename):
     '''
-    Lists the layers in the model.
+    Lists the layers in the model with their children.
+    
+    This provides an easy way to see how many "layers" in the model there are, and which ones
+    have weights attached to them.
+
+    Layers without weights and biases are relu, pool, or flatten layers.
+
+    INPUT:
+			model_path		the full path to the saved weight and architecture files, ending in '/'
+			weight_filename	an h5 file with the weights
+    OUTPUT:
+            an ASCII table using tableprint
     '''
     weights = h5py.File(model_path + weight_filename, 'r')
     layer_names = list(weights)

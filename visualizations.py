@@ -11,9 +11,9 @@ from preprocessing import datagen, loadexpt
 
 pwd = os.getcwd()
 
-def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
-        fig_size=(8,10), dpi=300, space=True, time=True, display=True,
-        save=False, cmap='seismic'):
+def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
+        fig_dir=pwd, fig_size=(8,10), dpi=300, space=True, time=True, display=True,
+        save=False, cmap='seismic', normalize=True):
     '''
     Visualize convolutional spatiotemporal filters in a convolutional neural
     network.
@@ -44,9 +44,13 @@ def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
     # if user supplied path instead of array of weights
     if type(weights) is str:
         weight_file = h5py.File(weights, 'r')
-        weights = weight_file['layer_0']['param_0']
+        weights = weight_file[layer_name]['param_0']
 
     num_filters = weights.shape[0]
+
+    if normalize:
+        max_val = np.max(abs(weights[:]))
+        colorlimit = [-max_val, max_val]
 
     # plot space and time profiles together
     if space and time:
@@ -62,7 +66,10 @@ def visualize_convnet_weights(weights, title='convnet', fig_dir=pwd,
                 spatial,temporal = ft.decompose(weights[plt_idx-1])
                 #plt.subplot(num_rows, num_cols, plt_idx)
                 ax = plt.subplot2grid((num_rows*4, num_cols), (4*y, x), rowspan=3)
-                ax.imshow(spatial, interpolation='nearest', cmap=cmap) #, clim=[np.min(W0), np.max(W0)])
+                if normalize:
+                    ax.imshow(spatial, interpolation='nearest', cmap=cmap, clim=colorlimit) 
+                else:
+                    ax.imshow(spatial, interpolation='nearest', cmap=cmap)
                 plt.grid('off')
                 plt.axis('off')
 

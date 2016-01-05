@@ -1,8 +1,10 @@
+import numpy as np
 import theano
 import h5py
 import tableprint
 from keras.models import model_from_json
 from scipy.stats import pearsonr
+from preprocessing import datagen, loadexpt
 
 def load_model(model_path, weight_filename):
 	''' Loads a Keras model using:
@@ -89,9 +91,23 @@ def get_performance(model, stim_type='natural', cells=[0]):
         truth.extend(y)
         predictions.extend(model.predict(X))
 
+    truth = np.array(truth)
+    predictions = np.array(predictions)
+
     test_cc = []
     for c in cells:
         test_cc.append(pearsonr(truth[:,c], predictions[:,c])[0])
 
     return test_cc
+
+def get_weights(path_to_weights, layer_name='layer_0'):
+    '''
+    A simple function to return the weights from a saved .h5 file.
+    '''
+    
+    weight_file = h5py.File(path_to_weights, 'r')
+
+    # param_0 stores the weights, param_1 stores biases
+    weights = weight_file[layer_name]['param_0']
+    return weights
 

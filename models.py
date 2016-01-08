@@ -278,7 +278,7 @@ class convnet(Model):
             #Add relu activation separately for threshold visualizations
             self.model.add(Activation('relu'))
             # max pooling layer
-            self.model.add(MaxPooling2D(pool_size=(2, 2), ignore_border=True))
+            self.model.add(MaxPooling2D(pool_size=(2, 2))
 
             # flatten
             self.model.add(Flatten())
@@ -363,7 +363,7 @@ class lstm(Model):
             #Add relu activation separately for threshold visualizations
             self.model.add(Activation('relu'))
             # max pooling layer
-            self.model.add(TimeDistributedMaxPooling2D(pool_size=(2, 2), ignore_border=True))
+            self.model.add(TimeDistributedMaxPooling2D(pool_size=(2, 2))
 
             # flatten
             self.model.add(TimeDistributedFlatten())

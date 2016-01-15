@@ -1,5 +1,5 @@
 import numpy as np
-from utils import rolling_window
+from .utils import rolling_window
 
 # Probe contrast adaptation
 def get_contrast_changes(period=5, low_contrast=0.1, high_contrast=1.0, sample_rate=30):
@@ -16,10 +16,10 @@ def get_contrast_changes(period=5, low_contrast=0.1, high_contrast=1.0, sample_r
             full_field_movie    np array of shape (nframes, 40, 50, 50)
     '''
 
-    flicker_sequence = np.hstack([low_contrast*np.random.randn(period*sample_rate), 
+    flicker_sequence = np.hstack([low_contrast*np.random.randn(period*sample_rate),
                                   high_contrast*np.random.randn(period*sample_rate),
                                   low_contrast*np.random.randn(period*sample_rate)])
-        
+
     # Convert flicker sequence into full field movie
     full_field_flicker = np.outer(flicker_sequence, np.ones((1,50,50)))
     full_field_flicker = full_field_flicker.reshape((flicker_sequence.shape[0], 50, 50))
@@ -66,7 +66,7 @@ def get_full_field_flashes(mask=np.ones((50,50)), initial_flash=60, latency=10, 
 
     flash_sequence = get_flash_sequence(initial_flash=initial_flash, latency=latency, nsamples=nsamples,
                                        intensity=intensity, flash_length=flash_length)
-    
+
     # Convert flash sequence into full field movie
     full_field_flash = np.outer(flash_sequence, mask)
     full_field_flash = full_field_flash.reshape((flash_sequence.shape[0], 50, 50))
@@ -102,7 +102,7 @@ def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask
         grating_frame = grating_frame * mask * intensity
     else:
         grating_frame = grating_frame * intensity
-    
+
     # make movie
     grating_movie = np.zeros((movie_duration, 50, 50))
     polarity_count = 0
@@ -112,7 +112,7 @@ def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask
             grating_movie[frame] = grating_frame
         else:
             grating_movie[frame] = -1 * grating_frame
-            
+
     # roll movie axes to get the right shape
     full_movies = rolling_window(grating_movie, 40)
     full_movies = np.rollaxis(full_movies, 2)

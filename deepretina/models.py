@@ -161,7 +161,7 @@ class Model(object):
         """
 
         # store the weights
-        filename = join(self.savedir, "epoch{:03d}_iter{:05d}_weights.h5".format(epoch, iteration))
+        filename = join(self.weightsdir, "epoch{:03d}_iter{:05d}_weights.h5".format(epoch, iteration))
         self.model.save_weights(filename)
 
 

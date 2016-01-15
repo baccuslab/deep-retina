@@ -60,15 +60,25 @@ if __name__ == '__main__':
     data = generate_data()
     (X_train, y_train), (X_test, y_test) = train_test_split(data)
 
+    nb_epochs = 10
+    batch_size = 1000
+
     # build the model
     n_hidden = 32
     model = Sequential()
-    model.add(LSTM(n_hidden, input_shape=(100,2)))
+    model.add(LSTM(n_hidden, batch_input_shape=(batch_size, 100, 2), stateful=True))
     model.add(Dense(2, activation='linear'))
     model.compile(loss="mean_squared_error", optimizer="adam")
 
     # train
-    model.fit(X_train, y_train, batch_size=1000, nb_epoch=10)
+    for epoch in range(nb_epochs):
+
+        print("------------------ Epoch {} of {} ------------------"
+              .format(epoch+1, nb_epochs))
+
+        for X, y in datagen(batch_size, X_train, y_train):
+            fobj, acc = model.train_on_batch(X, y, accuracy=True)
+            print("f = {:2.2f}\ta = {:2.2f}".format(float(fobj), float(acc)))
 
     # predict
     y_pred = model.predict(X_test)

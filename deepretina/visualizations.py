@@ -7,7 +7,7 @@ import json
 import os
 import h5py
 from keras.models import model_from_json
-from preprocessing import datagen, loadexpt
+from .preprocessing import datagen, loadexpt
 
 pwd = os.getcwd()
 
@@ -21,7 +21,7 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
     Computes the spatial and temporal profiles by SVD.
 
     INPUTS:
-    weights         weight array of shape (num_filters, history, space, space) 
+    weights         weight array of shape (num_filters, history, space, space)
                         or full path to weight file
     title           title of plots; also the saved plot file base name
     fig_dir         where to save figures
@@ -67,7 +67,7 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
                 #plt.subplot(num_rows, num_cols, plt_idx)
                 ax = plt.subplot2grid((num_rows*4, num_cols), (4*y, x), rowspan=3)
                 if normalize:
-                    ax.imshow(spatial, interpolation='nearest', cmap=cmap, clim=colorlimit) 
+                    ax.imshow(spatial, interpolation='nearest', cmap=cmap, clim=colorlimit)
                 else:
                     ax.imshow(spatial, interpolation='nearest', cmap=cmap)
                 plt.grid('off')
@@ -136,7 +136,7 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
 
 
 
-def visualize_affine_weights(weights, num_conv_filters, layer_name='layer_4', title='affine units', 
+def visualize_affine_weights(weights, num_conv_filters, layer_name='layer_4', title='affine units',
         fig_dir=pwd, fig_size=(8,10), dpi=300, display=True, save=False, cmap='seismic'):
     '''
     Visualize convolutional spatiotemporal filters in a convolutional neural
@@ -367,14 +367,14 @@ def get_stc(stimulus, response):
     return stc - np.outer(sta, sta)
 
 
-def visualize_sta(sta, fig_size=(8,10), display=True, save=False, normalize=True): 
+def visualize_sta(sta, fig_size=(8,10), display=True, save=False, normalize=True):
     '''
     Visualize one or many STAs of deep-retina interunits.
 
     Computes the spatial and temporal profiles by SVD.
 
     INPUTS:
-    sta             weight array of shape (time, space, space) 
+    sta             weight array of shape (time, space, space)
                         or (num_units, time, space, space)
     fig_size        figure size in inches
     display         bool; display figure?
@@ -406,9 +406,9 @@ def visualize_sta(sta, fig_size=(8,10), display=True, save=False, normalize=True
             #plt.subplot(num_rows, num_cols, plt_idx)
             ax = plt.subplot2grid((num_rows*4, num_cols), (4*y, x), rowspan=3)
             if not normalize:
-                ax.imshow(spatial, interpolation='nearest', cmap='seismic') 
+                ax.imshow(spatial, interpolation='nearest', cmap='seismic')
             else:
-                ax.imshow(spatial, interpolation='nearest', cmap='seismic', clim=colorlimit) 
+                ax.imshow(spatial, interpolation='nearest', cmap='seismic', clim=colorlimit)
             plt.grid('off')
             plt.axis('off')
 

@@ -4,13 +4,13 @@ import h5py
 import tableprint
 from keras.models import model_from_json
 from scipy.stats import pearsonr
-from preprocessing import datagen, loadexpt
+from .preprocessing import datagen, loadexpt
 
 def load_model(model_path, weight_filename):
 	''' Loads a Keras model using:
 			- an architecture.json file
 			- an h5 weight file, for instance 'epoch018_iter01300_weights.h5'
-			
+
 		INPUT:
 			model_path		the full path to the saved weight and architecture files, ending in '/'
 			weight_filename	an h5 file with the weights
@@ -22,7 +22,7 @@ def load_model(model_path, weight_filename):
 	architecture_string = architecture_data.read()
 	model = model_from_json(architecture_string)
 	model.load_weights(model_path + weight_filename)
-	
+
 	return model
 
 
@@ -45,7 +45,7 @@ def load_partial_model(model, layer_id):
 def list_layers(model_path, weight_filename):
     '''
     Lists the layers in the model with their children.
-    
+
     This provides an easy way to see how many "layers" in the model there are, and which ones
     have weights attached to them.
 
@@ -152,7 +152,7 @@ def get_performance(model, stim_type='natural', cells=[0], metric='pearsonr'):
             model           Keras model
             stim_type       'natural' or 'white'; which test data to draw from?
             cells           list of cell indices
-            metric          'pearsonr' (scipy Pearson's r), 
+            metric          'pearsonr' (scipy Pearson's r),
                             'cc' (numpy's corrcoef),
                             'lli' (Log-likelihood improvement over a mean rate model in bits per spike),
                             'rmse' (Root mean squared error),
@@ -173,7 +173,7 @@ def get_performance(model, stim_type='natural', cells=[0], metric='pearsonr'):
             test_cc.append(rmse(truth[:,c], predictions[:,c]))
         elif metric is 'fev':
             test_cc.append(fev(truth[:,c], predictions[:,c]))
-        
+
 
     return test_cc
 
@@ -181,7 +181,7 @@ def get_weights(path_to_weights, layer_name='layer_0'):
     '''
         A simple function to return the weights from a saved .h5 file.
     '''
-    
+
     weight_file = h5py.File(path_to_weights, 'r')
 
     # param_0 stores the weights, param_1 stores biases

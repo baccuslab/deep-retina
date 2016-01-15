@@ -76,3 +76,5 @@ if __name__ == '__main__':
     # plot
     plt.plot(y_test[:100,:], '-')   # true responses
     plt.plot(y_pred[:100,:], '-')   # predicted responses
+    plt.show()
+    plt.draw()

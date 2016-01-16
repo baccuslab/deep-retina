@@ -9,10 +9,8 @@ import h5py
 from keras.models import model_from_json
 from .preprocessing import datagen, loadexpt
 
-pwd = os.getcwd()
-
 def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
-        fig_dir=pwd, fig_size=(8,10), dpi=300, space=True, time=True, display=True,
+        fig_dir=None, fig_size=(8,10), dpi=300, space=True, time=True, display=True,
         save=False, cmap='seismic', normalize=True):
     '''
     Visualize convolutional spatiotemporal filters in a convolutional neural
@@ -40,6 +38,9 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
         spatial_profiles        list of spatial profiles of filters
         temporal_profiles       list of temporal profiles of filters
     '''
+
+    if fig_dir is None:
+        fig_dir = os.getcwd()
 
     # if user supplied path instead of array of weights
     if type(weights) is str:
@@ -137,7 +138,7 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
 
 
 def visualize_affine_weights(weights, num_conv_filters, layer_name='layer_4', title='affine units',
-        fig_dir=pwd, fig_size=(8,10), dpi=300, display=True, save=False, cmap='seismic'):
+        fig_dir=None, fig_size=(8,10), dpi=300, display=True, save=False, cmap='seismic'):
     '''
     Visualize convolutional spatiotemporal filters in a convolutional neural
     network.
@@ -157,6 +158,9 @@ def visualize_affine_weights(weights, num_conv_filters, layer_name='layer_4', ti
     OUTPUT:
     saved figure or displayed figure (or both).
     '''
+
+    if fig_dir is None:
+        fig_dir = os.getcwd()
 
     # if user supplied path instead of array of weights
     if type(weights) is str:

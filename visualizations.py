@@ -57,8 +57,8 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
         fig = plt.gcf()
         fig.set_size_inches(fig_size)
         plt.title(title, fontsize=20)
-        num_cols = int(np.sqrt(num_filters))
-        num_rows = int(np.ceil(num_filters/num_cols))
+        num_rows = int(np.sqrt(num_filters))
+        num_cols = int(np.ceil(num_filters/num_rows))
         idxs = range(num_cols)
         for x in range(num_cols):
             for y in range(num_rows):

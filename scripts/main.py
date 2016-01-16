@@ -8,7 +8,7 @@ from __future__ import absolute_import
 from keras.optimizers import Adam
 from keras.objectives import poisson_loss
 
-from models import ln, convnet, lstm
+from .models import ln, convnet, lstm
 from keras.optimizers import RMSprop
 from keras.objectives import poisson_loss
 

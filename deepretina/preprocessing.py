@@ -9,7 +9,7 @@ import os
 import h5py
 from scipy.stats import zscore
 from scipy.special import gamma
-from utils import rolling_window, notify, Batch
+from .utils import rolling_window, notify, Batch
 
 __all__ = ['datagen', 'loadexpt']
 
@@ -83,7 +83,7 @@ def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False,
     return Batch(stim_reshaped, resp)
 
 
-def datagen(batchsize, X, y):
+def datagen(batchsize, X, y, shuffle=True):
     """
     Returns a generator that yields batches of data for one pass through the data
 
@@ -97,15 +97,22 @@ def datagen(batchsize, X, y):
 
     """
 
-    # number of samples
-    nsamples = y.shape[0] #changed this from y.size to account for lstm labels
+    # total number of samples
+    training_data_maxlength = y.shape[0]
 
-    # compute the number of batches per epoch
-    num_batches = int(np.floor(float(nsamples) / batchsize))
+    # compute the number of available batches of a fixed size
+    num_batches = int(np.floor(float(training_data_maxlength) / batchsize))
 
-    # reshuffle indices
-    N = num_batches * batchsize
-    indices = np.random.choice(N, N, replace=False).reshape(num_batches, batchsize)
+    # number of samples we are going to used
+    N = int(num_batches * batchsize)
+
+    # generate indices
+    indices = np.arange(N)
+    if shuffle:
+        np.random.shuffle(indices)
+
+    # reshape into batches
+    indices = indices.reshape(num_batches, batchsize)
 
     # for each batch in this epoch
     for inds in indices:

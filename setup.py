@@ -1,8 +1,9 @@
-from setuptools import setup
+from setuptools import setup, find_packages
+import deepretina
 
 setup(name = 'deepretina',
-        version = '0.1',
-        description = 'Deep learning model of the retina',
+        version = deepretina.__version__,
+        description = 'Neural network models of the retina',
         author = 'Niru Maheshwaranathan, Lane McIntosh, Aran Nayebi',
         author_email = 'lmcintosh@stanford.edu',
         url = 'https://github.com/baccuslab/deep-retina.git',
@@ -15,8 +16,6 @@ setup(name = 'deepretina',
             'Intended Audience :: Science/Research',
             'Operating System :: MacOS :: MacOS X',
             'Topic :: Scientific/Engineering :: Information Analysis'],
-        packages = ['deepretina'],
-        package_dir = {'deepretina': ''},
-        py_modules = ['models', 'preprocessing', 'utils', 'visualizations']
+        packages = find_packages(),
         )
 

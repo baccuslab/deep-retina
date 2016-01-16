@@ -15,12 +15,13 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
 from keras.regularizers import l2
 
-from preprocessing import datagen, loadexpt
-from utils import notify, Batch, mksavedir, tocsv, tomarkdown, metric
+from .preprocessing import datagen, loadexpt
+from .utils import notify, Batch, mksavedir, tocsv, tomarkdown, metric
 from numpy.random import choice
 from functools import partial
 
 __all__ = ['Model', 'ln', 'convnet', 'lstm']
+
 
 class Model(object):
 
@@ -50,8 +51,11 @@ class Model(object):
         with notify('Compiling'):
             self.model.compile(loss=loss, optimizer=optimizer)
 
-        # save architecture as a json file
+        # create directories to save model results and weights in
         self.savedir = mksavedir(prefix=str(self))
+        self.weightsdir = mksavedir(basedir='~/deep-retina-saved-weights/', prefix=str(self))
+
+        # save architecture as a json file
         with notify('Saving architecture'):
             with open(join(self.savedir, 'architecture.json'), 'w') as f:
                 f.write(self.model.to_json())
@@ -89,10 +93,10 @@ class Model(object):
         batchsize : int
 
         num_epochs : int, optional
-            Default: 20
+            Number of epochs to train for. (Default: 20)
 
         save_every : int, optional
-            Default: 5
+            Saves the model parameters after `save_every` training batches. (Default: 5)
 
         """
 
@@ -157,7 +161,7 @@ class Model(object):
         """
 
         # store the weights
-        filename = join(self.savedir, "epoch{:03d}_iter{:05d}_weights.h5".format(epoch, iteration))
+        filename = join(self.weightsdir, "epoch{:03d}_iter{:05d}_weights.h5".format(epoch, iteration))
         self.model.save_weights(filename)
 
 
@@ -165,7 +169,6 @@ class ln(Model):
 
     def __str__(self):
         return "LN"
-
 
     def __init__(self, cell_index, stimulus_type, loss='poisson_loss', optimizer='sgd',
                  weight_init='glorot_normal', l2_reg=0., mean_adapt=False, stimulus_shape=(40, 50, 50)):
@@ -303,6 +306,7 @@ class convnet(Model):
 
         # compile
         super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
+
 
 class lstm(Model):
 

@@ -378,7 +378,7 @@ class fixedlstm(Model):
                                        ])
 
         # compile
-        super().__init__(cell_index, stimulus_type, loss, optimizer, timesteps, mean_adapt)
+        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
 
 class lstm(Model):
 

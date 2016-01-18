@@ -361,7 +361,7 @@ class fixedlstm(Model):
             self.model = Sequential()
 
             # Add relu activation separately for threshold visualization
-            self.model.add(Activation('relu', input_shape=(num_filters,)))
+            self.model.add(Activation('relu', input_shape=(timesteps, num_filters)))
 
             # Add LSTM, forget gate bias automatically initialized to 1, default weight initializations recommended
             self.model.add(LSTM(100*num_filters, forget_bias_init='one', return_sequences=True))

@@ -372,7 +372,7 @@ class fixedlstm(Model):
 
         # save architecture string (for markdown file)
         self.architecture = '\n'.join(['{} output units'.format(nout),
-                                       'weight initialization: {}'.format(weight_init),
+                                       'weight initialization: {}'.format(weight_init), 'timesteps: {}'.format(self.timesteps), 
                                        'l2 regularization: {}'.format(l2_reg),
                                        'num input filters: {}'.format(num_filters),
                                        ])

@@ -20,6 +20,21 @@ datadirs = {
     'lane.local': os.path.expanduser('~/experiments/data/')
 }
 
+def loadaffine(cellidx, filename, timesteps, method, exptdate='15-10-07'):
+    with notify('Loading {}ing data'.format(method)):
+        f = h5py.File(os.path.join(datadirs[os.uname()[1]], exptdate, filename + '_affine.h5'), 'r')
+        stim = np.array(f[method]['stimulus']).astype('float32')
+        resp = np.array(f[method]['response/firing_rate_10ms'][cellidx]).T
+        numExamples = (int(stim.shape[0]/timesteps))*timesteps
+        stim = stim[:numExamples]
+        resp = resp[:numExamples]
+        stim = np.reshape(stim, (int(numExamples/timesteps), timesteps, stim.shape[1]))
+        if type(cellidx) is int:
+            nout = 1
+        else:
+            nout = len(cellidx)
+        resp = np.reshape(resp, (int(numExamples/timesteps), timesteps, nout))
+    return Batch(stim, resp)
 
 def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False,
     cutout=False, cutout_cell=0, exptdate='15-10-07'):

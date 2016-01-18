@@ -20,7 +20,7 @@ from .utils import notify, Batch, mksavedir, tocsv, tomarkdown, metric
 from numpy.random import choice
 from functools import partial
 
-__all__ = ['Model', 'ln', 'convnet', 'lstm']
+__all__ = ['Model', 'ln', 'convnet', 'lstm', 'fixedlstm']
 
 
 class Model(object):

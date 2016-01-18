@@ -15,7 +15,7 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
 from keras.regularizers import l2
 
-from .preprocessing import datagen, loadexpt
+from .preprocessing import datagen, loadexpt, loadaffine
 from .utils import notify, Batch, mksavedir, tocsv, tomarkdown, metric
 from numpy.random import choice
 from functools import partial

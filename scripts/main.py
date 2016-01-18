@@ -62,7 +62,8 @@ def fit_lstm(cell, stimulus_type, num_timesteps):
 
 
 if __name__ == '__main__':
-    pass
+    #pass
     # mdl = fit_lstm(4, 'naturalscene', 152)
     # mdl = fit_ln(0, 'whitenoise')
-    mdl = fit_convnet([0, 1, 2, 3, 4], 'naturalscene')
+    # mdl = fit_convnet([0,1,2,3,4], 'naturalscene')
+    # mdl = fit_convnet(0, 'naturalscene')

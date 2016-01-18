@@ -55,7 +55,7 @@ whitenoise_model = model_from_json(whitenoise_architecture_string)
 
 # Do long STC
 stc = np.zeros((11*11, 11*11))
-n_samples = 100000
+n_samples = 1000000
 batch_size = 100
 for idx in range(n_samples/batch_size):
     stim = np.random.randint(0,2, size=(batch_size,40,50,50)).astype('float32')

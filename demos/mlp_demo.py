@@ -1,12 +1,5 @@
-"""
-Toy demo for sequence prediction using LSTM layers
-Uses Keras v0.3
-
-"""
-
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation
-from keras.layers.recurrent import LSTM
 from keras.optimizers import adam, SGD
 from datagen import generate_batch
 import tableprint as tp
@@ -17,11 +10,11 @@ def build(n_input, n_hidden):
 
     model = Sequential()
 
-    model = Sequential()
-    model.add(LSTM(n_hidden, input_shape=(n_input, 1)))
-    model.add(Dense(1, activation='linear'))
+    model.add(Dense(n_hidden, input_dim=n_input))
+    model.add(Activation('tanh'))
+    model.add(Dense(1))
 
-    model.compile(loss='mean_squared_error', optimizer=adam())
+    model.compile(loss='mean_squared_error', optimizer=SGD(lr=0.0001))
 
     return model
 
@@ -33,7 +26,6 @@ def train(niter, nsteps, nhidden, ntrain, ntest, snr=10.0):
 
     # generate a test batch
     Xtest, ytest = generate_batch(ntest, nsteps, snr=snr)
-    Xtest = Xtest.reshape(*Xtest.shape, 1)
 
     # print header
     print(tp.header(['Iter', 'Train', 'Test']))
@@ -44,7 +36,6 @@ def train(niter, nsteps, nhidden, ntrain, ntest, snr=10.0):
 
         # get data
         X, y = generate_batch(ntrain, nsteps, snr=snr)
-        X = X.reshape(*X.shape, 1)
 
         # train
         fobj = model.train_on_batch(X, y)
@@ -62,6 +53,6 @@ def train(niter, nsteps, nhidden, ntrain, ntest, snr=10.0):
 
 if __name__ == '__main__':
 
-    model, Xtest, ytest, yhat, error = train(1000, 100, 64, 50, 500, snr=10.)
+    model, Xtest, ytest, yhat, error = train(1000, 100, 64, 100, 500, snr=10.)
 
     # plt.plot(error)

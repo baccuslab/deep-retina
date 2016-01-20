@@ -2,89 +2,66 @@
 Toy demo for sequence prediction using LSTM layers
 Uses Keras v0.3
 
-code adapted from: http://danielhnyk.cz/predicting-sequences-vectors-keras-using-rnn-lstm/
-
-2015/01/12
-
 """
 
-import numpy as np
-import pandas as pd
-from random import random
 from keras.models import Sequential
+from keras.layers.core import Dense, Activation
 from keras.layers.recurrent import LSTM
-from keras.layers.core import Dense
-import matplotlib.pyplot as plt
+from keras.optimizers import adam, SGD
+from datagen import generate_batch
+import tableprint as tp
+import numpy as np
 
-def generate_data():
-    """
-    Generates a toy data sequence to train on
 
-    """
+def build(n_input, n_hidden):
 
-    flow = (list(range(1,10,1)) + list(range(10,1,-1)))*1000
-    pdata = pd.DataFrame({"a":flow, "b":flow})
-    pdata.b = pdata.b.shift(9)
-    return pdata.iloc[10:] * random()  # some noise
+    model = Sequential()
 
-def _load_data(data, n_prev = 100):
-    """
-    helper function
+    model = Sequential()
+    model.add(LSTM(n_hidden, input_shape=(n_input, 1)))
+    model.add(Dense(1, activation='linear'))
 
-    data should be pd.DataFrame()
-    """
+    model.compile(loss='mean_squared_error', optimizer=adam())
 
-    docX, docY = [], []
-    for i in range(len(data)-n_prev):
-        docX.append(data.iloc[i:i+n_prev].as_matrix())
-        docY.append(data.iloc[i+n_prev].as_matrix())
-    alsX = np.array(docX)
-    alsY = np.array(docY)
+    return model
 
-    return alsX, alsY
 
-def train_test_split(df, test_size=0.1):
-    """
-    This just splits data to training and testing parts
-    """
-    ntrn = round(len(df) * (1 - test_size))
+def train(niter, nsteps, nhidden, ntrain, ntest, snr=10.0):
 
-    X_train, y_train = _load_data(df.iloc[0:ntrn])
-    X_test, y_test = _load_data(df.iloc[ntrn:])
+    # build a model
+    model = build(nsteps, nhidden)
 
-    return (X_train, y_train), (X_test, y_test)
+    # generate a test batch
+    Xtest, ytest = generate_batch(ntest, nsteps, snr=snr)
+    Xtest = Xtest.reshape(*Xtest.shape, 1)
+
+    # print header
+    print(tp.header(['Iter', 'Train', 'Test']))
+
+    error = []
+
+    for idx in range(niter):
+
+        # get data
+        X, y = generate_batch(ntrain, nsteps, snr=snr)
+        X = X.reshape(*X.shape, 1)
+
+        # train
+        fobj = model.train_on_batch(X, y)
+
+        # test
+        yhat = model.predict(Xtest).ravel()
+        test_err = ((yhat - ytest) ** 2).mean()
+
+        # update
+        error.append((float(fobj[0]), test_err))
+        print(tp.row([idx, float(fobj[0]), test_err]), flush=True)
+
+    return model, Xtest, ytest, yhat, np.array(error)
+
 
 if __name__ == '__main__':
 
-    # generate sample data
-    data = generate_data()
-    (X_train, y_train), (X_test, y_test) = train_test_split(data)
+    model, Xtest, ytest, yhat, error = train(1000, 100, 64, 50, 500, snr=10.)
 
-    nb_epochs = 10
-    batch_size = 1000
-
-    # build the model
-    n_hidden = 32
-    model = Sequential()
-    model.add(LSTM(n_hidden, batch_input_shape=(batch_size, 100, 2), stateful=True))
-    model.add(Dense(2, activation='linear'))
-    model.compile(loss="mean_squared_error", optimizer="adam")
-
-    # train
-    for epoch in range(nb_epochs):
-
-        print("------------------ Epoch {} of {} ------------------"
-              .format(epoch+1, nb_epochs))
-
-        for X, y in datagen(batch_size, X_train, y_train):
-            fobj, acc = model.train_on_batch(X, y, accuracy=True)
-            print("f = {:2.2f}\ta = {:2.2f}".format(float(fobj), float(acc)))
-
-    # predict
-    y_pred = model.predict(X_test)
-
-    # plot
-    plt.plot(y_test[:100,:], '-')   # true responses
-    plt.plot(y_pred[:100,:], '-')   # predicted responses
-    plt.show()
-    plt.draw()
+    # plt.plot(error)

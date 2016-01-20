@@ -368,7 +368,7 @@ class fixedlstm(Model):
             self.model.add(Activation('relu', input_shape=(timesteps, num_filters)))
 
             # Add LSTM, forget gate bias automatically initialized to 1, default weight initializations recommended
-            self.model.add(LSTM(100*num_filters, forget_bias_init='one', return_sequences=True))
+            self.model.add(LSTM(num_hidden, forget_bias_init='one', return_sequences=True))
 #            self.model.add(LSTM(num_hidden, forget_bias_init='one', return_sequences=False))
 
             # Add a final dense (affine) layer with softplus activation

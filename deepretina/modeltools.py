@@ -111,6 +111,9 @@ def lli(r, rhat):
 
     mean = np.mean(rhat)
     mu = float(np.mean(r * np.log(mean) - mean))
+    # account for possibility that rhat is zero
+    r = r[rhat > 0]
+    rhat = rhat[rhat > 0]
     return (np.mean(r * np.log(rhat) - rhat) - mu) / (mean * np.log(2))
 
 

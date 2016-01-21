@@ -72,6 +72,9 @@ class Model(object):
         else:
             self.holdout = loadaffine(cell_index, self.stimulus_type, self.timesteps, 'test')
             self.training = loadaffine(cell_index, self.stimulus_type, self.timesteps, 'train')
+#            self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.timesteps)
+#            self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.timesteps)
+
 
         # save model information to a markdown file
         if 'architecture' not in self.__dict__:
@@ -316,7 +319,7 @@ class fixedlstm(Model):
     def __str__(self):
         return "fixedlstm"
 
-    def __init__(self, cell_index, stimulus_type, timesteps=152, num_filters=16,
+    def __init__(self, cell_index, stimulus_type, timesteps=152, num_filters=16, num_hidden=1600,
                  loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False):
         """
         CNN-LSTM network with fixed CNN features as input.
@@ -365,15 +368,17 @@ class fixedlstm(Model):
             self.model.add(Activation('relu', input_shape=(timesteps, num_filters)))
 
             # Add LSTM, forget gate bias automatically initialized to 1, default weight initializations recommended
-            self.model.add(LSTM(100*num_filters, forget_bias_init='one', return_sequences=True))
+            self.model.add(LSTM(num_hidden, forget_bias_init='one', return_sequences=True))
+#            self.model.add(LSTM(num_hidden, forget_bias_init='one', return_sequences=False))
 
             # Add a final dense (affine) layer with softplus activation
             self.model.add(TimeDistributedDense(nout, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))
+#            self.model.add(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))
 
         # save architecture string (for markdown file)
         self.architecture = '\n'.join(['{} output units'.format(nout),
                                        'weight initialization: {}'.format(weight_init), 'timesteps: {}'.format(self.timesteps), 
-                                       'l2 regularization: {}'.format(l2_reg),
+                                       'hidden units: {}'.format(num_hidden), 'l2 regularization: {}'.format(l2_reg),
                                        'num input filters: {}'.format(num_filters),
                                        ])
 

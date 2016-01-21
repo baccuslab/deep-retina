@@ -226,7 +226,7 @@ class convnet(Model):
     def __str__(self):
         return "convnet"
 
-    def __init__(self, cell_index, stimulus_type, num_filters=(4, 16), filter_size=(9,9),
+    def __init__(self, cell_index, stimulus_type, num_filters=(4, 16), filter_size=(9, 9),
                  loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False,
                  stimulus_shape=(40, 50, 50)):
         """

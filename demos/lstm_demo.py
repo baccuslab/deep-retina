@@ -30,7 +30,7 @@ def train(niter, nsteps, nhidden, ntrain, ntest, snr=10.0, disp=True):
 
     # generate a test batch
     Xtest, ytest = generate_batch(ntest, nsteps, snr=snr)
-    Xtest = Xtest.reshape(*Xtest.shape, 1)
+    Xtest = Xtest.reshape(Xtest.shape[0], Xtest.shape[1], 1)
 
     # print header
     if disp:
@@ -42,7 +42,7 @@ def train(niter, nsteps, nhidden, ntrain, ntest, snr=10.0, disp=True):
 
         # get data
         X, y = generate_batch(ntrain, nsteps, snr=snr)
-        X = X.reshape(*X.shape, 1)
+        X = X.reshape(X.shape[0], X.shape[1], 1)
 
         # train
         fobj = model.train_on_batch(X, y)
@@ -71,7 +71,7 @@ def scan_params():
     Scans parameters for training LSTMs
 
     """
-    
+
     nh = np.array([4, 6, 8, 12, 16, 24, 32, 48, 64])
     nt = np.array([5, 10, 15, 20, 25, 30, 35, 40, 45, 50])
     niter = 1000

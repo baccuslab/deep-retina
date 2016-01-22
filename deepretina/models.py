@@ -10,13 +10,14 @@ from os.path import join
 from time import strftime
 
 from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Activation, Flatten, TimeDistributedDense
+from keras.layers.core import Dense, Activation, Flatten, TimeDistributedDense
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
 from keras.regularizers import l2
 
-from .preprocessing import datagen, loadexpt, loadaffine
-from .utils import notify, Batch, mksavedir, tocsv, tomarkdown, metric
+from .preprocessing import datagen, loadexpt
+from .utils import notify, Batch, mksavedir, tocsv, tomarkdown
+from .metrics import cc, lli, rmse
 from numpy.random import choice
 from functools import partial
 
@@ -62,19 +63,16 @@ class Model(object):
 
         # function to write data to a CSV file
         self.save_csv = partial(tocsv, join(self.savedir, 'performance'))
-        self.save_csv(['Epoch', 'Iteration', 'Training CC', 'Test CC'])
+        self.save_csv(['Epoch', 'Iteration',
+                       'CC:Train', 'CC:Test',
+                       'LLI:Train', 'LLI:Test',
+                       'RMSE:Train', 'RMSE:Test',
+                       ])
 
         # load experimental data
         self.stimulus_type = stimulus_type
-        if str(self) != 'fixedlstm':
-            self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[0], mean_adapt=mean_adapt)
-            self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[0], mean_adapt=mean_adapt)
-        else:
-            self.holdout = loadaffine(cell_index, self.stimulus_type, self.timesteps, 'test')
-            self.training = loadaffine(cell_index, self.stimulus_type, self.timesteps, 'train')
-#            self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.timesteps)
-#            self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.timesteps)
-
+        self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[0], mean_adapt=mean_adapt)
+        self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[0], mean_adapt=mean_adapt)
 
         # save model information to a markdown file
         if 'architecture' not in self.__dict__:
@@ -89,7 +87,6 @@ class Model(object):
 
         # write metadata to a markdown file
         tomarkdown(join(self.savedir, 'README'), metadata)
-
 
     def train(self, batchsize, num_epochs=20, save_every=5):
         """
@@ -118,9 +115,9 @@ class Model(object):
 
             # update display
             print('')
-            print('='*20)
+            print('=' * 20)
             print('==== Epoch #{:3d} ===='.format(epoch))
-            print('='*20)
+            print('=' * 20)
             print('Train CC: {:4.3f}'.format(res[2]))
             print(' Test CC: {:4.3f}\n'.format(res[3]))
 
@@ -145,19 +142,27 @@ class Model(object):
 
     def test(self, epoch, iteration):
 
-        # performance on the entire holdout set
-        yhat_test = self.predict(self.holdout.X)
-        corr_test = metric(yhat_test.ravel(), self.holdout.y)
-
         # performance on a subset of the training data
         training_sample_size = yhat_test.shape[0]
         inds = choice(self.training.y.shape[0], training_sample_size, replace=False)
-        yhat_train = self.predict(self.training.X[inds, ...])
-        corr_train = metric(yhat_train.ravel(), self.training.y[inds])
+        rhat_train = self.predict(self.training.X[inds, ...])
+        r_train = self.training.y.shape[0]
+
+        # performance on the entire holdout set
+        rhat_test = self.predict(self.holdout.X)
+        r_test = self.holdout.y
+
+        # evalue using the given metrics
+        functions = (cc, lli, rmse)
+        scores = [(f(r_train, rhat_train),
+                   f(r_test, rhat_test))
+                  for f in functions]
 
         # save the results to a CSV file
-        results = [epoch, iteration, corr_train, corr_test]
+        results = [epoch, iteration, *np.array(scores).ravel()]
         self.save_csv(results)
+
+        # TODO: plot the train / test firing rates and save in a figure
 
         return results
 

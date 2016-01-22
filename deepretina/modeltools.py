@@ -5,6 +5,8 @@ import tableprint
 from keras.models import model_from_json
 from scipy.stats import pearsonr
 from .preprocessing import datagen, loadexpt
+from . import metrics
+
 
 def load_model(model_path, weight_filename):
 	''' Loads a Keras model using:
@@ -97,42 +99,6 @@ def get_test_responses(model, stim_type='natural', cells=[0]):
 
     return [truth, predictions]
 
-def cc(r, rhat):
-    """
-    Correlation coefficient
-    """
-    return np.corrcoef(np.vstack((rhat, r)))[0, 1]
-
-
-def lli(r, rhat):
-    """
-    Log-likelihood improvement over a mean rate model (in bits per spike)
-    """
-
-    mean = np.mean(rhat)
-    mu = float(np.mean(r * np.log(mean) - mean))
-    # account for possibility that rhat is zero
-    r = r[rhat > 0]
-    rhat = rhat[rhat > 0]
-    return (np.mean(r * np.log(rhat) - rhat) - mu) / (mean * np.log(2))
-
-
-def rmse(r, rhat):
-    """
-    Root mean squared error
-    """
-    return np.sqrt(np.mean((rhat - r) ** 2))
-
-
-def fev(r, rhat):
-    """
-    Fraction of explained variance
-    """
-
-    mean = np.mean(r)
-    rate_var = np.mean((mean - r) ** 2)
-    return 1.0 - (rmse(r, rhat) ** 2) / rate_var
-
 
 def get_correlation(model, stim_type='natural', cells=[0]):
     '''
@@ -147,7 +113,7 @@ def get_correlation(model, stim_type='natural', cells=[0]):
     return test_cc
 
 
-def get_performance(model, stim_type='natural', cells=[0], metric='pearsonr'):
+def get_performance(model, stim_type='natural', cells=[0], metric='cc'):
     '''
         Get correlation coefficient on held-out data for deep-retina.
 
@@ -155,8 +121,7 @@ def get_performance(model, stim_type='natural', cells=[0], metric='pearsonr'):
             model           Keras model
             stim_type       'natural' or 'white'; which test data to draw from?
             cells           list of cell indices
-            metric          'pearsonr' (scipy Pearson's r),
-                            'cc' (numpy's corrcoef),
+            metric          'cc' (scipy.stats.pearsonr),
                             'lli' (Log-likelihood improvement over a mean rate model in bits per spike),
                             'rmse' (Root mean squared error),
                             'fev' (Fraction of explained variance; note this does not take into account
@@ -164,21 +129,14 @@ def get_performance(model, stim_type='natural', cells=[0], metric='pearsonr'):
     '''
     truth, predictions = get_test_responses(model, stim_type=stim_type, cells=cells)
 
-    test_cc = []
-    for c in cells:
-        if metric is 'pearsonr':
-            test_cc.append(pearsonr(truth[:,c], predictions[:,c])[0])
-        elif metric is 'cc':
-            test_cc.append(cc(truth[:,c], predictions[:,c]))
-        elif metric is 'lli':
-            test_cc.append(lli(truth[:,c], predictions[:,c]))
-        elif metric is 'rmse':
-            test_cc.append(rmse(truth[:,c], predictions[:,c]))
-        elif metric is 'fev':
-            test_cc.append(fev(truth[:,c], predictions[:,c]))
+    # metric (function computing a score between true and predicted rates)
+    metric_fun = getattr(metrics, metric)
 
+    # compute the test results
+    test_results = [metric_fun(truth[:, c], predictions[:, c]) for c in cells]
 
-    return test_cc
+    return test_results
+
 
 def get_weights(path_to_weights, layer_name='layer_0'):
     '''
@@ -190,4 +148,3 @@ def get_weights(path_to_weights, layer_name='layer_0'):
     # param_0 stores the weights, param_1 stores biases
     weights = weight_file[layer_name]['param_0']
     return weights
-

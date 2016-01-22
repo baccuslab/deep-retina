@@ -5,8 +5,7 @@ Helper utilities
 
 from __future__ import print_function
 from contextlib import contextmanager
-from scipy.stats import pearsonr
-from os import mkdir, uname, getlogin, getenv
+from os import mkdir, uname, getenv
 from os.path import join, expanduser
 from time import strftime
 from collections import namedtuple
@@ -14,8 +13,7 @@ import numpy as np
 import sys
 import csv
 
-__all__ = ['notify', 'rolling_window', 'mksavedir', 'tocsv', 'save_markdown',
-           'metric', 'Batch']
+__all__ = ['notify', 'rolling_window', 'mksavedir', 'tocsv', 'Batch']
 
 
 Batch = namedtuple('Batch', ['X', 'y'])
@@ -108,14 +106,6 @@ def tomarkdown(filename, lines):
         f.write('\n'.join(lines))
 
 
-def metric(yhat,yobs):
-    """
-    Metric for comparing predicted and observed firing rates
-
-    """
-    return pearsonr(yhat.flatten(), yobs.flatten())[0]
-
-
 def rolling_window(array, window, time_axis=0):
     """
     Make an ndarray with a rolling window of the last dimension
@@ -166,4 +156,3 @@ def rolling_window(array, window, time_axis=0):
     shape = array.shape[:-1] + (array.shape[-1] - window, window)
     strides = array.strides + (array.strides[-1],)
     return np.lib.stride_tricks.as_strided(array, shape=shape, strides=strides)
-

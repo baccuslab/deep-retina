@@ -11,10 +11,21 @@ __all__ = ['cc', 'lli', 'rmse', 'fev']
 
 def cc(r, rhat):
     """
-    Correlation coefficient
-    """
+    Correlation coefficient. By default averages over
 
-    return pearsonr(r, rhat)[0]
+    If r, rhat are matrices, cc() computes the average
+    pearsonr correlation of all column vectors
+    of each column vector.
+    the second axis.
+    """
+    ndims = len(r.shape)
+    if ndims > 1:
+        ccs = []
+        for col in range(r.shape[1]):
+            ccs.append(pearsonr(r[:,col], rhat[:,col])[0])
+        return np.mean(ccs)
+    else:
+        return pearsonr(r, rhat)[0]
 
 
 def lli(r, rhat):

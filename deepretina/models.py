@@ -150,7 +150,7 @@ class Model(object):
         training_sample_size = rhat_test.shape[0]
         inds = choice(self.training.y.shape[0], training_sample_size, replace=False)
         rhat_train = self.predict(self.training.X[inds, ...])
-        r_train = self.training.y.shape[0]
+        r_train = self.training.y[inds]
 
         # evalue using the given metrics
         functions = (cc, lli, rmse)

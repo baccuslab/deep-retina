@@ -17,7 +17,7 @@ __all__ = ['datagen', 'loadexpt']
 datadirs = {
     'mbp': os.path.expanduser('~/experiments/data/'),
     'lenna': os.path.expanduser('~/experiments/data/'),
-    'lane.local': os.path.expanduser('~/experiments/data/')
+    'lane.local': os.path.expanduser('~/experiments/data/'),
     'lane-desktop': os.path.expanduser('~/experiments/data/')
 }
 

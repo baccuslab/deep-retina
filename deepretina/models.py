@@ -142,15 +142,15 @@ class Model(object):
 
     def test(self, epoch, iteration):
 
-        # performance on a subset of the training data
-        training_sample_size = yhat_test.shape[0]
-        inds = choice(self.training.y.shape[0], training_sample_size, replace=False)
-        rhat_train = self.predict(self.training.X[inds, ...])
-        r_train = self.training.y.shape[0]
-
         # performance on the entire holdout set
         rhat_test = self.predict(self.holdout.X)
         r_test = self.holdout.y
+
+        # performance on a subset of the training data
+        training_sample_size = rhat_test.shape[0]
+        inds = choice(self.training.y.shape[0], training_sample_size, replace=False)
+        rhat_train = self.predict(self.training.X[inds, ...])
+        r_train = self.training.y.shape[0]
 
         # evalue using the given metrics
         functions = (cc, lli, rmse)
@@ -159,7 +159,7 @@ class Model(object):
                   for f in functions]
 
         # save the results to a CSV file
-        results = [epoch, iteration, *np.array(scores).ravel()]
+        results = [epoch, iteration] + list(np.array(scores).ravel())
         self.save_csv(results)
 
         # TODO: plot the train / test firing rates and save in a figure

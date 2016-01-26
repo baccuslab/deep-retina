@@ -17,7 +17,7 @@ from keras.regularizers import l2
 
 from .preprocessing import datagen, loadexpt
 from .utils import notify, Batch, mksavedir, tocsv, tomarkdown
-from .metrics import cc, lli, rmse
+from .metrics import cc, lli, rmse, multicell
 from numpy.random import choice
 from functools import partial
 
@@ -155,12 +155,11 @@ class Model(object):
         rhat_train = self.predict(self.training.X[inds, ...])
         r_train = self.training.y[inds]
 
-        # TODO: deal with multiple cells
-
-        # evalue using the given metrics
-        functions = (cc, lli, rmse)
-        scores = [(f(r_train, rhat_train),
-                   f(r_test, rhat_test))
+        # evalue using the given metrics  (computes an average over the different cells)
+        # ASSUMES TRAINING ON MULTIPLE CELLS
+        functions = map(multicell, (cc, lli, rmse))
+        scores = [(f(r_train, rhat_train)[0],
+                   f(r_test, rhat_test)[0])
                   for f in functions]
 
         # save the results to a CSV file

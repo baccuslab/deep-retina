@@ -3,29 +3,31 @@ import theano
 import h5py
 import tableprint
 from keras.models import model_from_json
-from scipy.stats import pearsonr
 from .preprocessing import datagen, loadexpt
 from . import metrics
 
 
 def load_model(model_path, weight_filename):
-	''' Loads a Keras model using:
-			- an architecture.json file
-			- an h5 weight file, for instance 'epoch018_iter01300_weights.h5'
 
-		INPUT:
-			model_path		the full path to the saved weight and architecture files, ending in '/'
-			weight_filename	an h5 file with the weights
+    '''
+    Loads a Keras model using:
+    - an architecture.json file
+    - an h5 weight file, for instance 'epoch018_iter01300_weights.h5'
+
+    INPUT:
+        model_path		the full path to the saved weight and architecture files, ending in '/'
+        weight_filename	an h5 file with the weights
         OUTPUT:
-            returns keras model
-	'''
-	architecture_filename = 'architecture.json'
-	architecture_data = open(model_path + architecture_filename, 'r')
-	architecture_string = architecture_data.read()
-	model = model_from_json(architecture_string)
-	model.load_weights(model_path + weight_filename)
+        returns keras model
+    '''
 
-	return model
+    architecture_filename = 'architecture.json'
+    architecture_data = open(model_path + architecture_filename, 'r')
+    architecture_string = architecture_data.read()
+    model = model_from_json(architecture_string)
+    model.load_weights(model_path + weight_filename)
+
+    return model
 
 
 def load_partial_model(model, layer_id):
@@ -54,10 +56,11 @@ def list_layers(model_path, weight_filename):
     Layers without weights and biases are relu, pool, or flatten layers.
 
     INPUT:
-			model_path		the full path to the saved weight and architecture files, ending in '/'
-			weight_filename	an h5 file with the weights
+        model_path		the full path to the saved weight and architecture files, ending in '/'
+        weight_filename	an h5 file with the weights
+
     OUTPUT:
-            an ASCII table using tableprint
+        an ASCII table using tableprint
     '''
     weights = h5py.File(model_path + weight_filename, 'r')
     layer_names = list(weights)
@@ -71,10 +74,11 @@ def list_layers(model_path, weight_filename):
     for l in layer_names:
         params.append(list(weights[l]))
         if params[-1]:
-            print(tableprint.row([l.encode('ascii','ignore'), params[-1][0].encode('ascii','ignore'),
-                params[-1][1].encode('ascii','ignore')]))
+            print(tableprint.row([l.encode('ascii', 'ignore'),
+                  params[-1][0].encode('ascii', 'ignore'),
+                  params[-1][1].encode('ascii', 'ignore')]))
         else:
-            print(tableprint.row([l.encode('ascii','ignore'), '', '']))
+            print(tableprint.row([l.encode('ascii', 'ignore'), '', '']))
 
     print(tableprint.hr(3))
 
@@ -100,15 +104,17 @@ def get_test_responses(model, stim_type='natural', cells=[0]):
     return [truth, predictions]
 
 
-def get_correlation(model, stim_type='natural', cells=[0]):
+def get_correlation(model, stim_type='natural', cells=[0], metric='cc'):
     '''
         Get Pearson's r correlation.
     '''
     truth, predictions = get_test_responses(model, stim_type=stim_type, cells=cells)
 
+    metric_func = getattr(metrics, metric)
+
     test_cc = []
     for c in cells:
-        test_cc.append(pearsonr(truth[:,c], predictions[:,c])[0])
+        test_cc.append(metric_func(truth[:, c], predictions[:, c]))
 
     return test_cc
 
@@ -130,10 +136,10 @@ def get_performance(model, stim_type='natural', cells=[0], metric='cc'):
     truth, predictions = get_test_responses(model, stim_type=stim_type, cells=cells)
 
     # metric (function computing a score between true and predicted rates)
-    metric_fun = getattr(metrics, metric)
+    metric_func = getattr(metrics, metric)
 
     # compute the test results
-    test_results = [metric_fun(truth[:, c], predictions[:, c]) for c in cells]
+    test_results = [metric_func(truth[:, c], predictions[:, c]) for c in cells]
 
     return test_results
 

@@ -182,8 +182,9 @@ class ln(Model):
     def __str__(self):
         return "LN"
 
-    def __init__(self, cell_index, stimulus_type, loss='poisson_loss', optimizer='sgd',
-                 weight_init='glorot_normal', l2_reg=0., mean_adapt=False, stimulus_shape=(40, 50, 50)):
+    def __init__(self, cell_index, stimulus_type, loss='poisson_loss',
+                 optimizer='sgd', weight_init='glorot_normal', l2_reg=0.,
+                 mean_adapt=False, stimulus_shape=(40, 50, 50)):
         """
         Linear-nonlinear model with a parametric softplus nonlinearity
 
@@ -200,7 +201,7 @@ class ln(Model):
             A Keras objective. Default: 'poisson_loss'
 
         optimizer : string or object, optional
-            A Keras optimizer. Default: 'adam'
+            A Keras optimizer. Default: 'sgd'
 
         weight_init : string or object, optional
             A Keras weight initialization method. Default: 'glorot_uniform'
@@ -234,8 +235,9 @@ class convnet(Model):
     def __str__(self):
         return "convnet"
 
-    def __init__(self, cell_index, stimulus_type, num_filters=(4, 16), filter_size=(9, 9),
-                 loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False,
+    def __init__(self, cell_index, stimulus_type, num_filters=(4, 16),
+                 filter_size=(9, 9), loss='poisson_loss', optimizer='adam',
+                 weight_init='normal', l2_reg=0., mean_adapt=False,
                  stimulus_shape=(40, 50, 50)):
         """
         Convolutional neural network
@@ -290,22 +292,25 @@ class convnet(Model):
                                          border_mode='same', subsample=(1, 1),
                                          W_regularizer=l2(l2_reg)))
 
-            #Add relu activation separately for threshold visualizations
+            # Add relu activation
             self.model.add(Activation('relu'))
+
             # max pooling layer
             self.model.add(MaxPooling2D(pool_size=(2, 2)))
 
             # flatten
             self.model.add(Flatten())
 
-            # Add dense (affine) layer with relu activation
+            # Add dense (affine) layer
             self.model.add(Dense(num_filters[1], init=weight_init, W_regularizer=l2(l2_reg)))
 
-            # Add relu activation separately for threshold visualization
+            # Add relu activation
             self.model.add(Activation('relu'))
 
             # Add a final dense (affine) layer with softplus activation
-            self.model.add(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))
+            self.model.add(Dense(nout, init=weight_init,
+                                 W_regularizer=l2(l2_reg),
+                                 activation='softplus'))
 
         # save architecture string (for markdown file)
         self.architecture = '\n'.join(['{} convolutional filters of size {}'.format(num_filters[0], filter_size),
@@ -318,6 +323,7 @@ class convnet(Model):
 
         # compile
         super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
+
 
 class fixedlstm(Model):
 
@@ -390,6 +396,7 @@ class fixedlstm(Model):
         # compile
         super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
 
+
 class lstm(Model):
 
     def __str__(self):
@@ -399,7 +406,7 @@ class lstm(Model):
                  loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False,
                  stimulus_shape=(40, 50, 50)):
         """
-        Convolutional neural network
+        LSTM
 
         Parameters
         ----------
@@ -433,6 +440,7 @@ class lstm(Model):
 
         """
         from keras.layers.extra import TimeDistributedConvolution2D, TimeDistributedMaxPooling2D, TimeDistributedFlatten
+
         self.stim_shape = (num_timesteps, stimulus_shape[0], stimulus_shape[1], stimulus_shape[2])
 
         # build the model
@@ -442,12 +450,13 @@ class lstm(Model):
 
             # first convolutional layer
             self.model.add(TimeDistributedConvolution2D(num_filters[0], filter_size[0], filter_size[1],
-                                         input_shape=self.stim_shape, init=weight_init,
-                                         border_mode='same', subsample=(1, 1),
-                                         W_regularizer=l2(l2_reg)))
+                                                        input_shape=self.stim_shape, init=weight_init,
+                                                        border_mode='same', subsample=(1, 1),
+                                                        W_regularizer=l2(l2_reg)))
 
-            #Add relu activation separately for threshold visualizations
+            # Add relu activation separately
             self.model.add(Activation('relu'))
+
             # max pooling layer
             self.model.add(TimeDistributedMaxPooling2D(pool_size=(2, 2)))
 
@@ -461,7 +470,7 @@ class lstm(Model):
             self.model.add(Activation('relu'))
 
             # Add LSTM, forget gate bias automatically initialized to 1, default weight initializations recommended
-            self.model.add(LSTM(100*num_filters[1], forget_bias_init='one', return_sequences=True))
+            self.model.add(LSTM(100 * num_filters[1], forget_bias_init='one', return_sequences=True))
 
             # Add a final dense (affine) layer with softplus activation
             self.model.add(TimeDistributedDense(1, init=weight_init, W_regularizer=l2(l2_reg), activation='softplus'))

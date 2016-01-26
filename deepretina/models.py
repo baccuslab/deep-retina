@@ -521,7 +521,7 @@ class generalizedconvnet(Model):
 
     def __init__(self, cell_index, stimulus_type, 
             layers=['conv', 'relu', 'pool', 'flatten', 'affine', 'relu', 'finalaffine'],
-            num_filters=[4, 16], filter_sizes=[9], loss='poisson_loss', optimizer='adam',
+            num_filters=[4, -1, -1, -1, 16], filter_sizes=[9], loss='poisson_loss', optimizer='adam',
             weight_init='normal', l2_reg=0.01, mean_adapt=False, stimulus_shape=(30, 50, 50)):
         """
         Convolutional neural network
@@ -575,8 +575,8 @@ class generalizedconvnet(Model):
 
                 if layer_type == 'conv':
                     # convolutional layer
-                    self.model.add(Convolution2D(num_filters[layer_id], filter_size[layer_id], 
-                                                filter_size[layer_id], input_shape=self.stim_shape,
+                    self.model.add(Convolution2D(num_filters[layer_id], filter_sizes[layer_id], 
+                                                filter_sizes[layer_id], input_shape=self.stim_shape,
                                                 init=weight_init, border_mode='same', 
                                                 subsample=(1, 1), W_regularizer=l2(l2_reg)))
                 if layer_type == 'relu':

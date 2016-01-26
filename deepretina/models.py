@@ -71,8 +71,10 @@ class Model(object):
 
         # load experimental data
         self.stimulus_type = stimulus_type
-        self.holdout = loadexpt(cell_index, self.stimulus_type, 'test', self.stim_shape[0], mean_adapt=mean_adapt)
-        self.training = loadexpt(cell_index, self.stimulus_type, 'train', self.stim_shape[0], mean_adapt=mean_adapt)
+        load_data = partial(loadexpt, cell_index, self.stimulus_type,
+                            history=self.stim_shape[0], mean_adapt=mean_adapt)
+        self.holdout = load_data('test')
+        self.training = load_data('train')
 
         # save model information to a markdown file
         if 'architecture' not in self.__dict__:
@@ -81,7 +83,8 @@ class Model(object):
         metadata = ['# ' + str(self), '## ' + strftime('%B %d, %Y'),
                     'Started training on: ' + strftime('%I:%M:%S %p'),
                     '### Architecture', self.architecture,
-                    '### Stimulus', 'Experiment 10-07-15', stimulus_type, 'Mean adaptation: ' + str(mean_adapt),
+                    '### Stimulus', 'Experiment 10-07-15', stimulus_type,
+                    'Mean adaptation: ' + str(mean_adapt),
                     'Cell #{}'.format(cell_index),
                     '### Optimization', str(loss), str(optimizer)]
 
@@ -172,8 +175,11 @@ class Model(object):
 
         """
 
+        filename = join(self.weightsdir,
+                        "epoch{:03d}_iter{:05d}_weights.h5"
+                        .format(epoch, iteration))
+
         # store the weights
-        filename = join(self.weightsdir, "epoch{:03d}_iter{:05d}_weights.h5".format(epoch, iteration))
         self.model.save_weights(filename)
 
 

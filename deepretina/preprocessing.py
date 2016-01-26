@@ -21,24 +21,26 @@ datadirs = {
     'lane-desktop': os.path.expanduser('~/experiments/data/')
 }
 
+
 def loadaffine(cellidx, filename, timesteps, method, exptdate='15-10-07'):
     with notify('Loading {}ing data'.format(method)):
         f = h5py.File(os.path.join(datadirs[os.uname()[1]], exptdate, filename + '_affine.h5'), 'r')
         stim = np.array(f[method]['stimulus']).astype('float32')
         resp = np.array(f[method]['response/firing_rate_10ms'][cellidx]).T
-        numExamples = (int(stim.shape[0]/timesteps))*timesteps
+        numExamples = (int(stim.shape[0] / timesteps)) * timesteps
         stim = stim[:numExamples]
         resp = resp[:numExamples]
-        stim = np.reshape(stim, (int(numExamples/timesteps), timesteps, stim.shape[1]))
+        stim = np.reshape(stim, (int(numExamples / timesteps), timesteps, stim.shape[1]))
         if type(cellidx) is int:
             nout = 1
         else:
             nout = len(cellidx)
-        resp = np.reshape(resp, (int(numExamples/timesteps), timesteps, nout))
+        resp = np.reshape(resp, (int(numExamples / timesteps), timesteps, nout))
     return Batch(stim, resp)
 
-def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False,
-    cutout=False, cutout_cell=0, exptdate='15-10-07'):
+
+def loadexpt(cellidx, filename, train_or_test, history, fraction=1., mean_adapt=False,
+             cutout=False, cutout_cell=0, exptdate='15-10-07'):
     """
     Loads an experiment from disk
 
@@ -50,7 +52,7 @@ def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False,
     filename : string
         Name of the hdf5 file to load
 
-    method : string
+    train_or_test : string
         The key in the hdf5 file to load ('train' or 'test')
 
     history : int
@@ -63,21 +65,21 @@ def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False,
 
     assert fraction > 0 and fraction <= 1, "Fraction of data to load must be between 0 and 1"
 
-    with notify('Loading {}ing data'.format(method)):
+    with notify('Loading {}ing data'.format(train_or_test)):
 
         # select different filename if you want a cutout
         if cutout:
-            filename = filename + '_cutout_cell%02d' %(cutout_cell+1)
+            filename = filename + '_cutout_cell%02d' %(cutout_cell + 1)
 
         # load the hdf5 file
         f = h5py.File(os.path.join(datadirs[os.uname()[1]], exptdate, filename + '.h5'), 'r')
 
         # length of the experiment
-        expt_length = f[method]['time'].size
+        expt_length = f[train_or_test]['time'].size
         num_samples = int(np.floor(expt_length * fraction))
 
         # load the stimulus
-        stim = zscore(np.array(f[method]['stimulus'][:num_samples]).astype('float32'))
+        stim = zscore(np.array(f[train_or_test]['stimulus'][:num_samples]).astype('float32'))
 
         # photoreceptor model of mean adaptation
         if mean_adapt:
@@ -88,10 +90,10 @@ def loadexpt(cellidx, filename, method, history, fraction=1., mean_adapt=False,
             # don't create the toeplitz matrix
             stim_reshaped = stim
         else:
-            stim_reshaped = np.rollaxis(np.rollaxis(rolling_window(stim, history, time_axis=0), stim.ndim-1), stim.ndim, 1)
+            stim_reshaped = np.rollaxis(np.rollaxis(rolling_window(stim, history, time_axis=0), stim.ndim - 1), stim.ndim, 1)
 
         # get the response for this cell
-        resp = np.array(f[method]['response/firing_rate_10ms'][cellidx, history:num_samples]).T
+        resp = np.array(f[train_or_test]['response/firing_rate_10ms'][cellidx, history:num_samples]).T
 
     return Batch(stim_reshaped, resp)
 
@@ -154,12 +156,12 @@ def pr_filter(dt, stim, tau_y=0.033, ny=4., tau_z=0.019, nz=10., alpha=1., beta=
     T = stim.shape[0]
     for row in range(stim.shape[1]):
         for col in range(stim.shape[2]):
-            y[:, row, col] = np.convolve(stim[:,row,col], Ky, mode='full')[:T]
-            z[:, row, col] = np.convolve(stim[:,row,col], Kz, mode='full')[:T]
+            y[:, row, col] = np.convolve(stim[:, row, col], Ky, mode='full')[:T]
+            z[:, row, col] = np.convolve(stim[:, row, col], Kz, mode='full')[:T]
 
     # return the filtered stimulus
     return (alpha * y) / (1 + beta * z)
 
 
 def _make_filter(t, tau, n):
-    return ((t ** n) / (gamma(n+1) * tau ** (n + 1))) * np.exp(-t / tau)
+    return ((t ** n) / (gamma(n + 1) * tau ** (n + 1))) * np.exp(-t / tau)

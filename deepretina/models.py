@@ -513,15 +513,16 @@ class lstm(Model):
         self.training = Batch(X_train, y_train)
         self.holdout = Batch(X_test, y_test)
 
+
 class generalizedconvnet(Model):
 
     def __str__(self):
-        return "convnet"
+        return "generalizedconvnet"
 
-    def __init__(self, cell_index, stimulus_type, 
-            layers=['conv', 'relu', 'pool', 'flatten', 'affine', 'relu', 'finalaffine'],
-            num_filters=[4, -1, -1, -1, 16], filter_sizes=[9], loss='poisson_loss', optimizer='adam',
-            weight_init='normal', l2_reg=0.01, mean_adapt=False, stimulus_shape=(30, 50, 50)):
+    def __init__(self, cell_index, stimulus_type,
+                 layers=['conv', 'relu', 'pool', 'flatten', 'affine', 'relu', 'finalaffine'],
+                 num_filters=[4, -1, -1, -1, 16], filter_sizes=[9], loss='poisson_loss', optimizer='adam',
+                 weight_init='normal', l2_reg=0.01, mean_adapt=False, stimulus_shape=(30, 50, 50)):
         """
         Convolutional neural network
 
@@ -574,10 +575,10 @@ class generalizedconvnet(Model):
 
                 if layer_type == 'conv':
                     # convolutional layer
-                    self.model.add(Convolution2D(num_filters[layer_id], filter_sizes[layer_id], 
-                                                filter_sizes[layer_id], input_shape=self.stim_shape,
-                                                init=weight_init, border_mode='same', 
-                                                subsample=(1, 1), W_regularizer=l2(l2_reg)))
+                    self.model.add(Convolution2D(num_filters[layer_id], filter_sizes[layer_id],
+                                                 filter_sizes[layer_id], input_shape=self.stim_shape,
+                                                 init=weight_init, border_mode='same',
+                                                 subsample=(1, 1), W_regularizer=l2(l2_reg)))
                 if layer_type == 'relu':
                     # Add relu activation
                     self.model.add(Activation('relu'))
@@ -612,4 +613,3 @@ class generalizedconvnet(Model):
 
         # compile
         super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
-

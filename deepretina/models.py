@@ -155,6 +155,8 @@ class Model(object):
         rhat_train = self.predict(self.training.X[inds, ...])
         r_train = self.training.y[inds]
 
+        # TODO: deal with multiple cells
+
         # evalue using the given metrics
         functions = (cc, lli, rmse)
         scores = [(f(r_train, rhat_train),

@@ -9,11 +9,11 @@ from scipy.stats import pearsonr
 __all__ = ['cc', 'lli', 'rmse', 'fev', 'multicell']
 
 
-def multicell(function):
+def multicell(metric):
     """
-    This function returns a new function which can be used to apply
-    a metric function to a bunch of cells, returning the score for each pair
-    as well as the average
+    This function returns a new function which when called will apply the
+    given metric across the columns of the input array, returning the score
+    for each pair as well as the average
 
     """
 
@@ -21,7 +21,7 @@ def multicell(function):
         assert r.shape == rhat.shape, "Argument shapes must be equal"
         assert r.ndim == 2, "Inputs must be matrices"
 
-        scores = [function(r[:, cell_index], rhat[:, cell_index])
+        scores = [metric(r[:, cell_index], rhat[:, cell_index])
                   for cell_index in range(r.shape[1])]
 
         return np.mean(scores), scores

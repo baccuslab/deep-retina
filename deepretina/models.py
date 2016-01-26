@@ -513,3 +513,104 @@ class lstm(Model):
         y_test = np.reshape(y_test, (int(numTest/numTime), numTime, 1))
         self.training = Batch(X_train, y_train)
         self.holdout = Batch(X_test, y_test)
+
+class generalizedconvnet(Model):
+
+    def __str__(self):
+        return "convnet"
+
+    def __init__(self, cell_index, stimulus_type, 
+            layers=['conv', 'relu', 'pool', 'flatten', 'affine', 'relu', 'finalaffine'],
+            num_filters=[4, 16], filter_sizes=[9], loss='poisson_loss', optimizer='adam',
+            weight_init='normal', l2_reg=0.01, mean_adapt=False, stimulus_shape=(30, 50, 50)):
+        """
+        Convolutional neural network
+
+        Parameters
+        ----------
+
+        cell_index : int
+            Which cell to use
+
+        stimulus_type : string
+            Either 'whitenoise' or 'naturalscene'
+
+        num_filters : tuple, optional
+            Number of filters in each layer. Default: [4, 16]
+
+        filter_size : tuple, optional
+            Convolutional filter size. Default: [9]
+            Assumes that the filter is square.
+
+        loss : string or object, optional
+            A Keras objective. Default: 'poisson_loss'
+
+        optimizer : string or object, optional
+            A Keras optimizer. Default: 'adam'
+
+        weight_init : string
+            weight initialization. Default: 'normal'
+
+        l2_reg : float, optional
+            How much l2 regularization to apply to all filter weights
+
+        """
+
+        self.stim_shape = stimulus_shape
+
+        if type(cell_index) is int:
+            # one output unit
+            nout = 1
+
+        else:
+            # number of output units depends on the expt, hardcoded for now
+            nout = len(cell_index)
+
+        # build the model
+        with notify('Building convnet'):
+
+            self.model = Sequential()
+
+            for layer_id, layer_type in enumerate(layers):
+
+                if layer_type == 'conv':
+                    # convolutional layer
+                    self.model.add(Convolution2D(num_filters[layer_id], filter_size[layer_id], 
+                                                filter_size[layer_id], input_shape=self.stim_shape,
+                                                init=weight_init, border_mode='same', 
+                                                subsample=(1, 1), W_regularizer=l2(l2_reg)))
+                if layer_type = 'relu':
+                    # Add relu activation
+                    self.model.add(Activation('relu'))
+
+                if layer_type = 'pool':
+                    # max pooling layer
+                    self.model.add(MaxPooling2D(pool_size=(2, 2)))
+
+                if layer_type = 'flatten':
+                    # flatten
+                    self.model.add(Flatten())
+
+                if layer_type = 'affine':
+                    # Add dense (affine) layer
+                    self.model.add(Dense(num_filters[layer_id], init=weight_init, W_regularizer=l2(l2_reg)))
+
+                if layer_type = 'finalaffine':
+                    # Add a final dense (affine) layer with softplus activation
+                    self.model.add(Dense(nout, init=weight_init,
+                                         W_regularizer=l2(l2_reg),
+                                         activation='softplus'))
+
+        # save architecture string (for markdown file)
+        self.architecture = '\n'.join(['{} layers'.format(layers),
+                                       '{} number of filters'.format(num_filters),
+                                       '{} size of filters'.format(filter_sizes),
+                                       '{} output units'.format(nout),
+                                       'weight initialization: {}'.format(weight_init),
+                                       'l2 regularization: {}'.format(l2_reg),
+                                       'stimulus shape: {}'.format(self.stim_shape),
+                                       ])
+
+        # compile
+        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
+

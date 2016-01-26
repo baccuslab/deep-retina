@@ -579,23 +579,23 @@ class generalizedconvnet(Model):
                                                 filter_size[layer_id], input_shape=self.stim_shape,
                                                 init=weight_init, border_mode='same', 
                                                 subsample=(1, 1), W_regularizer=l2(l2_reg)))
-                if layer_type = 'relu':
+                if layer_type == 'relu':
                     # Add relu activation
                     self.model.add(Activation('relu'))
 
-                if layer_type = 'pool':
+                if layer_type =='pool':
                     # max pooling layer
                     self.model.add(MaxPooling2D(pool_size=(2, 2)))
 
-                if layer_type = 'flatten':
+                if layer_type == 'flatten':
                     # flatten
                     self.model.add(Flatten())
 
-                if layer_type = 'affine':
+                if layer_type == 'affine':
                     # Add dense (affine) layer
                     self.model.add(Dense(num_filters[layer_id], init=weight_init, W_regularizer=l2(l2_reg)))
 
-                if layer_type = 'finalaffine':
+                if layer_type == 'finalaffine':
                     # Add a final dense (affine) layer with softplus activation
                     self.model.add(Dense(nout, init=weight_init,
                                          W_regularizer=l2(l2_reg),

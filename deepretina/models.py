@@ -158,8 +158,8 @@ class Model(object):
         # evalue using the given metrics  (computes an average over the different cells)
         # ASSUMES TRAINING ON MULTIPLE CELLS
         functions = map(multicell, (cc, lli, rmse))
-        scores = [(f(r_train, rhat_train)[0],
-                   f(r_test, rhat_test)[0])
+        scores = [(f(r_train, rhat_train)[0][0],
+                   f(r_test, rhat_test)[0][0])
                   for f in functions]
 
         # save the results to a CSV file

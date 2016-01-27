@@ -69,11 +69,8 @@ def lli(r, rhat, dt=1e-2):
     def loglikelihood(q):
         return r * np.log(q) - q
 
-    # difference in log-likelihoods
-    LL_diff = np.mean(loglikelihood(rhat) - loglikelihood(mu))
-
-    # rescale to be in bits per spike
-    return LL_diff / (mu * np.log(2) * dt)
+    # difference in log-likelihoods (in bits per spike)
+    return np.mean(loglikelihood(rhat) - loglikelihood(mu)) / (mu * np.log(2))
 
 
 def rmse(r, rhat):

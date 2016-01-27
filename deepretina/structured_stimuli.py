@@ -2,7 +2,7 @@ import numpy as np
 from .utils import rolling_window
 
 # Probe contrast adaptation
-def get_contrast_changes(period=5, low_contrast=0.1, high_contrast=1.0, sample_rate=30):
+def get_contrast_changes(period=5, low_contrast=0.1, high_contrast=1.0, sample_rate=30, roll=True):
     '''
         Returns full field flicker stimulus with low-high-low contrast.
 
@@ -24,11 +24,14 @@ def get_contrast_changes(period=5, low_contrast=0.1, high_contrast=1.0, sample_r
     full_field_flicker = np.outer(flicker_sequence, np.ones((1,50,50)))
     full_field_flicker = full_field_flicker.reshape((flicker_sequence.shape[0], 50, 50))
 
-    # Convert movie to 400ms long samples in the correct format for our model
-    full_field_movies = rolling_window(full_field_flicker, 40)
-    full_field_movies = np.rollaxis(full_field_movies, 2)
-    full_field_movies = np.rollaxis(full_field_movies, 3, 1)
-    return full_field_movies
+    if roll:
+        # Convert movie to 400ms long samples in the correct format for our model
+        full_field_movies = rolling_window(full_field_flicker, 40)
+        full_field_movies = np.rollaxis(full_field_movies, 2)
+        full_field_movies = np.rollaxis(full_field_movies, 3, 1)
+        return full_field_movies
+    else:
+        return full_field_flicker
 
 # Probe flash response
 def get_flash_sequence(initial_flash=45, latency=10, nsamples=100, intensity=1, flash_length=1):
@@ -78,7 +81,7 @@ def get_full_field_flashes(mask=np.ones((50,50)), initial_flash=60, latency=10, 
     return full_field_movies
 
 # Probe nonlinear subunits by reversing gratings
-def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask=False, intensity=1, phase=0):
+def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask=False, intensity=1, phase=0, roll=True):
     '''
         Returns a reversing gratings stimulus.
 
@@ -113,8 +116,11 @@ def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask
         else:
             grating_movie[frame] = -1 * grating_frame
 
-    # roll movie axes to get the right shape
-    full_movies = rolling_window(grating_movie, 40)
-    full_movies = np.rollaxis(full_movies, 2)
-    full_movies = np.rollaxis(full_movies, 3, 1)
-    return full_movies
+    if roll:
+        # roll movie axes to get the right shape
+        full_movies = rolling_window(grating_movie, 40)
+        full_movies = np.rollaxis(full_movies, 2)
+        full_movies = np.rollaxis(full_movies, 3, 1)
+        return full_movies
+    else:
+        return grating_movie

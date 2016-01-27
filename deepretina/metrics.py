@@ -42,16 +42,38 @@ def cc(r, rhat):
     return pearsonr(r, rhat)[0]
 
 
-def lli(r, rhat):
+def lli(r, rhat, dt=1e-2):
     """
     Log-likelihood improvement over a mean rate model (in bits per spike)
+
+    Parameters
+    ----------
+
+    r : array_like
+        True firing rate
+
+    rhat : array_like
+        Model firing rate
+
+    dt : float, optional
+        Sampling period (in seconds). Default: 0.010s
+
     """
     assert r.shape == rhat.shape, "Argument shapes must be equal"
     assert r.ndim == 1, "Inputs must be vectors"
 
-    mu = np.mean(rhat)
-    mu = float(np.mean(r * np.log(mu) - mu))
-    return (np.mean(r * np.log(rhat) - rhat) - mu) / (mu * np.log(2))
+    # mean firing rate
+    mu = np.mean(r)
+
+    # poisson log-likelihood
+    def loglikelihood(q):
+        return r * np.log(q) - q
+
+    # difference in log-likelihoods
+    LL_diff = np.mean(loglikelihood(rhat) - loglikelihood(mu))
+
+    # rescale to be in bits per spike
+    return LL_diff / (mu * np.log(2) * dt)
 
 
 def rmse(r, rhat):

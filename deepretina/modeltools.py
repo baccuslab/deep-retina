@@ -94,7 +94,7 @@ def get_test_responses(model, stim_type='natural', cells=[0]):
 
     truth = []
     predictions = []
-    for X, y in datagen(50, *test_data):
+    for X, y in datagen(50, *test_data, shuffle=False):
         truth.extend(y)
         predictions.extend(model.predict(X))
 

@@ -138,7 +138,7 @@ class Model(object):
                 loss = self.model.train_on_batch(X, y)
 
                 # update display and save
-                print('{:05d}: {}'.format(iteration, loss))
+                print('{:05d}: {}'.format(iteration, float(loss)))
 
     def predict(self, X):
         return self.model.predict(X)
@@ -158,12 +158,13 @@ class Model(object):
         # evalue using the given metrics  (computes an average over the different cells)
         # ASSUMES TRAINING ON MULTIPLE CELLS
         functions = map(multicell, (cc, lli, rmse))
-        scores = [(f(r_train, rhat_train)[0][0],
-                   f(r_test, rhat_test)[0][0])
-                  for f in functions]
+        results = [epoch, iteration]
+
+        for f in functions:
+            results.append(f(r_train, rhat_train)[0])
+            results.append(f(r_test, rhat_test)[0])
 
         # save the results to a CSV file
-        results = [epoch, iteration] + list(np.array(scores).ravel())
         self.save_csv(results)
 
         # TODO: plot the train / test firing rates and save in a figure

@@ -26,7 +26,7 @@ __all__ = ['Model', 'ln', 'convnet', 'lstm', 'fixedlstm']
 
 class Model(object):
 
-    def __init__(self, cell_index, stimulus_type, loss, optimizer, mean_adapt):
+    def __init__(self, cell_index, stimulus_type, loss, optimizer, mean_adapt, exptdate):
         """
         Superclass for managing keras models
 
@@ -72,7 +72,8 @@ class Model(object):
         # load experimental data
         self.stimulus_type = stimulus_type
         load_data = partial(loadexpt, cell_index, self.stimulus_type,
-                            history=self.stim_shape[0], mean_adapt=mean_adapt)
+                            history=self.stim_shape[0], exptdate=exptdate,
+                            mean_adapt=mean_adapt)
         self.holdout = load_data('test')
         self.training = load_data('train')
 
@@ -83,7 +84,7 @@ class Model(object):
         metadata = ['# ' + str(self), '## ' + strftime('%B %d, %Y'),
                     'Started training on: ' + strftime('%I:%M:%S %p'),
                     '### Architecture', self.architecture,
-                    '### Stimulus', 'Experiment 10-07-15', stimulus_type,
+                    '### Stimulus', 'Experiment ' + exptdate, stimulus_type,
                     'Mean adaptation: ' + str(mean_adapt),
                     'Cell #{}'.format(cell_index),
                     '### Optimization', str(loss), str(optimizer)]
@@ -138,7 +139,7 @@ class Model(object):
                 loss = self.model.train_on_batch(X, y)
 
                 # update display and save
-                print('{:05d}: {}'.format(iteration, loss))
+                print('{:05d}: {}'.format(iteration, loss[0]))
 
     def predict(self, X):
         return self.model.predict(X)
@@ -158,12 +159,13 @@ class Model(object):
         # evalue using the given metrics  (computes an average over the different cells)
         # ASSUMES TRAINING ON MULTIPLE CELLS
         functions = map(multicell, (cc, lli, rmse))
-        scores = [(f(r_train, rhat_train)[0][0],
-                   f(r_test, rhat_test)[0][0])
-                  for f in functions]
+        results = [epoch, iteration]
+
+        for f in functions:
+            results.append(f(r_train, rhat_train)[0])
+            results.append(f(r_test, rhat_test)[0])
 
         # save the results to a CSV file
-        results = [epoch, iteration] + list(np.array(scores).ravel())
         self.save_csv(results)
 
         # TODO: plot the train / test firing rates and save in a figure
@@ -189,7 +191,7 @@ class ln(Model):
     def __str__(self):
         return "LN"
 
-    def __init__(self, cell_index, stimulus_type, loss='poisson_loss',
+    def __init__(self, cell_index, stimulus_type, exptdate, loss='poisson_loss',
                  optimizer='sgd', weight_init='glorot_normal', l2_reg=0.,
                  mean_adapt=False, stimulus_shape=(40, 50, 50)):
         """
@@ -234,7 +236,7 @@ class ln(Model):
                                        'weight initialization: {}'.format(weight_init)])
 
         # compile
-        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
+        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt, exptdate)
 
 
 class convnet(Model):
@@ -242,7 +244,7 @@ class convnet(Model):
     def __str__(self):
         return "convnet"
 
-    def __init__(self, cell_index, stimulus_type, num_filters=(4, 16),
+    def __init__(self, cell_index, stimulus_type, exptdate, num_filters=(4, 16),
                  filter_size=(9, 9), loss='poisson_loss', optimizer='adam',
                  weight_init='normal', l2_reg=0., mean_adapt=False,
                  stimulus_shape=(40, 50, 50)):
@@ -329,7 +331,7 @@ class convnet(Model):
                                        ])
 
         # compile
-        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
+        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt, exptdate)
 
 
 class fixedlstm(Model):
@@ -337,7 +339,7 @@ class fixedlstm(Model):
     def __str__(self):
         return "fixedlstm"
 
-    def __init__(self, cell_index, stimulus_type, timesteps=152, num_filters=16, num_hidden=1600,
+    def __init__(self, cell_index, stimulus_type, exptdate, timesteps=152, num_filters=16, num_hidden=1600,
                  loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False):
         """
         CNN-LSTM network with fixed CNN features as input.
@@ -401,7 +403,7 @@ class fixedlstm(Model):
                                        ])
 
         # compile
-        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
+        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt, exptdate)
 
 
 class lstm(Model):
@@ -409,7 +411,7 @@ class lstm(Model):
     def __str__(self):
         return "lstm"
 
-    def __init__(self, cell_index, stimulus_type, num_timesteps=152, num_filters=(8, 16), filter_size=(13,13),
+    def __init__(self, cell_index, stimulus_type, exptdate, num_timesteps=152, num_filters=(8, 16), filter_size=(13,13),
                  loss='poisson_loss', optimizer='adam', weight_init='normal', l2_reg=0., mean_adapt=False,
                  stimulus_shape=(40, 50, 50)):
         """
@@ -490,7 +492,7 @@ class lstm(Model):
                                        'stimulus shape: {}'.format(self.stim_shape)])
 
         # compile
-        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
+        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt, exptdate)
 
         # hack to fix train/test datasets for use with the LSTM architecture
         numTime = self.stim_shape[0]
@@ -519,7 +521,7 @@ class generalizedconvnet(Model):
     def __str__(self):
         return "generalizedconvnet"
 
-    def __init__(self, cell_index, stimulus_type,
+    def __init__(self, cell_index, stimulus_type, exptdate,
                  layers=['conv', 'relu', 'pool', 'flatten', 'affine', 'relu', 'finalaffine'],
                  num_filters=[4, -1, -1, -1, 16], filter_sizes=[9], loss='poisson_loss', optimizer='adam',
                  weight_init='normal', l2_reg=0.01, mean_adapt=False, stimulus_shape=(30, 50, 50)):
@@ -612,4 +614,4 @@ class generalizedconvnet(Model):
                                        ])
 
         # compile
-        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt)
+        super().__init__(cell_index, stimulus_type, loss, optimizer, mean_adapt, exptdate)

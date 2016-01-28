@@ -137,9 +137,9 @@ class Model(object):
 
                 # train on the batch
                 loss = self.model.train_on_batch(X, y)
-
+                
                 # update display and save
-                print('{:05d}: {}'.format(iteration, loss[0]))
+                print('{:05d}: {}'.format(iteration, loss))
 
     def predict(self, X):
         return self.model.predict(X)

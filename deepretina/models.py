@@ -14,6 +14,7 @@ from keras.layers.core import Dense, Activation, Flatten, TimeDistributedDense
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
 from keras.regularizers import l2
+from tqdm import tqdm
 
 from .preprocessing import datagen, loadexpt
 from .utils import notify, Batch, mksavedir, tocsv, tomarkdown
@@ -92,7 +93,7 @@ class Model(object):
         # write metadata to a markdown file
         tomarkdown(join(self.savedir, 'README'), metadata)
 
-    def train(self, batchsize, num_epochs=20, save_every=5):
+    def train(self, batchsize, num_epochs=20, save_every=50):
         """
         Train the network!
 
@@ -104,9 +105,12 @@ class Model(object):
             Number of epochs to train for. (Default: 20)
 
         save_every : int, optional
-            Saves the model parameters after `save_every` training batches. (Default: 5)
+            Saves the model parameters after `save_every` training batches. (Default: 50)
 
         """
+
+        # estimate the number of batches
+        num_batches = np.floor(self.training.X.shape[0] / batchsize).astype('int')
 
         # initialize training iteration
         iteration = 0
@@ -114,30 +118,24 @@ class Model(object):
         # loop over epochs
         for epoch in range(num_epochs):
 
-            # save updates for this epoch
-            res = self.test(epoch, iteration)
-
-            # update display
-            print('')
-            print('=' * 20)
-            print('==== Epoch #{:3d} ===='.format(epoch))
-            print('=' * 20)
-            print('Train CC: {:4.3f}'.format(res[2]))
-            print(' Test CC: {:4.3f}\n'.format(res[3]))
-
             # loop over data batches for this epoch
-            for X, y in datagen(batchsize, *self.training):
+            for X, y in tqdm(datagen(batchsize, *self.training),
+                             'Epoch #{}'.format(epoch + 1),
+                             num_batches):
 
                 # update on save_every
                 if iteration % save_every == 0:
                     self.save(epoch, iteration)
+
+                    # save updates for this epoch
+                    self.test(epoch, iteration)
 
                 # update iteration
                 iteration += 1
 
                 # train on the batch
                 loss = self.model.train_on_batch(X, y)
-                
+
                 # update display and save
                 print('{:05d}: {}'.format(iteration, loss))
 

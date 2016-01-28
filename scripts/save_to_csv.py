@@ -4,6 +4,8 @@ import csv
 
 new_csv_name = raw_input("Please type in the new csv name and press 'Enter': ")
 f = raw_input("Please type in the path you want to start from and press 'Enter': ")
+
+print('Starting to walk down directories')
 # e.g. first run from os.path.expanduser('~/Dropbox/deep-retina/saved')
 walker = os.walk(f, topdown=True)
 
@@ -11,6 +13,7 @@ full_paths = []
 for dirs, subdirs, files in walker:
     full_paths.append([dirs, subdirs, files])
 
+models_parsed = 0
 all_models = []
 for path in full_paths:
     readme_name = 'README.md'
@@ -45,8 +48,8 @@ for path in full_paths:
             model = {
                 'type': description[0][2:-1],
                 'date': description[1][3:-1],
-                'machine': path_components[6],
-                'folder': path_components[7],
+                'machine': path_components[-3],
+                'folder': path_components[-2],
                 'stimulus': stimulus,
                 'experiment': experiment,
                 'cells': cells,
@@ -57,6 +60,8 @@ for path in full_paths:
                 'mean_test_cc': np.mean(just_numbers, axis=0)[3],
             }
             all_models.append(model)
+            models_parsed += 1
+            print('Saved model %i' %(models_parsed))
         
 header = {}
 for k in sorted(all_models[0].keys()):

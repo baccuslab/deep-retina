@@ -1,5 +1,5 @@
 """
-Helper utilities
+Helper utilities for saving models and model outputs
 
 """
 

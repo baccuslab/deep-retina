@@ -3,48 +3,66 @@ Metrics comparing predicted and recorded firing rates
 
 """
 
+from __future__ import absolute_import, division, print_function
 import numpy as np
 from scipy.stats import pearsonr
+from functools import wraps
 
-__all__ = ['cc', 'lli', 'rmse', 'fev', 'multicell']
+__all__ = ['cc', 'lli', 'rmse', 'fev']
 
 
 def multicell(metric):
+    """Decorator for turning a function that takes two 1-D numpy arrays, and
+    makes it work for when you have a list of 1-D arrays or a 2-D array, where
+    the metric is applied to each item in the list or each matrix row.
     """
-    This function returns a new function which when called will apply the
-    given metric across the columns of the input array, returning the score
-    for each pair as well as the average
+    @wraps(metric)
+    def multicell_wrapper(r, rhat):
 
-    """
+        # ensure that the arguments have the right shape / dimensions
+        for arg in (r, rhat):
+            assert isinstance(arg, (np.ndarray, list, tuple)), \
+                "Arguments must be a numpy array or list of numpy arrays"
 
-    def metric_multicell(r, rhat):
-        assert r.shape == rhat.shape, "Argument shapes must be equal"
-        assert r.ndim == 2, "Inputs must be matrices"
+        # convert arguments to matrices
+        true_rates = np.atleast_2d(r)
+        model_rates = np.atleast_2d(rhat)
 
-        scores = [metric(r[:, cell_index], rhat[:, cell_index])
-                  for cell_index in range(r.shape[1])]
+        assert true_rates.ndim == 2, "Arguments have too many dimensions"
+        assert true_rates.shape == model_rates.shape, "Shapes must be equal"
 
-        return np.mean(scores), scores
+        # compute scores for each pair
+        scores = [metric(true_rate, model_rate)
+                  for true_rate, model_rate in zip(true_rates, model_rates)]
 
-    return metric_multicell
+        # return the mean and the full list, if there were multiple cells
+        if len(scores) > 1:
+            return np.mean(scores), scores
+
+        # otherwise return just the score for this pair of variables
+        elif len(scores) == 1:
+            return scores[0]
+
+        # the scores list should not be empty
+        else:
+            raise ValueError("Empty list of scores")
+
+    return multicell_wrapper
 
 
+@multicell
 def cc(r, rhat):
-    """
-    Correlation coefficient. By default averages over
+    """Pearson's correlation coefficient
 
     If r, rhat are matrices, cc() computes the average pearsonr correlation
     of each column vector
     """
-    assert r.shape == rhat.shape, "Argument shapes must be equal"
-    assert r.ndim == 1, "Inputs must be vectors"
-
     return pearsonr(r, rhat)[0]
 
 
-def lli(r, rhat, dt=1e-2):
-    """
-    Log-likelihood improvement over a mean rate model (in bits per spike)
+@multicell
+def lli(r, rhat):
+    """Log-likelihood improvement over a mean rate model (in bits per spike)
 
     Parameters
     ----------
@@ -55,13 +73,7 @@ def lli(r, rhat, dt=1e-2):
     rhat : array_like
         Model firing rate
 
-    dt : float, optional
-        Sampling period (in seconds). Default: 0.010s
-
     """
-    assert r.shape == rhat.shape, "Argument shapes must be equal"
-    assert r.ndim == 1, "Inputs must be vectors"
-
     # mean firing rate
     mu = np.mean(r)
 
@@ -73,23 +85,16 @@ def lli(r, rhat, dt=1e-2):
     return np.mean(loglikelihood(rhat) - loglikelihood(mu)) / (mu * np.log(2))
 
 
+@multicell
 def rmse(r, rhat):
-    """
-    Root mean squared error
-    """
-    assert r.shape == rhat.shape, "Argument shapes must be equal"
-    assert r.ndim == 1, "Inputs must be vectors"
-
+    """Root mean squared error"""
     return np.sqrt(np.mean((rhat - r) ** 2))
 
 
+@multicell
 def fev(r, rhat):
-    """
-    Fraction of explained variance
+    """Fraction of explained variance
 
     wikipedia.org/en/Fraction_of_variance_unexplained
     """
-    assert r.shape == rhat.shape, "Argument shapes must be equal"
-    assert r.ndim == 1, "Inputs must be vectors"
-
-    return 1.0 - rmse(r, rhat) / r.var()
+    return 1.0 - rmse(r, rhat)**2 / r.var()

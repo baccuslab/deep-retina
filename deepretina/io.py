@@ -9,20 +9,116 @@ from os import mkdir, uname, getenv
 from os.path import join, expanduser
 from time import strftime
 from collections import namedtuple
+from pyret.stimulustools import rolling_window
+from scipy.stats import zscore
 import numpy as np
 import sys
-import csv
+import h5py
 
-__all__ = ['notify', 'rolling_window', 'mksavedir', 'tocsv', 'Batch']
-
+__all__ = ['notify', 'mksavedir', 'loadexpt', 'batchify', 'Batch']
 
 Batch = namedtuple('Batch', ['X', 'y'])
 
 
+def loadexpt(cellidx, filename, train_or_test, history, fraction=1., cutout=False, cutout_cell=0, exptdate='15-10-07'):
+    """Loads an experiment from disk
+
+    Parameters
+    ----------
+    cellidx : int
+        Index of the cell to load
+
+    filename : string
+        Name of the hdf5 file to load
+
+    train_or_test : string
+        The key in the hdf5 file to load ('train' or 'test')
+
+    history : int
+        Number of samples of history to include in the toeplitz stimulus
+
+    fraction : float, optional
+        Fraction of the experiment to load, must be between 0 and 1. (Default: 1.0)
+
+    """
+
+    assert fraction > 0 and fraction <= 1, "Fraction of data to load must be between 0 and 1"
+
+    with notify('Loading {}ing data'.format(train_or_test)):
+
+        # select different filename if you want a cutout
+        if cutout:
+            filename = filename + '_cutout_cell%02d' %(cutout_cell + 1)
+
+        # load the hdf5 file
+        f = h5py.File(join(expanduser('~/experiments/data'), exptdate, filename + '.h5'), 'r')
+
+        # length of the experiment
+        expt_length = f[train_or_test]['time'].size
+        num_samples = int(np.floor(expt_length * fraction))
+
+        # load the stimulus
+        stim = zscore(np.array(f[train_or_test]['stimulus'][:num_samples]).astype('float32'))
+
+        # reshaped stimulus (nsamples, time/channel, space, space)
+        if history == 0:
+            # don't create the toeplitz matrix
+            stim_reshaped = stim
+        else:
+            stim_reshaped = np.rollaxis(np.rollaxis(rolling_window(stim, history, time_axis=0), stim.ndim - 1), stim.ndim, 1)
+
+        # get the response for this cell
+        resp = np.array(f[train_or_test]['response/firing_rate_10ms'][cellidx, history:num_samples]).T
+
+    return Batch(stim_reshaped, resp)
+
+
+def batchify(batchsize, X, y, shuffle):
+    """Returns a generator that yields batches of data for one pass through the data
+
+    Parameters
+    ----------
+    batchsize : int
+        The number of samples to include in each batch
+
+    X : array_like
+        Array of stimuli, the first dimension indexes each sample
+
+    y : array_like
+        Array of responses, the first dimension indexes each sample
+
+    shuffle : boolean
+        If true, the samples are shuffled before being put into batches
+
+    """
+
+    # total number of samples
+    training_data_maxlength = y.shape[0]
+
+    # compute the number of available batches of a fixed size
+    num_batches = int(np.floor(float(training_data_maxlength) / batchsize))
+
+    # number of samples we are going to used
+    N = int(num_batches * batchsize)
+
+    # generate indices
+    indices = np.arange(N)
+    if shuffle:
+        np.random.shuffle(indices)
+
+    # reshape into batches
+    indices = indices.reshape(num_batches, batchsize)
+
+    # for each batch in this epoch
+    for inds in indices:
+
+        # yield data
+        yield X[inds, ...], y[inds]
+
+
 @contextmanager
 def notify(title):
-    """
-    Context manager for printing messages of the form 'Loading... Done.'
+    """Context manager for printing messages of the form 'Loading... Done.'
 
     Parameters
     ----------
@@ -31,9 +127,9 @@ def notify(title):
 
     Usage
     -----
-    with notify('Loading'):
-        # do long running task
-        time.sleep(0.5)
+    >>> with notify('Loading'):
+    >>>    # do long running task
+    >>>    time.sleep(0.5)
     >>> Loading... Done.
 
     """
@@ -75,84 +171,15 @@ def mksavedir(basedir='~/Dropbox/deep-retina/saved', prefix=''):
     return savedir
 
 
-def tocsv(filename, array, fmt=''):
-    """
-    Write the data in the given array to a CSV file
-
-    """
-
-    row = [('{' + fmt + '}').format(x) for x in array]
-
-    # add .csv to the filename if necessary
-    if not filename.endswith('.csv'):
-        filename += '.csv'
-
-    with open(filename, 'a') as f:
-        writer = csv.writer(f, delimiter=',')
-        writer.writerow(row)
-
-
 def tomarkdown(filename, lines):
     """
     Write the given lines to a markdown file
 
     """
 
-    # add .csv to the filename if necessary
+    # add .md to the filename if necessary
     if not filename.endswith('.md'):
         filename += '.md'
 
     with open(filename, 'a') as f:
         f.write('\n'.join(lines))
-
-
-def rolling_window(array, window, time_axis=0):
-    """
-    Make an ndarray with a rolling window of the last dimension
-
-    Parameters
-    ----------
-    array : array_like
-        Array to add rolling window to
-
-    window : int
-        Size of rolling window
-
-    time_axis : 'first' or 'last', optional
-        The axis of the time dimension (default: 'first')
-
-    Returns
-    -------
-    Array that is a view of the original array with a added dimension
-    of size `window`.
-
-    Examples
-    --------
-    >>> x=np.arange(10).reshape((2,5))
-    >>> rolling_window(x, 3)
-    array([[[0, 1, 2], [1, 2, 3], [2, 3, 4]],
-               [[5, 6, 7], [6, 7, 8], [7, 8, 9]]])
-    Calculate rolling mean of last dimension:
-    >>> np.mean(rolling_window(x, 3), -1)
-    array([[ 1.,  2.,  3.],
-               [ 6.,  7.,  8.]])
-
-    """
-
-    # flip array dimensinos if the time axis is the first axis
-    if time_axis == 0:
-        array = array.T
-
-    elif time_axis == -1:
-        pass
-
-    else:
-        raise ValueError("Time axis must be 0 or -1")
-
-    assert window >= 1, "`window` must be at least 1."
-    assert window < array.shape[-1], "`window` is too long."
-
-    # with strides
-    shape = array.shape[:-1] + (array.shape[-1] - window, window)
-    strides = array.strides + (array.strides[-1],)
-    return np.lib.stride_tricks.as_strided(array, shape=shape, strides=strides)

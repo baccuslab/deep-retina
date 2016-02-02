@@ -6,58 +6,122 @@ Helper utilities for saving models and model outputs
 from __future__ import absolute_import, division, print_function
 from os import mkdir, uname, getenv
 from os.path import join, expanduser
-from time import strftime
+from json import dumps
+import shutil
+import time
+import theano
+import keras
+import deepretina
+import hashlib
 
-__all__ = ['mksavedir']
-
+__all__ = ['Monitor']
 
 directories = {
-    'weights': '~/deep-retina-saved-weights/',
-    'dropbox': '~/Dropbox/deep-retina/saved/',
-    'database': '~/deep-retina-results/',
+    'dropbox': expanduser('~/Dropbox/deep-retina/saved/'),
+    'database': expanduser('~/deep-retina-results/database'),
 }
 
-# def initialize()
 
+class Monitor:
 
-def mksavedir(basedir='~/Dropbox/deep-retina/saved', prefix=''):
-    """
-    Makes a new directory for saving models
+    def __init__(self, name, model, data):
 
-    Parameters
-    ----------
-    basedir : string, optional
-        Base directory to store model results in
+        # pointer to Keras model and experimental data
+        self.name = name
+        self.model = model
+        self.data = data
+        self.rate = data.test.y
 
-    prefix : string, optional
-        Prefix to add to the folder (name of the model or some other identifier)
+        # get the start time and date and some system information
+        self.start = {
+            'machine': uname()[1],
+            'user': getenv('USER'),
+            'timestamp': time.time(),
+            'date': time.strftime("%Y-%m-%d"),
+            'time': time.strftime("%H.%M.%S"),
+        }
 
-    """
+        # store version info
+        self.versions = {
+            'keras': keras.__version__,
+            'deep-retina': deepretina.__version__,
+            'theano': theano.__version__,
+        }
 
-    assert type(prefix) is str, "prefix must be a string"
+        # build a hash for this model architecture
+        tmp = hashlib.md5()
+        tmp.update('\n'.join((self.start['date'],
+                              self.start['time'],
+                              self.model.to_yaml()).encode('ascii')))
+        self.hashkey = tmp.hexdigest()[:6]
 
-    # get the current date and time
-    now = strftime("%Y-%m-%d %H.%M.%S") + " " + prefix
+        # make the necessary folders
+        self.datadir = ' '.join((self.hashkey, self.name))
+        for _, directory in directories.items():
+            mkdir(join(directory, self.datadir))
 
-    # the save directory is the given base directory plus the current date/time
-    userdir = uname()[1] + '.' + getenv('USER')
-    savedir = join(expanduser(basedir), userdir, now)
+        # write files to disk
+        self.write('architecture.json', self.model.to_json())
+        self.write('architecture.yaml', self.model.to_yaml())
+        self.write('version_info.json', dumps(self.versions))
+        self.write('experiment.json', dumps(data.info))
+        self.write('system.json', dumps(self.start))
 
-    # create the directory
-    mkdir(savedir)
+    def save(self, epoch, iteration):
+        pass
 
-    return savedir
+    def write(self, filename, text, copy=True):
+        """Writes the given text to a file"""
+        fullpath = join(directories['database'], self.datadir, filename)
 
+        with open(fullpath) as f:
+            f.write(text)
 
-def tomarkdown(filename, lines):
-    """
-    Write the given lines to a markdown file
+        # copy to dropbox
+        if copy:
+            shutil.copy(fullpath, directories['dropbox'])
 
-    """
+    @property
+    def rhat(self):
+        return self.model.predict(self.data.test.X)
 
-    # add .md to the filename if necessary
-    if not filename.endswith('.md'):
-        filename += '.md'
+    # def test(self, epoch, iteration):
 
-    with open(filename, 'a') as f:
-        f.write('\n'.join(lines))
+        # # performance on the entire holdout set
+        # rhat_test = self.predict(self.holdout.X)
+        # r_test = self.holdout.y
+
+        # # performance on a subset of the training data
+        # training_sample_size = rhat_test.shape[0]
+        # inds = choice(self.training.y.shape[0], training_sample_size, replace=False)
+        # rhat_train = self.predict(self.training.X[inds, ...])
+        # r_train = self.training.y[inds]
+
+        # # evalue using the given metrics  (computes an average over the different cells)
+        # # ASSUMES TRAINING ON MULTIPLE CELLS
+        # functions = map(multicell, (cc, lli, rmse))
+        # results = [epoch, iteration]
+
+        # for f in functions:
+            # results.append(f(r_train, rhat_train)[0])
+            # results.append(f(r_test, rhat_test)[0])
+
+        # # save the results to a CSV file
+        # self.save_csv(results)
+
+        # # TODO: plot the train / test firing rates and save in a figure
+
+        # return results
+
+    # def save(self, epoch, iteration):
+        # """
+        # Save weights and optional test performance to directory
+
+        # """
+
+        # filename = join(self.weightsdir,
+                        # "epoch{:03d}_iter{:05d}_weights.h5"
+                        # .format(epoch, iteration))
+
+        # # store the weights
+        # self.model.save_weights(filename)

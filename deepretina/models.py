@@ -1,5 +1,5 @@
 """
-Classes for wrapping Keras models
+Construct and train deep neural network models using Keras
 
 """
 
@@ -9,9 +9,7 @@ from keras.layers.core import Dense, Activation, Flatten, TimeDistributedDense
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
 from keras.regularizers import l2
-from tqdm import tqdm
 from .utils import notify
-from .metrics import cc, lli, rmse
 from . import io
 
 __all__ = ['sequential', 'train', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet']
@@ -36,7 +34,6 @@ def sequential(layers, optimizer, loss='poisson_loss'):
     -------
     model : keras.models.Sequential
         A compiled Keras model object
-
     """
     model = Sequential()
     [model.add(layer) for layer in layers]
@@ -124,7 +121,7 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
     return layers
 
 
-def train(model, data, save_every, num_epochs):
+def train(model, data, save_every, num_epochs, name='model'):
     """Train the given network against the given data
 
     Parameters
@@ -136,79 +133,44 @@ def train(model, data, save_every, num_epochs):
         An Experiment object
 
     save_every : int
-        Saves the model parameters after `save_every` training batches
+        Saves the model parameters after `save_every` training batches.
+        If save_every is less than or equal to zero, nothing gets saved.
 
     num_epochs : int
         Number of epochs to train for
-    """
 
-    assert isinstance(model, Model)
+    name : string
+        A name for this model
+    """
+    assert isinstance(model, Model), "model is not a Keras model"
+    assert isinstance(save_every, int), "save_every must be an integer"
+
+    # create monitor for storing / saving model results
+    if save_every > 0:
+        monitor = io.Monitor(name, model, data)
 
     # initialize training iteration
     iteration = 0
 
     # loop over epochs
     for epoch in range(num_epochs):
+        print('Epoch #{} of {}'.format(epoch + 1, num_epochs))
 
         # loop over data batches for this epoch
-        for X, y in tqdm(data.batches('train', shuffle=True),
-                         'Epoch #{}'.format(epoch + 1),
-                         data.num_batches('train')):
+        for X, y in data.batches(shuffle=True):
 
-            # update on save_every
-            if iteration % save_every == 0:
-                io.save(epoch, iteration)
-                io.test(epoch, iteration)
-
-            # update iteration
-            iteration += 1
+            # update on save_every, assuming it is positive
+            if (save_every > 0) and (iteration % save_every == 0):
+                monitor.save(epoch, iteration)
 
             # train on the batch
             loss = model.train_on_batch(X, y)
 
-            # update display and save
-            print('{:05d}: {}'.format(iteration, loss))
+            # update
+            iteration += 1
+            print('\t{} of {}: {}'.format(iteration, data.num_batches, loss))
 
-    # def test(self, epoch, iteration):
-
-        # # performance on the entire holdout set
-        # rhat_test = self.predict(self.holdout.X)
-        # r_test = self.holdout.y
-
-        # # performance on a subset of the training data
-        # training_sample_size = rhat_test.shape[0]
-        # inds = choice(self.training.y.shape[0], training_sample_size, replace=False)
-        # rhat_train = self.predict(self.training.X[inds, ...])
-        # r_train = self.training.y[inds]
-
-        # # evalue using the given metrics  (computes an average over the different cells)
-        # # ASSUMES TRAINING ON MULTIPLE CELLS
-        # functions = map(multicell, (cc, lli, rmse))
-        # results = [epoch, iteration]
-
-        # for f in functions:
-            # results.append(f(r_train, rhat_train)[0])
-            # results.append(f(r_test, rhat_test)[0])
-
-        # # save the results to a CSV file
-        # self.save_csv(results)
-
-        # # TODO: plot the train / test firing rates and save in a figure
-
-        # return results
-
-    # def save(self, epoch, iteration):
-        # """
-        # Save weights and optional test performance to directory
-
-        # """
-
-        # filename = join(self.weightsdir,
-                        # "epoch{:03d}_iter{:05d}_weights.h5"
-                        # .format(epoch, iteration))
-
-        # # store the weights
-        # self.model.save_weights(filename)
+    return monitor
 
 
 def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='normal', l2_reg=0.0):

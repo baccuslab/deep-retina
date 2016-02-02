@@ -35,17 +35,8 @@ def multicell(metric):
         scores = [metric(true_rate, model_rate)
                   for true_rate, model_rate in zip(true_rates, model_rates)]
 
-        # return the mean and the full list, if there were multiple cells
-        if len(scores) > 1:
-            return np.mean(scores), scores
-
-        # otherwise return just the score for this pair of variables
-        elif len(scores) == 1:
-            return scores[0]
-
-        # the scores list should not be empty
-        else:
-            raise ValueError("Empty list of scores")
+        # return the mean across cells and the full list
+        return np.mean(scores), scores
 
     return multicell_wrapper
 

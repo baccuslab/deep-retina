@@ -15,23 +15,60 @@ __all__ = ['loadexpt']
 
 
 class Experiment(object):
+    """Lightweight class to keep track of loaded experiment data"""
 
     def __init__(self, expt, cells, filename, history, batchsize, load_fraction=1.0):
+        """Keeps track of experimental data
+
+        Parameters
+        ----------
+        expt : string
+            The experiment date
+
+        cells : list
+            Which cells to train on
+
+        filename : string
+            Which h5 file to load (e.g. 'whitenoise' or 'naturalscene')
+
+        history : int
+            Temporal history, in samples, for the rolling window (Toeplitz stimulus)
+
+        batchsize : int
+            How many samples to include in each training batch
+
+        load_fraction : float
+            What fraction of the training stimulus to load
+
+        """
+        # store experiment variables (for saving later)
+        self.info = {
+            'date': expt,
+            'cells': cells,
+            'filename': filename,
+            'history': history,
+            'batchsize': batchsize,
+            'load_fraction': load_fraction
+        }
 
         # load data from disk
         load_data = partial(loadexpt, expt, cells, filename, history, load_fraction=load_fraction)
+
+        # store train/test data and compute the number of batches
         self.test = load_data('test')
         self.train = load_data('train')
         self.batchsize = batchsize
+        self.num_batches = np.floor(self.train.X.shape[0] / self.batchsize).astype('int')
 
-    def batches(self, test_or_train, shuffle):
-        assert test_or_train in ('test', 'train'), "Must be 'test' or 'train'"
-        data = self.__dict__[test_or_train]
-        return batchify(self.batchsize, data.X, data.y, shuffle)
+    def batches(self, shuffle):
+        """Returns a generator that yields training batches of data
 
-    def num_batches(self, test_or_train):
-        data = self.__dict__[test_or_train]
-        self.num_batches = np.floor(data.X.shape[0] / self.batchsize).astype('int')
+        Parameters
+        ----------
+        shuffle : boolean
+            Whether or not to shuffle the time points before making batches
+        """
+        return batchify(self.batchsize, self.train.X, self.train.y, shuffle)
 
 
 def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0):

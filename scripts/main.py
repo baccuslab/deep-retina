@@ -4,47 +4,39 @@ Main script for training deep retinal models
 """
 
 from __future__ import absolute_import
-from .models import ln, convnet, lstm
+from .models import sequential, convnet, lstm, train
+from .experiments import Experiment
 from keras.optimizers import RMSprop
 
 
-def fit_ln(cell, stimulus_type):
-    """
-    Demo code for fitting an LN model in keras
+def fit_convnet(cells, stimulus):
+    """Demo code for fitting a convnet model"""
 
-    """
+    stim_shape = (40, 50, 50)
+    ncells = len(cells)
 
-    # initialize model
-    mdl = ln(cell, stimulus_type, l2_reg=0.01, optimizer='adam')
+    # get the convnet layers
+    layers = convnet(stim_shape, ncells, num_filters=(8, 16),
+                     filter_size=(13, 13), weight_init='normal', l2_reg=0.01)
 
-    # train
-    batchsize = 5000            # number of samples per batch
-    num_epochs = 15             # number of epochs to train for
-    save_weights_every = 50     # save weights every n iterations
+    # compile the keras model
+    model = sequential(layers, 'adam')
 
-    mdl.train(batchsize, num_epochs=num_epochs, save_every=save_weights_every)
+    # load experiment data
+    data = Experiment('15-10-07', cells, stimulus, stim_shape[0])
 
-    return mdl
-
-
-def fit_convnet(cell, stimulus_type):
-    """
-    Demo code for fitting a convnet model
-
-    """
-
-    # initialize model
-    mdl = convnet(cell, stimulus_type, num_filters=(8, 16), filter_size=(13, 13),
-                  weight_init='normal', l2_reg=0.01, mean_adapt=False)
+    # training options
+    training_options = {
+        'batchsize': 5000,          # number of samples per batch
+        'save_every': 50,           # save weights every n iterations
+        'num_epochs': 10,           # number of epochs to train for
+        'name': 'convnet',          # a name for the model
+    }
 
     # train
-    batchsize = 5000            # number of samples per batch
-    num_epochs = 10             # number of epochs to train for
-    save_weights_every = 50     # save weights every n iterations
+    monitor = train(model, data, **training_options)
 
-    mdl.train(batchsize, num_epochs=num_epochs, save_every=save_weights_every)
-
-    return mdl
+    return model, monitor
 
 
 def fit_lstm(cell, stimulus_type, num_timesteps):

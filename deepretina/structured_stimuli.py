@@ -1,9 +1,15 @@
+"""
+Generate commonly used visual stimuli
+
+"""
+
+from __future__ import absolute_import, division, print_function
 import numpy as np
 from .utils import rolling_window
 
-# Probe contrast adaptation
+
 def get_contrast_changes(period=5, low_contrast=0.1, high_contrast=1.0, sample_rate=30, roll=True):
-    '''
+    """Probe contrast adaptation
         Returns full field flicker stimulus with low-high-low contrast.
 
         INPUT:
@@ -14,7 +20,7 @@ def get_contrast_changes(period=5, low_contrast=0.1, high_contrast=1.0, sample_r
 
         OUTPUT:
             full_field_movie    np array of shape (nframes, 40, 50, 50)
-    '''
+    """
 
     flicker_sequence = np.hstack([low_contrast*np.random.randn(period*sample_rate),
                                   high_contrast*np.random.randn(period*sample_rate),

@@ -5,12 +5,33 @@ Preprocessing utility functions for loading and formatting experimental data
 
 from __future__ import absolute_import, division, print_function
 import os
+from functools import partial
 import numpy as np
 import h5py
 from scipy.stats import zscore
-from .utils import notify, Batch
+from .utils import notify, Batch, batchify
 
 __all__ = ['loadexpt']
+
+
+class Experiment(object):
+
+    def __init__(self, expt, cells, filename, history, batchsize, load_fraction=1.0):
+
+        # load data from disk
+        load_data = partial(loadexpt, expt, cells, filename, history, load_fraction=load_fraction)
+        self.test = load_data('test')
+        self.train = load_data('train')
+        self.batchsize = batchsize
+
+    def batches(self, test_or_train, shuffle):
+        assert test_or_train in ('test', 'train'), "Must be 'test' or 'train'"
+        data = self.__dict__[test_or_train]
+        return batchify(self.batchsize, data.X, data.y, shuffle)
+
+    def num_batches(self, test_or_train):
+        data = self.__dict__[test_or_train]
+        self.num_batches = np.floor(data.X.shape[0] / self.batchsize).astype('int')
 
 
 def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0):

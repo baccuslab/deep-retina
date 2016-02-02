@@ -95,6 +95,6 @@ def rmse(r, rhat):
 def fev(r, rhat):
     """Fraction of explained variance
 
-    wikipedia.org/en/Fraction_of_variance_unexplained
+    https://wikipedia.org/en/Fraction_of_variance_unexplained
     """
     return 1.0 - rmse(r, rhat)**2 / r.var()

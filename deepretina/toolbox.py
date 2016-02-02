@@ -1,8 +1,9 @@
 """
-Toolbox for inspecting and probing Keras models
+Toolbox with helpful utilities for exploring Keras models
 
 """
 
+from __future__ import absolute_import, division, print_function
 import numpy as np
 import theano
 import h5py

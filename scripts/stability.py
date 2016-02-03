@@ -15,6 +15,7 @@ stim_types = np.array(['whitenoise.h5', 'naturalscene.h5', 'structured.h5', 'nat
 stim_types = stim_types[stim_idx]
 #test_stim = 'whitenoise.h5'
 
+print('Computing correlations and firing rates... ')
 #for expt in experiments:
 all_ccs = []
 all_frs = []
@@ -77,6 +78,8 @@ for c in range(ncells):
                 plt.imshow(all_ccs[j][c], cmap='Reds', clim=[0.0, 1.0], interpolation='nearest')
                 plt.ylabel('Correlation across time', fontsize=20)
                 ax.grid('off')
+                ax.set_xticks([])
+                ax.set_yticks([])
                 #ax.axis('off')
 
                 # plot actual values on white portion
@@ -88,17 +91,21 @@ for c in range(ncells):
                             ax.text(y_val, x_val, label, va='center', ha='center') 
 
             else:
-                plt.plot(tax/60.0, all_frs[j][c,:], 'k', linewidth=3)
+                plt.plot(tax/60.0, all_frs[j][c,:], 'k', linewidth=2)
+                #adjust_spines(ax, ['left', 'bottom'])
                 plt.xlabel('Time (min)', fontsize=20)
-                plt.ylabel('Firing Rate (Hz)', fontsize=20)
+                # only label firing rate on far left plot
+                if j == 0:
+                    plt.ylabel('Firing Rate (Hz)', fontsize=20)
                 plt.ylim([0.0,np.max(all_frs)])
                 plt.xlim([0.0,np.max(tax)/60.0])
-                adjust_spines(ax, ['left', 'bottom'])
-                #ax.spines['right'].set_visible(False)
-                #ax.spines['top'].set_visible(False)
-                #ax.yaxis.set_ticks_position('left')
-                #ax.xaxis.set_ticks_position('bottom')
+                ax.spines['right'].set_visible(False)
+                ax.spines['top'].set_visible(False)
+                ax.yaxis.set_ticks_position('left')
+                ax.xaxis.set_ticks_position('bottom')
     plt.savefig(full_path + 'stability_' + cell_label + '.jpg')
+    plt.close()
+    print('Saved stability_' + cell_label)
 
 
 f.close()

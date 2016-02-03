@@ -88,4 +88,4 @@ def fev(r, rhat):
 
     https://wikipedia.org/en/Fraction_of_variance_unexplained
     """
-    return 1.0 - rmse(r, rhat)**2 / r.var()
+    return 1.0 - rmse(r, rhat)[0]**2 / r.var()

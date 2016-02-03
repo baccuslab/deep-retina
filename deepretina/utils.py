@@ -1,28 +1,64 @@
 """
-Helper utilities
+Generic utilities for use in deepretina
 
 """
 
-from __future__ import print_function
-from contextlib import contextmanager
-from os import mkdir, uname, getenv
-from os.path import join, expanduser
-from time import strftime
-from collections import namedtuple
-import numpy as np
 import sys
-import csv
+from collections import namedtuple
+from contextlib import contextmanager
+import numpy as np
 
-__all__ = ['notify', 'rolling_window', 'mksavedir', 'tocsv', 'Batch']
-
+__all__ = ['batchify', 'Batch', 'notify']
 
 Batch = namedtuple('Batch', ['X', 'y'])
 
 
+def batchify(batchsize, X, y, shuffle):
+    """Returns a generator that yields batches of data (one epoch)
+
+    Parameters
+    ----------
+    batchsize : int
+        The number of samples to include in each batch
+
+    X : array_like
+        Array of stimuli, the first dimension indexes each sample
+
+    y : array_like
+        Array of responses, the first dimension indexes each sample
+
+    shuffle : boolean
+        If true, the samples are shuffled before being put into batches
+
+    """
+
+    # total number of samples
+    training_data_maxlength = y.shape[0]
+
+    # compute the number of available batches of a fixed size
+    num_batches = int(np.floor(float(training_data_maxlength) / batchsize))
+
+    # number of samples we are going to used
+    N = int(num_batches * batchsize)
+
+    # generate indices
+    indices = np.arange(N)
+    if shuffle:
+        np.random.shuffle(indices)
+
+    # reshape into batches
+    indices = indices.reshape(num_batches, batchsize)
+
+    # for each batch in this epoch
+    for inds in indices:
+
+        # yield data
+        yield X[inds, ...], y[inds]
+
+
 @contextmanager
 def notify(title):
-    """
-    Context manager for printing messages of the form 'Loading... Done.'
+    """Context manager for printing messages of the form 'Loading... Done.'
 
     Parameters
     ----------
@@ -31,9 +67,9 @@ def notify(title):
 
     Usage
     -----
-    with notify('Loading'):
-        # do long running task
-        time.sleep(0.5)
+    >>> with notify('Loading'):
+    >>>    # do long running task
+    >>>    time.sleep(0.5)
     >>> Loading... Done.
 
     """
@@ -44,115 +80,3 @@ def notify(title):
         yield
     finally:
         print('Done.')
-
-
-def mksavedir(basedir='~/Dropbox/deep-retina/saved', prefix=''):
-    """
-    Makes a new directory for saving models
-
-    Parameters
-    ----------
-    basedir : string, optional
-        Base directory to store model results in
-
-    prefix : string, optional
-        Prefix to add to the folder (name of the model or some other identifier)
-
-    """
-
-    assert type(prefix) is str, "prefix must be a string"
-
-    # get the current date and time
-    now = strftime("%Y-%m-%d %H.%M.%S") + " " + prefix
-
-    # the save directory is the given base directory plus the current date/time
-    userdir = uname()[1] + '.' + getenv('USER')
-    savedir = join(expanduser(basedir), userdir, now)
-
-    # create the directory
-    mkdir(savedir)
-
-    return savedir
-
-
-def tocsv(filename, array, fmt=''):
-    """
-    Write the data in the given array to a CSV file
-
-    """
-
-    row = [('{' + fmt + '}').format(x) for x in array]
-
-    # add .csv to the filename if necessary
-    if not filename.endswith('.csv'):
-        filename += '.csv'
-
-    with open(filename, 'a') as f:
-        writer = csv.writer(f, delimiter=',')
-        writer.writerow(row)
-
-
-def tomarkdown(filename, lines):
-    """
-    Write the given lines to a markdown file
-
-    """
-
-    # add .csv to the filename if necessary
-    if not filename.endswith('.md'):
-        filename += '.md'
-
-    with open(filename, 'a') as f:
-        f.write('\n'.join(lines))
-
-
-def rolling_window(array, window, time_axis=0):
-    """
-    Make an ndarray with a rolling window of the last dimension
-
-    Parameters
-    ----------
-    array : array_like
-        Array to add rolling window to
-
-    window : int
-        Size of rolling window
-
-    time_axis : 'first' or 'last', optional
-        The axis of the time dimension (default: 'first')
-
-    Returns
-    -------
-    Array that is a view of the original array with a added dimension
-    of size `window`.
-
-    Examples
-    --------
-    >>> x=np.arange(10).reshape((2,5))
-    >>> rolling_window(x, 3)
-    array([[[0, 1, 2], [1, 2, 3], [2, 3, 4]],
-               [[5, 6, 7], [6, 7, 8], [7, 8, 9]]])
-    Calculate rolling mean of last dimension:
-    >>> np.mean(rolling_window(x, 3), -1)
-    array([[ 1.,  2.,  3.],
-               [ 6.,  7.,  8.]])
-
-    """
-
-    # flip array dimensinos if the time axis is the first axis
-    if time_axis == 0:
-        array = array.T
-
-    elif time_axis == -1:
-        pass
-
-    else:
-        raise ValueError("Time axis must be 0 or -1")
-
-    assert window >= 1, "`window` must be at least 1."
-    assert window < array.shape[-1], "`window` is too long."
-
-    # with strides
-    shape = array.shape[:-1] + (array.shape[-1] - window, window)
-    strides = array.strides + (array.strides[-1],)
-    return np.lib.stride_tricks.as_strided(array, shape=shape, strides=strides)

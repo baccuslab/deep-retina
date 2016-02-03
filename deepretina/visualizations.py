@@ -1,3 +1,9 @@
+"""
+Model visualization tools
+
+"""
+
+from __future__ import absolute_import, division, print_function
 import numpy as np
 import matplotlib.pyplot as plt
 import pyret.filtertools as ft
@@ -8,6 +14,7 @@ import os
 import h5py
 from keras.models import model_from_json
 from .preprocessing import datagen, loadexpt
+
 
 def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
         fig_dir=None, fig_size=(8,10), dpi=300, space=True, time=True, display=True,

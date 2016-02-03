@@ -1,3 +1,9 @@
+"""
+Toolbox with helpful utilities for exploring Keras models
+
+"""
+
+from __future__ import absolute_import, division, print_function
 import numpy as np
 import theano
 import h5py
@@ -8,8 +14,7 @@ from . import metrics
 
 
 def load_model(model_path, weight_filename):
-
-    '''
+    """
     Loads a Keras model using:
     - an architecture.json file
     - an h5 weight file, for instance 'epoch018_iter01300_weights.h5'
@@ -19,7 +24,7 @@ def load_model(model_path, weight_filename):
         weight_filename	an h5 file with the weights
         OUTPUT:
         returns keras model
-    '''
+    """
 
     architecture_filename = 'architecture.json'
     architecture_data = open(model_path + architecture_filename, 'r')
@@ -31,7 +36,7 @@ def load_model(model_path, weight_filename):
 
 
 def load_partial_model(model, layer_id):
-    '''
+    """
     Returns the model up to a specified layer.
 
     INPUT:
@@ -40,14 +45,14 @@ def load_partial_model(model, layer_id):
 
     OUTPUT:
         a theano function representing the partial model
-    '''
+    """
 
     # create theano function to generate activations of desired layer
     return theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
 
 
 def list_layers(model_path, weight_filename):
-    '''
+    """
     Lists the layers in the model with their children.
 
     This provides an easy way to see how many "layers" in the model there are, and which ones
@@ -61,7 +66,7 @@ def list_layers(model_path, weight_filename):
 
     OUTPUT:
         an ASCII table using tableprint
-    '''
+    """
     weights = h5py.File(model_path + weight_filename, 'r')
     layer_names = list(weights)
 
@@ -84,9 +89,9 @@ def list_layers(model_path, weight_filename):
 
 
 def get_test_responses(model, stim_type='natural', cells=[0]):
-    '''
+    """
         Get a list of [true_responses, model_responses] on the same test data.
-    '''
+    """
     if stim_type is 'natural':
         test_data = loadexpt(cells, 'naturalscene', 'test', 40)
     elif stim_type is 'white':
@@ -105,9 +110,7 @@ def get_test_responses(model, stim_type='natural', cells=[0]):
 
 
 def get_correlation(model, stim_type='natural', cells=[0], metric='cc'):
-    '''
-        Get Pearson's r correlation.
-    '''
+    """Get Pearson's r correlation."""
     truth, predictions = get_test_responses(model, stim_type=stim_type, cells=cells)
 
     metric_func = getattr(metrics, metric)
@@ -120,7 +123,7 @@ def get_correlation(model, stim_type='natural', cells=[0], metric='cc'):
 
 
 def get_performance(model, stim_type='natural', cells=[0], metric='cc'):
-    '''
+    """
         Get correlation coefficient on held-out data for deep-retina.
 
         INPUT:
@@ -132,7 +135,7 @@ def get_performance(model, stim_type='natural', cells=[0], metric='cc'):
                             'rmse' (Root mean squared error),
                             'fev' (Fraction of explained variance; note this does not take into account
                                     the variance from trial-to-trial)
-    '''
+    """
     truth, predictions = get_test_responses(model, stim_type=stim_type, cells=cells)
 
     # metric (function computing a score between true and predicted rates)
@@ -145,9 +148,9 @@ def get_performance(model, stim_type='natural', cells=[0], metric='cc'):
 
 
 def get_weights(path_to_weights, layer_name='layer_0'):
-    '''
-        A simple function to return the weights from a saved .h5 file.
-    '''
+    """
+    Return the weights from a saved .h5 file.
+    """
 
     weight_file = h5py.File(path_to_weights, 'r')
 

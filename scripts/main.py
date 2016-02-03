@@ -4,73 +4,39 @@ Main script for training deep retinal models
 """
 
 from __future__ import absolute_import
-from .models import ln, convnet, lstm
-from keras.optimizers import RMSprop
+from deepretina.models import sequential, convnet, train
+from deepretina.experiments import Experiment
 
 
-def fit_ln(cell, stimulus_type):
-    """
-    Demo code for fitting an LN model in keras
+def fit_convnet(cells, stimulus):
+    """Demo code for fitting a convnet model"""
 
-    """
+    stim_shape = (40, 50, 50)
+    ncells = len(cells)
+    batchsize = 5000
 
-    # initialize model
-    mdl = ln(cell, stimulus_type, l2_reg=0.01, optimizer='adam')
+    # get the convnet layers
+    layers = convnet(stim_shape, ncells, num_filters=(8, 16),
+                     filter_size=(13, 13), weight_init='normal', l2_reg=0.01)
 
-    # train
-    batchsize = 5000            # number of samples per batch
-    num_epochs = 15             # number of epochs to train for
-    save_weights_every = 50     # save weights every n iterations
+    # compile the keras model
+    model = sequential(layers, 'adam')
 
-    mdl.train(batchsize, num_epochs=num_epochs, save_every=save_weights_every)
+    # load experiment data
+    data = Experiment('15-10-07', cells, stimulus, stim_shape[0], batchsize)
 
-    return mdl
-
-
-def fit_convnet(cell, stimulus_type):
-    """
-    Demo code for fitting a convnet model
-
-    """
-
-    # initialize model
-    mdl = convnet(cell, stimulus_type, num_filters=(8, 16), filter_size=(13, 13),
-                  weight_init='normal', l2_reg=0.01, mean_adapt=False)
+    # training options
+    training_options = {
+        'save_every': 10,           # save weights every n iterations
+        'num_epochs': 10,           # number of epochs to train for
+        'name': 'convnet',          # a name for the model
+    }
 
     # train
-    batchsize = 5000            # number of samples per batch
-    num_epochs = 10             # number of epochs to train for
-    save_weights_every = 50     # save weights every n iterations
+    train(model, data, **training_options)
 
-    mdl.train(batchsize, num_epochs=num_epochs, save_every=save_weights_every)
-
-    return mdl
-
-
-def fit_lstm(cell, stimulus_type, num_timesteps):
-
-    # modified optimizer
-    RMSmod = RMSprop(lr=0.001, rho=0.99, epsilon=1e-6)
-
-    # build the model
-    mdl = lstm(cell, stimulus_type, num_timesteps=num_timesteps,
-               num_filters=(8, 16), filter_size=(13, 13), loss='poisson_loss',
-               optimizer=RMSmod, weight_init='he_normal', l2_reg=0.01)
-
-    # training preferences
-    batchsize = 100
-    num_epochs = 150
-    save_weights_every = 50
-
-    # train
-    mdl.train(batchsize, num_epochs=num_epochs, save_every=save_weights_every)
-
-    return mdl
+    return model
 
 
 if __name__ == '__main__':
-    pass
-    # mdl = fit_lstm(4, 'naturalscene', 152)
-    # mdl = fit_ln(0, 'whitenoise')
-    # mdl = fit_convnet([0,1,2,3,4], 'naturalscene')
-    # mdl = fit_convnet(0, 'naturalscene')
+    mdl = fit_convnet([0, 1, 2, 3, 4], 'naturalscene')

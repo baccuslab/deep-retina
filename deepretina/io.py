@@ -11,7 +11,6 @@ from itertools import product
 from . import metrics
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import sem
 import shutil
 import time
 import theano

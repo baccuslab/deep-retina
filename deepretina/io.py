@@ -7,14 +7,18 @@ from __future__ import absolute_import, division, print_function
 from os import mkdir, uname, getenv, path
 from json import dumps
 from collections import defaultdict
+from itertools import product
 from . import metrics
 import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import sem
 import shutil
 import time
 import theano
 import keras
 import deepretina
 import hashlib
+import h5py
 
 __all__ = ['Monitor']
 
@@ -33,9 +37,16 @@ class Monitor:
         self.model = model
         self.data = data
 
-        # storage for keeping track of model metrics
-        self.results = defaultdict(list)
-        self.best = (-1, 0)
+        # store results in a dictionary
+        self.results = {
+            'iter': list(),
+            'epoch': list(),
+            'train': defaultdict(list),
+            'test': defaultdict(list),
+        }
+
+        # metrics to use (names of functions in the metrics module)
+        self.metrics = ('cc', 'lli', 'rmse', 'fev')
 
         # metadata related to this training instance
         self.metadata = {
@@ -68,9 +79,55 @@ class Monitor:
         self.write('experiment.json', dumps(data.info))
         self.write('metadata.json', dumps(self.metadata))
 
+        # start CSV files for performance
+        headers = ','.join(('Epoch', 'Iteration') +
+                           tuple(map(str.upper, self.metrics)))
+        self.write('train.csv', headers)
+        self.write('test.csv', headers)
+
+        # keep track of the iteration with the best held out performance
+        self.best = (-1, 0)
+
+        # store results in a (new) h5 file
+        with h5py.File(self.savepath('results.h5'), 'x') as f:
+
+            # store metadata
+            f.attrs.update(self.metadata)
+            f.attrs['md5'] = self.hashkey
+
+            # store experiment info
+            f['cells'] = np.array(data.info['cells'])
+            f['cells'].attrs.update(data.info)
+
+            # initialize some datasets
+            f['train'] = 0
+            f['test'] = 0
+            f['iter'] = 0
+            f['epoch'] = 0
+
     def savepath(self, filename):
         """Generates a fullpath to save the given file in the data directory"""
         return path.join(self.datadir, filename)
+
+    def update_results(self):
+
+        with h5py.File(self.savepath('results.h5'), 'r+') as f:
+
+            del f['iter']
+            f['iter'] = self.results['iter']
+
+            del f['epoch']
+            f['epoch'] = self.results['epoch']
+
+            for dset in ('train', 'test'):
+
+                # delete the dataset (TODO: perhaps handle this more elegantly)
+                del f[dset]
+
+                for metric in self.metrics:
+                    f[dset][metric] = np.array(self.results[dset][metric])
+                    f[dset][metric]['mean'] = np.array(self.results[dset][metric]).mean(axis=1)
+                    f[dset][metric]['sem'] = sem(np.array(self.results[dset][metric]), axis=1)
 
     def save(self, epoch, iteration):
         """Saves relevant information for this epoch/iteration of training
@@ -89,30 +146,54 @@ class Monitor:
         iteration : int
             Current iteration of training
         """
-        # compute the test metrics and predicted firing rates
-        scores, r_train, rhat_train, r_test, rhat_test = self.test()
-
-        # store
         self.results['iter'].append(iteration)
         self.results['epoch'].append(epoch)
+
+        # compute the test metrics and predicted firing rates
+        avg_scores, all_scores, r_train, rhat_train, r_test, rhat_test = self.test()
+
         for key in ('train', 'test'):
-            for metric in ('cc', 'lli', 'fev', 'rmse'):
-                self.results[':'.join(key, metric)].append(scores[key][metric])
+
+            # update performance CSV files with the average score across cells
+            row = ','.join([epoch, iteration] +
+                           [avg_scores[key][metric] for metric in self.metrics])
+            self.write(key + '.csv', row)
+
+            # append to results
+            [self.results[key][metric].append(all_scores[key][metric])
+             for metric in self.metrics]
 
         # save the weights
         filename = 'epoch{:03d}_iter{:05d}_weights.h5'.format(epoch, iteration)
         self.model.save_weights(self.savepath(filename))
 
+        # update the results.h5 file
+        self.update_results()
+
         # update the 'best' iteration we have seen
-        if scores['test']['cc'] > self.best[1]:
-            self.best = (iteration, scores['test']['cc'])
+        if avg_scores['test']['cc'] > self.best[1]:
 
-            # TODO: save best weights
+            # update the best iteration and held-out CC performance
+            self.best = (iteration, avg_scores['test']['cc'])
 
-        # TODO: plot the train / test firing rates and save in a figure
-        # TODO: plot the performance over time
+            # save best weights
+            self.model.save_weights(self.savepath('best_weights.h5'), overwrite=True)
+
+        # plot the train / test firing rates
+        plot_rates(train=(r_train, rhat_train), test=(r_test, rhat_test))
+        plt.savefig(self.savepath('rates.jpg'), dpi=100, bbox_inches='tight')
+        plt.close('all')
+
+        # plot the performance curves
+        plot_performance(self.results)
+        plt.savefig(self.savepath('performance.jpg'), dpi=100, bbox_inches='tight')
+        plt.close('all')
+
+        # copy these to dropbox
+        self.copy_to_dropbox('rates.jpg')
+        self.copy_to_dropbox('performance.jpg')
+
         # TODO: store results in SQL
-        # TODO: store results locally in an hdf5 file
 
     def write(self, filename, text, copy=True):
         """Writes the given text to a file
@@ -129,23 +210,21 @@ class Monitor:
         copy : boolean, optional
             Whether or not to copy the file to Dropbox (default: True)
         """
-        fullpath = self.savepath(filename)
-
         # write the file, appending if it already exists
-        with open(fullpath, 'a') as f:
+        with open(self.savepath(filename), 'a') as f:
             f.write(text)
 
         # copy to dropbox
         if copy:
-            self.copy(fullpath)
+            self.copy_to_dropbox(filename)
 
-    def copy(self, filepath):
+    def copy_to_dropbox(self, filename):
         """Copy the given file to Dropbox. Overwrites existing destination files"""
         try:
-            shutil.copy(filepath, directories['dropbox'])
+            shutil.copy(self.savepath(filename), directories['dropbox'])
         except FileNotFoundError:
             print('\n*******\nWarning\n*******')
-            print('Could not copy {} to Dropbox.\n'.format(filepath))
+            print('Could not copy {} to Dropbox.\n'.format(filename))
 
     def test(self):
         """Evaluates metrics on the train and test datasets"""
@@ -162,9 +241,70 @@ class Monitor:
         rhat_train = self.model.predict(self.data.train.X[inds, ...])
 
         # evalue using the given metrics (computes an average over the different cells)
-        scores = {}
-        for function in ('cc', 'lli', 'fev', 'rmse'):
-            scores['train'][function] = getattr(metrics, function)(r_train, rhat_train)
-            scores['test'][function] = getattr(metrics, function)(r_test, rhat_test)
+        avg_scores = {}
+        all_scores = {}
+        for function in self.metrics:
 
-        return scores, r_train, rhat_train, r_test, rhat_test
+            rates = {
+                'train': (r_train, rhat_train),
+                'test': (r_test, rhat_test),
+            }
+
+            # iterates over 'train' and 'test'
+            for key, args in rates.items():
+
+                # store the average across cells, and the individual scores for each cell
+                avg, cells = getattr(metrics, function)(*args)
+                avg_scores[key][function] = avg
+                all_scores[key][function] = cells
+
+        return avg_scores, all_scores, r_train, rhat_train, r_test, rhat_test
+
+
+def plot_rates(dt, **rates):
+    """Plots the given pairs of firing rates"""
+
+    # create the figure
+    fig, axs = plt.subplots(len(rates), 1)
+
+    for ax, key in zip(axs, rates):
+        t = dt * np.arange(rates[key][0].size)
+        ax.plot(t, rates[key][0], '-', color='powderblue', label='Data')
+        ax.plot(t, rates[key][1], '-', color='firebrick', label='Model')
+        ax.set_title(str.upper(key), fontsize=24)
+        ax.set_xlabel('Time (s)', fontsize=20)
+        ax.set_ylabel('Firing Rate (Hz)', fontsize=20)
+        ax.set_xlim(0, t[-1])
+        despine(ax)
+
+    plt.legend(fancybox=True, frameon=True)
+    plt.tight_layout()
+    return fig
+
+
+def plot_performance(metrics, results):
+    """Plots performance traces"""
+
+    assert len(metrics) == 4, "plot_performance assumes there are four metrics to plot"
+
+    fig, axs = plt.subplots(2, 2)
+
+    for metric, inds in zip(metrics, product((0, 1), repeat=2)):
+        ax = axs[inds[0]][inds[1]]
+        ax.plot(results['iter'], results['test'][metric].mean(axis=1), 'k-', label='test')
+        ax.plot(results['iter'], results['train'][metric].mean(axis=1), 'k--', label='train')
+        ax.set_title(str.upper(metric), fontsize=24)
+        ax.set_xlabel('Iteration', fontsize=20)
+        despine(ax)
+
+    plt.legend(frameon=True, fancybox=True)
+    plt.tight_layout()
+    return fig
+
+
+def despine(ax):
+    """Gets rid of the top and right spines"""
+    ax.spines['top'].set_color('none')
+    ax.spines['right'].set_color('none')
+    ax.yaxis.set_ticks_position('left')
+    ax.yaxis.set_ticks_position('bottom')

@@ -153,22 +153,26 @@ def train(model, data, save_every, num_epochs, name='model'):
     iteration = 0
 
     # loop over epochs
-    for epoch in range(num_epochs):
-        print('Epoch #{} of {}'.format(epoch + 1, num_epochs))
+    try:
+        for epoch in range(num_epochs):
+            print('Epoch #{} of {}'.format(epoch + 1, num_epochs))
 
-        # loop over data batches for this epoch
-        for X, y in data.batches(shuffle=True):
+            # loop over data batches for this epoch
+            for X, y in data.batches(shuffle=True):
 
-            # update on save_every, assuming it is positive
-            if (save_every > 0) and (iteration % save_every == 0):
-                monitor.save(epoch, iteration)
+                # update on save_every, assuming it is positive
+                if (save_every > 0) and (iteration % save_every == 0):
+                    monitor.save(epoch, iteration)
 
-            # train on the batch
-            loss = model.train_on_batch(X, y)
+                # train on the batch
+                loss = model.train_on_batch(X, y)[0]
 
-            # update
-            iteration += 1
-            print('\t[Batch {} of {}] Loss: {}'.format(iteration, data.num_batches, loss))
+                # update
+                iteration += 1
+                print('  (Batch {} of {}) Loss: {}'.format(iteration, data.num_batches, loss))
+
+    except KeyboardInterrupt:
+        print('\nCleaning up')
 
     print('\nTraining complete!')
 

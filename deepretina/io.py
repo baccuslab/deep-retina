@@ -10,7 +10,6 @@ from collections import defaultdict
 from itertools import product
 from . import metrics
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.stats import sem
 import shutil
 import time
@@ -26,6 +25,11 @@ directories = {
     'dropbox': path.expanduser('~/Dropbox/deep-retina/saved/'),
     'database': path.expanduser('~/deep-retina-results/database'),
 }
+
+# Force matplotlib to not use any X-windows backend
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 
 class Monitor:

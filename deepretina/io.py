@@ -18,17 +18,17 @@ import deepretina
 import hashlib
 import h5py
 
+# Force matplotlib to not use any X-windows backend
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 __all__ = ['Monitor']
 
 directories = {
     'dropbox': path.expanduser('~/Dropbox/deep-retina/saved/'),
     'database': path.expanduser('~/deep-retina-results/database'),
 }
-
-# Force matplotlib to not use any X-windows backend
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 
 
 class Monitor:
@@ -57,7 +57,7 @@ class Monitor:
             'user': getenv('USER'),
             'timestamp': time.time(),
             'date': time.strftime("%Y-%m-%d"),
-            'time': time.strftime("%H.%M.%S"),
+            'time': time.strftime("%H:%M:%S"),
             'keras': keras.__version__,
             'deep-retina': deepretina.__version__,
             'theano': theano.__version__,

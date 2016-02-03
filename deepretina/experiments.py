@@ -17,7 +17,7 @@ __all__ = ['loadexpt']
 class Experiment(object):
     """Lightweight class to keep track of loaded experiment data"""
 
-    def __init__(self, expt, cells, filename, history, batchsize, load_fraction=1.0):
+    def __init__(self, expt, cells, filename, history, batchsize, dt=1e-2, load_fraction=1.0):
         """Keeps track of experimental data
 
         Parameters
@@ -37,8 +37,11 @@ class Experiment(object):
         batchsize : int
             How many samples to include in each training batch
 
+        dt : float
+            The sampling period (in seconds). (default: 0.01)
+
         load_fraction : float
-            What fraction of the training stimulus to load
+            What fraction of the training stimulus to load (default: 1.0)
 
         """
         # store experiment variables (for saving later)
@@ -52,13 +55,14 @@ class Experiment(object):
         }
 
         # load data from disk
-        load_data = partial(loadexpt, expt, cells, filename, history, load_fraction=load_fraction)
+        load_data = partial(loadexpt, expt, cells, filename, history=history, load_fraction=load_fraction)
 
         # store train/test data and compute the number of batches
         self.test = load_data('test')
         self.train = load_data('train')
         self.batchsize = batchsize
         self.num_batches = np.floor(self.train.X.shape[0] / self.batchsize).astype('int')
+        self.dt = dt
 
     def batches(self, shuffle):
         """Returns a generator that yields training batches of data

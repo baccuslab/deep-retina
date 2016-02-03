@@ -10,7 +10,6 @@ from collections import defaultdict
 from itertools import product
 from . import metrics
 import numpy as np
-from scipy.stats import sem
 import shutil
 import time
 import theano

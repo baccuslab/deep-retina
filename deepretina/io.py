@@ -266,7 +266,7 @@ def plot_rates(dt, **rates):
     """Plots the given pairs of firing rates"""
 
     # create the figure
-    fig, axs = plt.subplots(len(rates), 1)
+    fig, axs = plt.subplots(len(rates), 1, figsize=(16, 10))
     
     # for now, manually choose indices to plot
     i0, i1 = (2000, 4000)

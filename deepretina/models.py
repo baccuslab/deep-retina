@@ -168,9 +168,9 @@ def train(model, data, save_every, num_epochs, name='model'):
 
             # update
             iteration += 1
-            print('\t{} of {}: {}'.format(iteration, data.num_batches, loss))
+            print('\t[Batch {} of {}] Loss: {}'.format(iteration, data.num_batches, loss))
 
-    return monitor
+    print('\nTraining complete!')
 
 
 def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='normal', l2_reg=0.0):

@@ -36,11 +36,7 @@ for test_stim in stim_types:
         # estimate firing rate with 2 second Gaussian
         frs[c,:] = spktools.estfr(tax, bspk[c,:], 2.0)
 
-        # need to rewrite new h5 files so cells are cell01 through cellnn
-        if expt in ['15-10-07', '15-11-21a', '15-11-21b']:
-            cell_label = 'cell%02i' %(c+1)
-        else:
-            cell_label = 'cell%02i' %(c)
+        cell_label = 'cell%02i' %(c+1)
         repeats = np.array(f['test/repeats/' + cell_label])
         for i in range(nrepeats):
             for j in range(i+1): #(i, nrepeats):
@@ -53,11 +49,7 @@ for test_stim in stim_types:
 
 # generate plots
 for c in range(ncells):
-    # need to rewrite new h5 files so cells are cell01 through cellnn
-    if expt in ['15-10-07', '15-11-21a', '15-11-21b']:
-        cell_label = 'cell%02i' %(c+1)
-    else:
-        cell_label = 'cell%02i' %(c)
+    cell_label = 'cell%02i' %(c+1)
 
     cols = len(stim_types)
     rows = 2

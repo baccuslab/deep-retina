@@ -36,10 +36,10 @@ for c in range(ncells):
             sta += response * stimulus[idx-filter_length:idx]
 
     # decompose STA
-    space, time = ft.decompose(sta)
+    #space, time = ft.decompose(sta)
 
     # plot STA
     fig = plt.figure(figsize=(6,10))
-    ax = pyviz.plotsta(np.linspace(0.0,filter_length*10.0, filter_length), sta, fig=fig)
+    fig, ax = pyviz.plotsta(np.linspace(0.0,filter_length*10.0, filter_length), sta, fig=fig)
     plt.savefig(data_dir + expt + '/' + 'cell%02i.jpg' %(c+1))
     plt.close()

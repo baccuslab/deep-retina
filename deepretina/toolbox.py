@@ -88,14 +88,11 @@ def list_layers(model_path, weight_filename):
     print(tableprint.hr(3))
 
 
-def get_test_responses(model, stim_type='natural', cells=[0]):
-    """
+def get_test_responses(model, stim_type='whitenoise', cells=[0], exptdate='15-10-07'):
+    '''
         Get a list of [true_responses, model_responses] on the same test data.
-    """
-    if stim_type is 'natural':
-        test_data = loadexpt(cells, 'naturalscene', 'test', 40)
-    elif stim_type is 'white':
-        test_data = loadexpt(cells, 'whitenoise', 'test', 40)
+    '''
+    test_data = loadexpt(cells, stim_type, 'test', 40, exptdate=exptdate)
 
     truth = []
     predictions = []

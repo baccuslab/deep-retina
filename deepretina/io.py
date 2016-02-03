@@ -61,17 +61,18 @@ class Monitor:
         }
 
         # generate a hash key for this model architecture
-        tmp = hashlib.md5()
-        tmp.update('\n'.join((self.start['date'],
-                              self.start['time'],
-                              self.model.to_yaml()).encode('ascii')))
-        self.hashkey = tmp.hexdigest()[:6]
+        hashstring = '\n'.join((self.metadata['date'],
+                                self.metadata['time'],
+                                self.metadata['machine'],
+                                self.metadata['user'],
+                                self.model.to_yaml()))
+        self.hashkey = md5(hashstring)
 
         # make the necessary folders on disk
-        dirname = ' '.join((self.hashkey, self.name))
+        self.dirname = ' '.join((self.hashkey, self.name))
         for _, directory in directories.items():
-            mkdir(path.join(directory, dirname))
-        self.datadir = path.join(directories['database'], dirname)
+            mkdir(path.join(directory, self.dirname))
+        self.datadir = path.join(directories['database'], self.dirname)
 
         # write files to disk
         self.write('architecture.json', self.model.to_json())
@@ -81,7 +82,7 @@ class Monitor:
 
         # start CSV files for performance
         headers = ','.join(('Epoch', 'Iteration') +
-                           tuple(map(str.upper, self.metrics)))
+                           tuple(map(str.upper, self.metrics))) + '\n'
         self.write('train.csv', headers)
         self.write('test.csv', headers)
 
@@ -125,9 +126,7 @@ class Monitor:
                 del f[dset]
 
                 for metric in self.metrics:
-                    f[dset][metric] = np.array(self.results[dset][metric])
-                    f[dset][metric]['mean'] = np.array(self.results[dset][metric]).mean(axis=1)
-                    f[dset][metric]['sem'] = sem(np.array(self.results[dset][metric]), axis=1)
+                    f[dset + '/' + metric] = np.array(self.results[dset][metric])
 
     def save(self, epoch, iteration):
         """Saves relevant information for this epoch/iteration of training
@@ -155,9 +154,9 @@ class Monitor:
         for key in ('train', 'test'):
 
             # update performance CSV files with the average score across cells
-            row = ','.join([epoch, iteration] +
-                           [avg_scores[key][metric] for metric in self.metrics])
-            self.write(key + '.csv', row)
+            data_row = [epoch, iteration] + [avg_scores[key][metric] for metric in self.metrics]
+            csv_row = ','.join(map(str, data_row)) + '\n'
+            self.write(key + '.csv', csv_row)
 
             # append to results
             [self.results[key][metric].append(all_scores[key][metric])
@@ -180,17 +179,19 @@ class Monitor:
             self.model.save_weights(self.savepath('best_weights.h5'), overwrite=True)
 
         # plot the train / test firing rates
-        plot_rates(train=(r_train, rhat_train), test=(r_test, rhat_test))
-        plt.savefig(self.savepath('rates.jpg'), dpi=100, bbox_inches='tight')
-        plt.close('all')
+        for ix, cell in enumerate(self.data.info['cells']):
+            filename = 'cell{}.jpg'.format(cell)
+            plot_rates(self.data.dt,
+                       train=(r_train[:, ix], rhat_train[:, ix]),
+                       test=(r_test[:, ix], rhat_test[:, ix]))
+            plt.savefig(self.savepath(filename), dpi=100, bbox_inches='tight')
+            plt.close('all')
+            self.copy_to_dropbox(filename)
 
         # plot the performance curves
-        plot_performance(self.results)
+        plot_performance(self.metrics, self.results)
         plt.savefig(self.savepath('performance.jpg'), dpi=100, bbox_inches='tight')
         plt.close('all')
-
-        # copy these to dropbox
-        self.copy_to_dropbox('rates.jpg')
         self.copy_to_dropbox('performance.jpg')
 
         # TODO: store results in SQL
@@ -221,7 +222,7 @@ class Monitor:
     def copy_to_dropbox(self, filename):
         """Copy the given file to Dropbox. Overwrites existing destination files"""
         try:
-            shutil.copy(self.savepath(filename), directories['dropbox'])
+            shutil.copy(self.savepath(filename), path.join(directories['dropbox'], self.dirname))
         except FileNotFoundError:
             print('\n*******\nWarning\n*******')
             print('Could not copy {} to Dropbox.\n'.format(filename))
@@ -235,19 +236,19 @@ class Monitor:
 
         # performance on a random subset of the training data
         training_sample_size = rhat_test.shape[0]
-        inds = np.random.choice(self.training.y.shape[0],
+        inds = np.random.choice(self.data.train.y.shape[0],
                                 training_sample_size, replace=False)
         r_train = self.data.train.y[inds]
         rhat_train = self.model.predict(self.data.train.X[inds, ...])
 
         # evalue using the given metrics (computes an average over the different cells)
-        avg_scores = {}
-        all_scores = {}
+        avg_scores = defaultdict(dict)
+        all_scores = defaultdict(dict)
         for function in self.metrics:
 
             rates = {
-                'train': (r_train, rhat_train),
-                'test': (r_test, rhat_test),
+                'train': (r_train.T, rhat_train.T),
+                'test': (r_test.T, rhat_test.T),
             }
 
             # iterates over 'train' and 'test'
@@ -266,18 +267,22 @@ def plot_rates(dt, **rates):
 
     # create the figure
     fig, axs = plt.subplots(len(rates), 1)
+    
+    # for now, manually choose indices to plot
+    i0, i1 = (2000, 4000)
+    inds = slice(i0, i1)
 
     for ax, key in zip(axs, rates):
         t = dt * np.arange(rates[key][0].size)
-        ax.plot(t, rates[key][0], '-', color='powderblue', label='Data')
-        ax.plot(t, rates[key][1], '-', color='firebrick', label='Model')
-        ax.set_title(str.upper(key), fontsize=24)
-        ax.set_xlabel('Time (s)', fontsize=20)
-        ax.set_ylabel('Firing Rate (Hz)', fontsize=20)
-        ax.set_xlim(0, t[-1])
+        ax.plot(t[inds], rates[key][0][inds], '-', color='powderblue', label='Data')
+        ax.plot(t[inds], rates[key][1][inds], '-', color='firebrick', label='Model')
+        ax.set_title(str.upper(key), fontsize=20)
+        ax.set_xlabel('Time (s)', fontsize=16)
+        ax.set_ylabel('Firing Rate (Hz)', fontsize=16)
+        ax.set_xlim(t[i0], t[i1])
         despine(ax)
 
-    plt.legend(fancybox=True, frameon=True)
+    plt.legend(loc='best', fancybox=True, frameon=True)
     plt.tight_layout()
     return fig
 
@@ -287,17 +292,17 @@ def plot_performance(metrics, results):
 
     assert len(metrics) == 4, "plot_performance assumes there are four metrics to plot"
 
-    fig, axs = plt.subplots(2, 2)
+    fig, axs = plt.subplots(2, 2, figsize=(16, 10))
 
     for metric, inds in zip(metrics, product((0, 1), repeat=2)):
         ax = axs[inds[0]][inds[1]]
-        ax.plot(results['iter'], results['test'][metric].mean(axis=1), 'k-', label='test')
-        ax.plot(results['iter'], results['train'][metric].mean(axis=1), 'k--', label='train')
-        ax.set_title(str.upper(metric), fontsize=24)
-        ax.set_xlabel('Iteration', fontsize=20)
+        ax.plot(results['iter'], np.mean(results['test'][metric], axis=1), 'k-', label='test')
+        ax.plot(results['iter'], np.mean(results['train'][metric], axis=1), 'k--', label='train')
+        ax.set_title(str.upper(metric), fontsize=20)
+        ax.set_xlabel('Iteration', fontsize=16)
         despine(ax)
 
-    plt.legend(frameon=True, fancybox=True)
+    plt.legend(loc='best', frameon=True, fancybox=True)
     plt.tight_layout()
     return fig
 
@@ -307,4 +312,11 @@ def despine(ax):
     ax.spines['top'].set_color('none')
     ax.spines['right'].set_color('none')
     ax.yaxis.set_ticks_position('left')
-    ax.yaxis.set_ticks_position('bottom')
+    ax.xaxis.set_ticks_position('bottom')
+
+
+def md5(string, length=6):
+    """Generates an md5 hash of the given string"""
+    tmp = hashlib.md5()
+    tmp.update(string.encode('ascii'))
+    return tmp.hexdigest()[:length]

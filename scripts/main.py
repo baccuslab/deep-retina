@@ -4,8 +4,8 @@ Main script for training deep retinal models
 """
 
 from __future__ import absolute_import
-from .models import sequential, convnet, lstm, train
-from .experiments import Experiment
+from deepretina.models import sequential, convnet, fixedlstm, train
+from deepretina.experiments import Experiment
 from keras.optimizers import RMSprop
 
 
@@ -14,6 +14,7 @@ def fit_convnet(cells, stimulus):
 
     stim_shape = (40, 50, 50)
     ncells = len(cells)
+    batchsize = 5000
 
     # get the convnet layers
     layers = convnet(stim_shape, ncells, num_filters=(8, 16),
@@ -23,20 +24,19 @@ def fit_convnet(cells, stimulus):
     model = sequential(layers, 'adam')
 
     # load experiment data
-    data = Experiment('15-10-07', cells, stimulus, stim_shape[0])
+    data = Experiment('15-10-07', cells, stimulus, stim_shape[0], batchsize)
 
     # training options
     training_options = {
-        'batchsize': 5000,          # number of samples per batch
-        'save_every': 50,           # save weights every n iterations
+        'save_every': 10,           # save weights every n iterations
         'num_epochs': 10,           # number of epochs to train for
         'name': 'convnet',          # a name for the model
     }
 
     # train
-    monitor = train(model, data, **training_options)
+    train(model, data, **training_options)
 
-    return model, monitor
+    return model
 
 
 def fit_lstm(cell, stimulus_type, num_timesteps):
@@ -61,8 +61,7 @@ def fit_lstm(cell, stimulus_type, num_timesteps):
 
 
 if __name__ == '__main__':
-    pass
     # mdl = fit_lstm(4, 'naturalscene', 152)
     # mdl = fit_ln(0, 'whitenoise')
-    # mdl = fit_convnet([0,1,2,3,4], 'naturalscene')
+    mdl = fit_convnet([0,1,2,3,4], 'naturalscene')
     # mdl = fit_convnet(0, 'naturalscene')

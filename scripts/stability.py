@@ -28,13 +28,13 @@ for test_stim in stim_types:
 
     # estimate firing rate with 1 second Gaussian filter
     frs = np.zeros_like(bspk)
-    for c in range(ncells):
-        frs[c,:] = spktools.estfr(tax, bspk[c,:], 2.0)
-
     # estimate the cross-correlogram between trials
     nrepeats = np.array(f['test/repeats/cell01']).shape[0]
     correlations = np.zeros((ncells, nrepeats, nrepeats))
     for c in range(ncells):
+        # estimate firing rate with 2 second Gaussian
+        frs[c,:] = spktools.estfr(tax, bspk[c,:], 2.0)
+
         # need to rewrite new h5 files so cells are cell01 through cellnn
         if expt in ['15-10-07', '15-11-21a', '15-11-21b']:
             cell_label = 'cell%02i' %(c+1)
@@ -60,7 +60,10 @@ for c in range(ncells):
 
     cols = len(stim_types)
     rows = 2
-    fig = plt.figure()
+    if int(num_stim_types) == 2:
+        fig = plt.figure(figsize=(10,7))
+    else:
+        fig = plt.figure(figsize=(17,7))
     #fig.set_size_inches((15,10))
     for i in range(rows):
         for j in range(cols):
@@ -88,8 +91,8 @@ for c in range(ncells):
                 plt.plot(tax/60.0, all_frs[j][c,:], 'k', linewidth=3)
                 plt.xlabel('Time (min)', fontsize=20)
                 plt.ylabel('Firing Rate (Hz)', fontsize=20)
-                plt.ylim([0.0,10.0])
-                plt.xlim([0.0,60.0])
+                plt.ylim([0.0,np.max(all_frs)])
+                plt.xlim([0.0,np.max(tax)/60.0])
                 adjust_spines(ax, ['left', 'bottom'])
                 #ax.spines['right'].set_visible(False)
                 #ax.spines['top'].set_visible(False)

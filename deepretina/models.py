@@ -121,7 +121,7 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
     return layers
 
 
-def train(model, data, save_every, num_epochs, name='model'):
+def train(model, data, save_every, num_epochs, name='model', reduce_lr_every=-1):
     """Train the given network against the given data
 
     Parameters
@@ -156,6 +156,12 @@ def train(model, data, save_every, num_epochs, name='model'):
     try:
         for epoch in range(num_epochs):
             print('Epoch #{} of {}'.format(epoch + 1, num_epochs))
+
+            # update learning rate on reduce_lr_every, assuming it is positive
+            if (reduce_lr_every > 0) and (epoch > 0) and (epoch % reduce_lr_every == 0):
+                lr = model.optimizer.lr
+                model.optimizer.lr.set_value(lr*self.reduce_rate)
+                print(' Reduced learning rate to {}'.format(lr))
 
             # loop over data batches for this epoch
             for X, y in data.batches(shuffle=True):

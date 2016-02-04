@@ -30,6 +30,7 @@ def fit_convnet(cells, stimulus):
         'save_every': 10,           # save weights every n iterations
         'num_epochs': 10,           # number of epochs to train for
         'name': 'convnet',          # a name for the model
+        'reduce_lr_every': 15       # halve the loss every n epochs
     }
 
     # train

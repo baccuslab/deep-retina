@@ -8,7 +8,7 @@ from deepretina.models import sequential, convnet, train
 from deepretina.experiments import Experiment
 
 
-def fit_convnet(cells, stimulus):
+def fit_convnet(cells, stimulus, exptdate='15-10-07'):
     """Demo code for fitting a convnet model"""
 
     stim_shape = (40, 50, 50)
@@ -23,7 +23,7 @@ def fit_convnet(cells, stimulus):
     model = sequential(layers, 'adam')
 
     # load experiment data
-    data = Experiment('15-10-07', cells, stimulus, stim_shape[0], batchsize)
+    data = Experiment(exptdate, cells, stimulus, stim_shape[0], batchsize)
 
     # training options
     training_options = {

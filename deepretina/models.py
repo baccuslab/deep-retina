@@ -228,7 +228,7 @@ def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='normal', l2_reg=0
 def generalizedconvnet(input_shape, nout,
                        architecture=('conv', 'relu', 'pool', 'flatten', 'affine', 'relu', 'affine'),
                        num_filters=(4, -1, -1, -1, 16),
-                       filter_sizes=(9,),
+                       filter_sizes=(9, -1, -1, -1, -1),
                        weight_init='normal',
                        l2_reg=0.0):
     """Generic convolutional neural network
@@ -267,20 +267,19 @@ def generalizedconvnet(input_shape, nout,
         How much l2 regularization to apply to all filter weights
 
     """
-    raise NotImplementedError("generalized convnet is currently broken!")
-
     layers = list()
 
     # initial convolutional layer
-    # layers.append(Convolution2D(num_filters
+    layers.append(Convolution2D(num_filters[0], filter_sizes[0], filter_sizes[0],
+                                input_shape=input_shape, init=weight_init,
+                                border_mode='same', subsample=(1, 1), W_regularizer=l2(l2_reg)))
 
-    for layer_id, layer_type in enumerate(architecture):
+    for layer_id, layer_type in enumerate(architecture[1:]):
 
         # convolutional layer
         if layer_type == 'conv':
             layers.append(Convolution2D(num_filters[layer_id], filter_sizes[layer_id],
-                                        filter_sizes[layer_id], input_shape=input_shape,
-                                        init=weight_init, border_mode='same',
+                                        filter_sizes[layer_id], init=weight_init, border_mode='same',
                                         subsample=(1, 1), W_regularizer=l2(l2_reg)))
 
         # Add relu activation

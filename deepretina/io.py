@@ -184,7 +184,7 @@ class Monitor:
         # plot the train / test firing rates
         for ix, cell in enumerate(self.data.info['cells']):
             filename = 'cell{}.jpg'.format(cell)
-            plot_rates(self.data.dt,
+            plot_rates(iteration, self.data.dt,
                        train=(r_train[:, ix], rhat_train[:, ix]),
                        test=(r_test[:, ix], rhat_test[:, ix]))
             plt.savefig(self.savepath(filename), dpi=100, bbox_inches='tight')
@@ -265,7 +265,7 @@ class Monitor:
         return avg_scores, all_scores, r_train, rhat_train, r_test, rhat_test
 
 
-def plot_rates(dt, **rates):
+def plot_rates(iteration, dt, **rates):
     """Plots the given pairs of firing rates"""
 
     # create the figure
@@ -275,11 +275,11 @@ def plot_rates(dt, **rates):
     i0, i1 = (2000, 4000)
     inds = slice(i0, i1)
 
-    for ax, key in zip(axs, rates):
+    for ax, key in zip(axs, sorted(rates.keys())):
         t = dt * np.arange(rates[key][0].size)
         ax.plot(t[inds], rates[key][0][inds], '-', color='powderblue', label='Data')
         ax.plot(t[inds], rates[key][1][inds], '-', color='firebrick', label='Model')
-        ax.set_title(str.upper(key), fontsize=20)
+        ax.set_title(str.upper(key) + ' [iter {}]'.format(iteration), fontsize=20)
         ax.set_xlabel('Time (s)', fontsize=16)
         ax.set_ylabel('Firing Rate (Hz)', fontsize=16)
         ax.set_xlim(t[i0], t[i1])

@@ -237,10 +237,10 @@ class Monitor:
         r_test = self.data.test.y
         rhat_test = self.model.predict(self.data.test.X)
 
-        # performance on a random subset of the training data
+        # performance on a random continuous subset of the training data
         training_sample_size = rhat_test.shape[0]
-        inds = np.random.choice(self.data.train.y.shape[0],
-                                training_sample_size, replace=False)
+        start_idx = np.random.randint(self.data.train.y.shape[0] - training_sample_size)
+        inds = slice(start_idx, start_idx + training_sample_size)
         r_train = self.data.train.y[inds]
         rhat_train = self.model.predict(self.data.train.X[inds, ...])
 
@@ -270,7 +270,7 @@ def plot_rates(dt, **rates):
 
     # create the figure
     fig, axs = plt.subplots(len(rates), 1, figsize=(16, 10))
-    
+
     # for now, manually choose indices to plot
     i0, i1 = (2000, 4000)
     inds = slice(i0, i1)

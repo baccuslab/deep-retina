@@ -184,7 +184,7 @@ class Monitor:
         # plot the train / test firing rates
         for ix, cell in enumerate(self.data.info['cells']):
             filename = 'cell{}.jpg'.format(cell)
-            plot_rates(self.data.dt,
+            plot_rates(iteration, self.data.dt,
                        train=(r_train[:, ix], rhat_train[:, ix]),
                        test=(r_test[:, ix], rhat_test[:, ix]))
             plt.savefig(self.savepath(filename), dpi=100, bbox_inches='tight')
@@ -237,10 +237,10 @@ class Monitor:
         r_test = self.data.test.y
         rhat_test = self.model.predict(self.data.test.X)
 
-        # performance on a random subset of the training data
+        # performance on a random continuous subset of the training data
         training_sample_size = rhat_test.shape[0]
-        inds = np.random.choice(self.data.train.y.shape[0],
-                                training_sample_size, replace=False)
+        start_idx = np.random.randint(self.data.train.y.shape[0] - training_sample_size)
+        inds = slice(start_idx, start_idx + training_sample_size)
         r_train = self.data.train.y[inds]
         rhat_train = self.model.predict(self.data.train.X[inds, ...])
 
@@ -265,21 +265,21 @@ class Monitor:
         return avg_scores, all_scores, r_train, rhat_train, r_test, rhat_test
 
 
-def plot_rates(dt, **rates):
+def plot_rates(iteration, dt, **rates):
     """Plots the given pairs of firing rates"""
 
     # create the figure
     fig, axs = plt.subplots(len(rates), 1, figsize=(16, 10))
-    
+
     # for now, manually choose indices to plot
     i0, i1 = (2000, 4000)
     inds = slice(i0, i1)
 
-    for ax, key in zip(axs, rates):
+    for ax, key in zip(axs, sorted(rates.keys())):
         t = dt * np.arange(rates[key][0].size)
         ax.plot(t[inds], rates[key][0][inds], '-', color='powderblue', label='Data')
         ax.plot(t[inds], rates[key][1][inds], '-', color='firebrick', label='Model')
-        ax.set_title(str.upper(key), fontsize=20)
+        ax.set_title(str.upper(key) + ' [iter {}]'.format(iteration), fontsize=20)
         ax.set_xlabel('Time (s)', fontsize=16)
         ax.set_ylabel('Firing Rate (Hz)', fontsize=16)
         ax.set_xlim(t[i0], t[i1])

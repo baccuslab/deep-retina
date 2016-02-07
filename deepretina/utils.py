@@ -3,6 +3,7 @@ Generic utilities for use in deepretina
 
 """
 
+from __future__ import absolute_import, division, print_function
 import sys
 from collections import namedtuple
 from contextlib import contextmanager

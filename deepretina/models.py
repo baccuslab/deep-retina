@@ -104,11 +104,11 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
     # max pooling layer
     layers.append(MaxPooling2D(pool_size=(2, 2)))
 
-    # Dropout
-    layers.append(Dropout(dropout))
-
     # flatten
     layers.append(Flatten())
+
+    # Dropout
+    layers.append(Dropout(dropout))
 
     # Add dense (affine) layer
     layers.append(Dense(num_filters[1], init=weight_init, W_regularizer=l2(l2_reg)))

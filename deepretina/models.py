@@ -5,7 +5,7 @@ Construct and train deep neural network models using Keras
 
 from __future__ import absolute_import, division, print_function
 from keras.models import Sequential, Model
-from keras.layers.core import Dense, Activation, Flatten, TimeDistributedDense
+from keras.layers.core import Dropout, Dense, Activation, Flatten, TimeDistributedDense
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
 from keras.regularizers import l2
@@ -67,7 +67,7 @@ def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
 
 
 def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
-            weight_init='normal', l2_reg=0.0):
+            weight_init='normal', l2_reg=0.0, dropout=0.0):
     """Convolutional neural network
 
     Parameters
@@ -103,6 +103,9 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
 
     # max pooling layer
     layers.append(MaxPooling2D(pool_size=(2, 2)))
+
+    # Dropout
+    layers.append(Dropout(dropout))
 
     # flatten
     layers.append(Flatten())

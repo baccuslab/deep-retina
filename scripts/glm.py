@@ -2,7 +2,7 @@ import limo
 from .preprocessing import loadexpt
 
 # load data
-data = loadexpt([0,1,2,3,4], 'whitenoise', 'train', history=40)
+data = loadexpt([0, 1, 2, 3, 4], 'whitenoise', 'train', history=40)
 dt = 1e-2
 
 # GLM features

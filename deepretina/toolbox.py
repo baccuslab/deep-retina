@@ -9,7 +9,7 @@ import theano
 import h5py
 import tableprint
 from keras.models import model_from_json
-from .preprocessing import datagen, loadexpt
+from .experiments import loadexpt
 from . import metrics
 
 

@@ -23,7 +23,7 @@ for expt in experiments:
 
     full_path = data_dir + expt + '/' + test_stim
     f = h5py.File(full_path, 'r')
-    bspk = np.array(f['train/response/binned'])
+    bspk = np.array(f['train/response/firing_rate_10ms'])
     tax = np.array(f['train/time'])
     ncells = bspk.shape[0]
 
@@ -48,11 +48,9 @@ for expt in experiments:
 
     f.close()
 
-import pdb
-pdb.set_trace()
 # save all temporal kernels
 h = h5py.File('all_temporal_kernels.h5', 'w')
-h.create_dataset('kernels', data=np.hstack(all_temporal_filters))
+h.create_dataset('kernels', data=np.vstack(all_temporal_filters))
 h.close()
 
 # plot all temporal kernels
@@ -60,7 +58,7 @@ fig = plt.figure(figsize=(6,10))
 time = np.linspace(0.0, filter_length*10.0, filter_length)
 #fig, ax = pyviz.plotsta(np.linspace(0.0,filter_length*10.0, filter_length), sta, fig=fig)
 
-plt.plot(time, np.hstack(all_temporal_filters), alpha=0.4, linewidth=2, color='LightCoral', linestyle='-')
+plt.plot(time, np.vstack(all_temporal_filters), alpha=0.4, linewidth=2, color='LightCoral', linestyle='-')
 plt.xlabel('Time (ms)', fontsize=20)
 
 plt.savefig('all temporal kernels.png', dpi=150)

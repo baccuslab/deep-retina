@@ -282,7 +282,7 @@ def plot_rates(iteration, dt, **rates):
     fig, axs = plt.subplots(len(rates), 1, figsize=(16, 10))
 
     # for now, manually choose indices to plot
-    i0, i1 = (2000, 4000)
+    i0, i1 = (2000, 3000)
     inds = slice(i0, i1)
 
     for ax, key in zip(axs, sorted(rates.keys())):

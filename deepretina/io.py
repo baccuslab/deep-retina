@@ -8,6 +8,7 @@ from os import mkdir, uname, getenv, path
 from json import dumps
 from collections import defaultdict
 from itertools import product
+from scipy.stats import sem
 from . import metrics
 import numpy as np
 import shutil
@@ -308,8 +309,17 @@ def plot_performance(metrics, results):
 
     for metric, inds in zip(metrics, product((0, 1), repeat=2)):
         ax = axs[inds[0]][inds[1]]
-        ax.plot(results['iter'], np.mean(results['test'][metric], axis=1), 'k-', label='test')
-        ax.plot(results['iter'], np.mean(results['train'][metric], axis=1), 'k--', label='train')
+
+        x = results['iter']
+        for key, color in [('test', 'lightcoral'), ('train', 'skyblue')]:
+
+            y = np.mean(results[key][metric], axis=1)
+            ye = sem(results[key][metric], axis=1)
+
+            # test
+            ax.plot(x, y, '-', color=color, label=key)
+            ax.fill_between(x, y - ye, y + ye, interpolate=True, alpha=0.4, color=color)
+
         ax.set_title(str.upper(metric), fontsize=20)
         ax.set_xlabel('Iteration', fontsize=16)
         despine(ax)

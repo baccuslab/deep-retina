@@ -33,7 +33,7 @@ directories = {
 
 class Monitor:
 
-    def __init__(self, name, model, data):
+    def __init__(self, name, model, data, user_description=True):
 
         # pointer to Keras model and experimental data
         self.name = name
@@ -51,6 +51,14 @@ class Monitor:
         # metrics to use (names of functions in the metrics module)
         self.metrics = ('cc', 'lli', 'rmse', 'fev')
 
+        # force the user to enter a description of the experiment
+        if user_description:
+            print('\nStarting to train model {}.'.format(self.hashkey))
+            description = input('Please enter a brief description:')
+
+        else:
+            description = 'No description specified'
+
         # metadata related to this training instance
         self.metadata = {
             'machine': uname()[1],
@@ -61,6 +69,7 @@ class Monitor:
             'keras': keras.__version__,
             'deep-retina': deepretina.__version__,
             'theano': theano.__version__,
+            'description': description,
         }
 
         # generate a hash key for this model architecture

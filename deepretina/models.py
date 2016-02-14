@@ -163,8 +163,8 @@ def train(model, data, save_every, num_epochs, name='model', reduce_lr_every=-1,
             # update learning rate on reduce_lr_every, assuming it is positive
             if (reduce_lr_every > 0) and (epoch > 0) and (epoch % reduce_lr_every == 0):
                 lr = model.optimizer.lr.get_value()
-                model.optimizer.lr.set_value(lr*reduce_rate)
-                print(' Reduced learning rate to {} from {}'.format(lr*reduce_rate, lr))
+                model.optimizer.lr.set_value(lr * reduce_rate)
+                print(' Reduced learning rate to {} from {}'.format(lr * reduce_rate, lr))
 
             # loop over data batches for this epoch
             for X, y in data.batches(shuffle=True):

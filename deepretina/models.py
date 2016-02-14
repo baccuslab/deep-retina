@@ -124,7 +124,7 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
     return layers
 
 
-def train(model, data, save_every, num_epochs, name='model', reduce_lr_every=-1, reduce_rate=0.5):
+def train(model, data, , num_epochs, name='model', reduce_lr_every=-1, reduce_rate=0.5):
     """Train the given network against the given data
 
     Parameters

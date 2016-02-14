@@ -6,9 +6,39 @@ Main script for training deep retinal models
 from __future__ import absolute_import
 from deepretina.models import sequential, convnet, train
 from deepretina.experiments import Experiment
+from deepretina.io import Monitor
+import inspect
+import subprocess
+from functools import wraps
 
 
-def fit_convnet(cells, stimulus, exptdate='15-10-07'):
+def main_wrapper(func):
+    @wraps(func)
+    def mainscript(*args, **kwargs):
+
+        # get information about this function call
+        func.__name__
+        source = inspect.getsource(func)
+        commit = subprocess.check_output(["git", "describe", "--always"])
+
+        # build a markdown string containing this information
+        kwargs['readme'] = '\n'.join(['# deep-retina script',
+                                      '### git commit',
+                                      commit,
+                                      '### function call',
+                                      '{}({}, {})'.format(func.__name__, args, kwargs),
+                                      '### source',
+                                      '```python',
+                                      source,
+                                      '```'])
+
+        func(*args, **kwargs)
+
+    return mainscript
+
+
+@main_wrapper
+def fit_convnet(cells, stimulus, exptdate='15-10-07', readme=None):
     """Demo code for fitting a convnet model"""
 
     stim_shape = (40, 50, 50)
@@ -25,16 +55,11 @@ def fit_convnet(cells, stimulus, exptdate='15-10-07'):
     # load experiment data
     data = Experiment(exptdate, cells, stimulus, stim_shape[0], batchsize, load_fraction=0.1)
 
-    # training options
-    training_options = {
-        'save_every': 5,           # save weights every n iterations
-        'num_epochs': 10,           # number of epochs to train for
-        'name': 'convnet',          # a name for the model
-        'reduce_lr_every': 15       # halve the loss every n epochs
-    }
+    # create a monitor to track progress
+    monitor = Monitor('convnet', model, data, readme, save_every=5)
 
     # train
-    train(model, data, **training_options)
+    train(model, data, monitor, num_epochs=100)
 
     return model
 

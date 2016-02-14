@@ -7,13 +7,9 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import matplotlib.pyplot as plt
 import pyret.filtertools as ft
-import pyret.visualizations as viz
 import theano
-import json
 import os
 import h5py
-from keras.models import model_from_json
-from .preprocessing import datagen, loadexpt
 
 
 def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
@@ -142,8 +138,6 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
         return spatial, temporal
 
 
-
-
 def visualize_affine_weights(weights, num_conv_filters, layer_name='layer_4', title='affine units',
         fig_dir=None, fig_size=(8,10), dpi=300, display=True, save=False, cmap='seismic'):
     '''
@@ -221,6 +215,7 @@ def singular_values(weights):
     fk, u, s, v = ft.lowranksta(weights)
     return s
 
+
 # - function that plots distribution of linear projections on threshold
 def activations(model, layer_id, stimulus):
     '''
@@ -232,6 +227,7 @@ def activations(model, layer_id, stimulus):
     # get intermediate unit response to stimulus
     response = get_activations(stimulus)
     return response
+
 
 def response_before_threshold(weights, model, layer_id, stimulus):
     '''
@@ -261,8 +257,6 @@ def response_before_threshold(weights, model, layer_id, stimulus):
         flat_filters = [np.reshape(filt, -1) for filt in filters]
         responses = [np.dot(flat_stim, flat_filt) + biases[idx] for idx, flat_filt in enumerate(flat_filters)]
         return responses
-
-
 
 
 # function that plots the receptive field of the interneurons (i.e. conv or affine layer activations)
@@ -323,7 +317,6 @@ def get_sta(model, layer_id, samples=50000, batch_size=50):
         return [sta, true_response_shape]
 
 
-
 # a useful visualization of intermediate units may be its STC
 def get_stc(stimulus, response):
     """
@@ -378,7 +371,7 @@ def get_stc(stimulus, response):
     return stc - np.outer(sta, sta)
 
 
-def visualize_sta(sta, fig_size=(8,10), display=True, save=False, normalize=True):
+def visualize_sta(sta, fig_size=(8, 10), display=True, save=False, normalize=True):
     '''
     Visualize one or many STAs of deep-retina interunits.
 

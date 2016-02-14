@@ -34,7 +34,7 @@ directories = {
 
 class Monitor:
 
-    def __init__(self, name, model, data, user_description=True):
+    def __init__(self, name, model, data, readme, save_every, user_description=True):
 
         # pointer to Keras model and experimental data
         self.name = name
@@ -92,6 +92,7 @@ class Monitor:
         self.write('architecture.yaml', self.model.to_yaml())
         self.write('experiment.json', dumps(data.info))
         self.write('metadata.json', dumps(self.metadata))
+        self.write('README.md', readme + '\n### Description\n' + description)
 
         # start CSV files for performance
         headers = ','.join(('Epoch', 'Iteration') +
@@ -313,18 +314,17 @@ def plot_performance(metrics, results):
         x = results['iter']
         for key, color in [('test', 'lightcoral'), ('train', 'skyblue')]:
 
+            # plot the performance curves (mean + sem across cells)
             y = np.mean(results[key][metric], axis=1)
             ye = sem(results[key][metric], axis=1)
-
-            # test
+            ax.fill_between(x, y - ye, y + ye, interpolate=True, alpha=0.2, color=color)
             ax.plot(x, y, '-', color=color, label=key)
-            ax.fill_between(x, y - ye, y + ye, interpolate=True, alpha=0.4, color=color)
 
         ax.set_title(str.upper(metric), fontsize=20)
         ax.set_xlabel('Iteration', fontsize=16)
         despine(ax)
 
-    plt.legend(loc='best', frameon=True, fancybox=True)
+    axs[0][0].legend(loc='best', frameon=True, fancybox=True)
     plt.tight_layout()
     return fig
 

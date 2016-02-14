@@ -6,10 +6,15 @@ Main script for training deep retinal models
 from __future__ import absolute_import
 from deepretina.models import sequential, convnet, train
 from deepretina.experiments import Experiment
+from deepretina.io import Monitor, main_wrapper
 
 
-def fit_convnet(cells, stimulus, exptdate='15-10-07'):
-    """Demo code for fitting a convnet model"""
+@main_wrapper
+def fit_convnet(cells, stimulus, exptdate, readme=None):
+    """Main script for fitting a convnet
+    
+    author: Lane McIntosh
+    """
 
     stim_shape = (40, 50, 50)
     ncells = len(cells)
@@ -25,19 +30,14 @@ def fit_convnet(cells, stimulus, exptdate='15-10-07'):
     # load experiment data
     data = Experiment(exptdate, cells, stimulus, stim_shape[0], batchsize)
 
-    # training options
-    training_options = {
-        'save_every': 10,           # save weights every n iterations
-        'num_epochs': 100,           # number of epochs to train for
-        'name': 'convnet',          # a name for the model
-        'reduce_lr_every': 15       # halve the loss every n epochs
-    }
+    # create a monitor to track progress
+    monitor = Monitor('convnet', model, data, readme, save_every=10)
 
     # train
-    train(model, data, **training_options)
+    train(model, data, monitor, num_epochs=100)
 
     return model
 
 
 if __name__ == '__main__':
-    mdl = fit_convnet([0, 1, 2, 3, 4], 'whitenoise')
+    mdl = fit_convnet([0, 1, 2, 3, 4], 'whitenoise', '15-10-07')

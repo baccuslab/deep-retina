@@ -8,6 +8,7 @@ from keras.models import Sequential, Model
 from keras.layers.core import Dropout, Dense, Activation, Flatten, TimeDistributedDense
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
+from keras.layers.advanced_activations import ParametricSoftplus
 from keras.regularizers import l2
 from .utils import notify
 from . import io
@@ -89,6 +90,10 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
 
     l2_reg : float, optional
         l2 regularization on the weights (default: 0.0)
+
+    dropout : float, optional
+        Fraction of units to 'dropout' for regularization (default: 0.0)
+
     """
     layers = list()
 
@@ -116,10 +121,11 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
     # Add relu activation
     layers.append(Activation('relu'))
 
-    # Add a final dense (affine) layer with softplus activation
-    layers.append(Dense(nout, init=weight_init,
-                        W_regularizer=l2(l2_reg),
-                        activation='softplus'))
+    # Add a final dense (affine) layer
+    layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg)))
+
+    # Finish it off with a parameterized softplus
+    layers.append(ParametricSoftplus())
 
     return layers
 

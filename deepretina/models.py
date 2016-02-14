@@ -124,7 +124,7 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
     return layers
 
 
-def train(model, data, , num_epochs, name='model', reduce_lr_every=-1, reduce_rate=0.5):
+def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=0.5):
     """Train the given network against the given data
 
     Parameters
@@ -135,22 +135,20 @@ def train(model, data, , num_epochs, name='model', reduce_lr_every=-1, reduce_ra
     data : experiments.Experiment
         An Experiment object
 
-    save_every : int
-        Saves the model parameters after `save_every` training batches.
-        If save_every is less than or equal to zero, nothing gets saved.
+    monitor : io.Monitor
+        Saves the model parameters and plots of performance progress
 
     num_epochs : int
         Number of epochs to train for
 
-    name : string
-        A name for this model
+    reduce_lr_every : int
+        How often to reduce the learning rate
+
+    reduce_rate : float
+        A fraction (constant) to multiply the learning rate by
+
     """
     assert isinstance(model, Model), "model is not a Keras model"
-    assert isinstance(save_every, int), "save_every must be an integer"
-
-    # create monitor for storing / saving model results
-    if save_every > 0:
-        monitor = io.Monitor(name, model, data)
 
     # initialize training iteration
     iteration = 0
@@ -164,13 +162,13 @@ def train(model, data, , num_epochs, name='model', reduce_lr_every=-1, reduce_ra
             if (reduce_lr_every > 0) and (epoch > 0) and (epoch % reduce_lr_every == 0):
                 lr = model.optimizer.lr.get_value()
                 model.optimizer.lr.set_value(lr * reduce_rate)
-                print(' Reduced learning rate to {} from {}'.format(lr * reduce_rate, lr))
+                print('\t(Reduced learning rate to {} from {})'.format(lr * reduce_rate, lr))
 
             # loop over data batches for this epoch
             for X, y in data.batches(shuffle=True):
 
                 # update on save_every, assuming it is positive
-                if (save_every > 0) and (iteration % save_every == 0):
+                if (monitor is not None) and (iteration % monitor.save_every == 0):
                     monitor.save(epoch, iteration)
 
                 # train on the batch
@@ -178,7 +176,7 @@ def train(model, data, , num_epochs, name='model', reduce_lr_every=-1, reduce_ra
 
                 # update
                 iteration += 1
-                print('  (Batch {} of {}) Loss: {}'.format(iteration, data.num_batches, loss))
+                print('Batch {} of {}\tLoss: {}'.format(iteration % data.num_batches, data.num_batches, loss))
 
     except KeyboardInterrupt:
         print('\nCleaning up')

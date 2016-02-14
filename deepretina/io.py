@@ -8,9 +8,12 @@ from os import mkdir, uname, getenv, path
 from json import dumps
 from collections import defaultdict
 from itertools import product
+from functools import wraps
 from scipy.stats import sem
 from . import metrics
 import numpy as np
+import inspect
+import subprocess
 import shutil
 import time
 import theano
@@ -18,6 +21,7 @@ import keras
 import deepretina
 import hashlib
 import h5py
+
 
 # Force matplotlib to not use any X-windows backend
 import matplotlib
@@ -34,12 +38,13 @@ directories = {
 
 class Monitor:
 
-    def __init__(self, name, model, data, readme, save_every, user_description=True):
+    def __init__(self, name, model, data, readme, save_every):
 
         # pointer to Keras model and experimental data
         self.name = name
         self.model = model
         self.data = data
+        self.save_every = save_every
 
         # store results in a dictionary
         self.results = {
@@ -52,14 +57,6 @@ class Monitor:
         # metrics to use (names of functions in the metrics module)
         self.metrics = ('cc', 'lli', 'rmse', 'fev')
 
-        # force the user to enter a description of the experiment
-        if user_description:
-            print('\nStarting to train model {}.'.format(self.hashkey))
-            description = input('Please enter a brief description:')
-
-        else:
-            description = 'No description specified'
-
         # metadata related to this training instance
         self.metadata = {
             'machine': uname()[1],
@@ -70,7 +67,6 @@ class Monitor:
             'keras': keras.__version__,
             'deep-retina': deepretina.__version__,
             'theano': theano.__version__,
-            'description': description,
         }
 
         # generate a hash key for this model architecture
@@ -82,6 +78,7 @@ class Monitor:
         self.hashkey = md5(hashstring)
 
         # make the necessary folders on disk
+        print('Creating directories and files for model {}\n'.format(self.hashkey))
         self.dirname = ' '.join((self.hashkey, self.name))
         for _, directory in directories.items():
             mkdir(path.join(directory, self.dirname))
@@ -92,7 +89,7 @@ class Monitor:
         self.write('architecture.yaml', self.model.to_yaml())
         self.write('experiment.json', dumps(data.info))
         self.write('metadata.json', dumps(self.metadata))
-        self.write('README.md', readme + '\n### Description\n' + description)
+        self.write('README.md', readme)
 
         # start CSV files for performance
         headers = ','.join(('Epoch', 'Iteration') +
@@ -327,6 +324,33 @@ def plot_performance(metrics, results):
     axs[0][0].legend(loc='best', frameon=True, fancybox=True)
     plt.tight_layout()
     return fig
+
+
+def main_wrapper(func):
+    @wraps(func)
+    def mainscript(*args, **kwargs):
+
+        # get information about this function call
+        func.__name__
+        source = inspect.getsource(func)
+        commit = str(subprocess.check_output(["git", "describe", "--always"]), "utf-8")
+
+        if 'description' in kwargs:
+            description = kwargs.pop('description')
+        else:
+            description = input('Please enter a brief description of this model/experiment/script:\n')
+
+        # build a markdown string containing this information
+        kwargs['readme'] = '\n'.join(['# deep-retina model training script',
+                                      '### description', description,
+                                      '### git commit', '[{}](https://github.com/baccuslab/deep-retina/commit/{})'.format(commit, commit),
+                                      '### function call', '```python\n{}(*{}, **{})\n```'.format(func.__name__, args, kwargs),
+                                      '### source', '```python', source, '```',
+                                      ])
+
+        func(*args, **kwargs)
+
+    return mainscript
 
 
 def despine(ax):

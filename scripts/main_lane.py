@@ -20,7 +20,7 @@ def fit_convnet(cells, stimulus, exptdate='15-10-07'):
                      filter_size=(13, 13), weight_init='normal', l2_reg=0.01)
 
     # compile the keras model
-    model = sequential(layers, 'adam')
+    model = sequential(layers, 'adam', loss='sub_poisson_loss')
 
     # load experiment data
     data = Experiment(exptdate, cells, stimulus, stim_shape[0], batchsize)
@@ -28,9 +28,9 @@ def fit_convnet(cells, stimulus, exptdate='15-10-07'):
     # training options
     training_options = {
         'save_every': 10,           # save weights every n iterations
-        'num_epochs': 100,           # number of epochs to train for
+        'num_epochs': 60,           # number of epochs to train for
         'name': 'convnet',          # a name for the model
-        'reduce_lr_every': 15       # halve the loss every n epochs
+        'reduce_lr_every': -1       # halve the loss every n epochs
     }
 
     # train

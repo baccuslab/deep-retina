@@ -40,4 +40,4 @@ def fit_convnet(cells, stimulus, exptdate, readme=None):
 
 
 if __name__ == '__main__':
-    mdl = fit_convnet([0, 1, 2, 3, 4], 'whitenoise', '15-10-07')
+    mdl = fit_convnet(list(range(37)), 'whitenoise', 'all-cells', readme='Training model on all good cells in first three experiments')

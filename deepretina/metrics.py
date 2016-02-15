@@ -36,7 +36,7 @@ def multicell(metric):
                   for true_rate, model_rate in zip(true_rates, model_rates)]
 
         # return the mean across cells and the full list
-        return np.mean(scores), scores
+        return np.nanmean(scores), scores
 
     return multicell_wrapper
 

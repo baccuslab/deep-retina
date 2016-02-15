@@ -276,18 +276,19 @@ def generalizedconvnet(input_shape, nout,
     """
     layers = list()
 
-    # initial convolutional layer
-    layers.append(Convolution2D(num_filters[0], filter_sizes[0], filter_sizes[0],
-                                input_shape=input_shape, init=weight_init,
-                                border_mode='same', subsample=(1, 1), W_regularizer=l2(l2_reg)))
-
-    for layer_id, layer_type in enumerate(architecture[1:]):
+    for layer_id, layer_type in enumerate(architecture):
 
         # convolutional layer
         if layer_type == 'conv':
-            layers.append(Convolution2D(num_filters[layer_id], filter_sizes[layer_id],
-                                        filter_sizes[layer_id], init=weight_init, border_mode='same',
-                                        subsample=(1, 1), W_regularizer=l2(l2_reg)))
+            if layer_id == 0:
+                # initial convolutional layer
+                layers.append(Convolution2D(num_filters[0], filter_sizes[0], filter_sizes[0],
+                                            input_shape=input_shape, init=weight_init,
+                                            border_mode='same', subsample=(1, 1), W_regularizer=l2(l2_reg)))
+            else:
+                layers.append(Convolution2D(num_filters[layer_id], filter_sizes[layer_id],
+                                            filter_sizes[layer_id], init=weight_init, border_mode='same',
+                                            subsample=(1, 1), W_regularizer=l2(l2_reg)))
 
         # Add relu activation
         if layer_type == 'relu':
@@ -303,12 +304,12 @@ def generalizedconvnet(input_shape, nout,
 
         # Add dense (affine) layer
         if layer_type == 'affine':
-            layers.append(Dense(num_filters[layer_id], init=weight_init, W_regularizer=l2(l2_reg)))
-
-        # Add a final dense (affine) layer with softplus activation
-        if layer_type == 'finalaffine':
-            layers.append(Dense(nout, init=weight_init,
-                                W_regularizer=l2(l2_reg),
-                                activation='softplus'))
+            if layer_id == len(architecture) - 1:
+                # add final affine layer with softplus activation
+                layers.append(Dense(nout, init=weight_init,
+                                    W_regularizer=l2(l2_reg),
+                                    activation='softplus'))
+            else:
+                layers.append(Dense(num_filters[layer_id], init=weight_init, W_regularizer=l2(l2_reg)))
 
     return layers

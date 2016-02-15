@@ -88,7 +88,7 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
 
     # plot just spatial profile
     elif space and not time:
-        fig = plt.gcf
+        fig = plt.gcf()
         fig.set_size_inches(fig_size)
         plt.title(title, fontsize=20)
         num_cols = int(np.sqrt(num_filters))
@@ -98,8 +98,7 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
                 plt_idx = y * num_cols + x + 1
                 spatial, temporal = ft.decompose(weights[plt_idx-1])
                 plt.subplot(num_rows, num_cols, plt_idx)
-                plt.imshow(spatial, interpolation='nearest', cmap=cmap)
-                plt.colorbar()
+                plt.imshow(spatial, interpolation='nearest', cmap=cmap, clim=colorlimit)
                 plt.grid('off')
                 plt.axis('off')
         if display:
@@ -109,7 +108,7 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
 
     # plot just temporal profile
     elif time and not space:
-        fig = plt.gcf
+        fig = plt.gcf()
         fig.set_size_inches(fig_size)
         plt.title(title, fontsize=20)
         num_cols = int(np.sqrt(num_filters))

@@ -8,8 +8,12 @@ from os import mkdir, uname, getenv, path
 from json import dumps
 from collections import defaultdict
 from itertools import product
+from functools import wraps
+from scipy.stats import sem
 from . import metrics
 import numpy as np
+import inspect
+import subprocess
 import shutil
 import time
 import theano
@@ -17,6 +21,7 @@ import keras
 import deepretina
 import hashlib
 import h5py
+
 
 # Force matplotlib to not use any X-windows backend
 import matplotlib
@@ -33,12 +38,13 @@ directories = {
 
 class Monitor:
 
-    def __init__(self, name, model, data):
+    def __init__(self, name, model, data, readme, save_every):
 
         # pointer to Keras model and experimental data
         self.name = name
         self.model = model
         self.data = data
+        self.save_every = save_every
 
         # store results in a dictionary
         self.results = {
@@ -72,6 +78,7 @@ class Monitor:
         self.hashkey = md5(hashstring)
 
         # make the necessary folders on disk
+        print('Creating directories and files for model {}\n'.format(self.hashkey))
         self.dirname = ' '.join((self.hashkey, self.name))
         for _, directory in directories.items():
             mkdir(path.join(directory, self.dirname))
@@ -82,6 +89,7 @@ class Monitor:
         self.write('architecture.yaml', self.model.to_yaml())
         self.write('experiment.json', dumps(data.info))
         self.write('metadata.json', dumps(self.metadata))
+        self.write('README.md', readme)
 
         # start CSV files for performance
         headers = ','.join(('Epoch', 'Iteration') +
@@ -272,7 +280,7 @@ def plot_rates(iteration, dt, **rates):
     fig, axs = plt.subplots(len(rates), 1, figsize=(16, 10))
 
     # for now, manually choose indices to plot
-    i0, i1 = (2000, 4000)
+    i0, i1 = (2000, 3000)
     inds = slice(i0, i1)
 
     for ax, key in zip(axs, sorted(rates.keys())):
@@ -299,15 +307,50 @@ def plot_performance(metrics, results):
 
     for metric, inds in zip(metrics, product((0, 1), repeat=2)):
         ax = axs[inds[0]][inds[1]]
-        ax.plot(results['iter'], np.mean(results['test'][metric], axis=1), 'k-', label='test')
-        ax.plot(results['iter'], np.mean(results['train'][metric], axis=1), 'k--', label='train')
+
+        x = results['iter']
+        for key, color in [('test', 'lightcoral'), ('train', 'skyblue')]:
+
+            # plot the performance curves (mean + sem across cells)
+            y = np.mean(results[key][metric], axis=1)
+            ye = sem(results[key][metric], axis=1)
+            ax.fill_between(x, y - ye, y + ye, interpolate=True, alpha=0.2, color=color)
+            ax.plot(x, y, '-', color=color, label=key)
+
         ax.set_title(str.upper(metric), fontsize=20)
         ax.set_xlabel('Iteration', fontsize=16)
         despine(ax)
 
-    plt.legend(loc='best', frameon=True, fancybox=True)
+    axs[0][0].legend(loc='best', frameon=True, fancybox=True)
     plt.tight_layout()
     return fig
+
+
+def main_wrapper(func):
+    @wraps(func)
+    def mainscript(*args, **kwargs):
+
+        # get information about this function call
+        func.__name__
+        source = inspect.getsource(func)
+        commit = str(subprocess.check_output(["git", "describe", "--always"]), "utf-8")
+
+        if 'description' in kwargs:
+            description = kwargs.pop('description')
+        else:
+            description = input('Please enter a brief description of this model/experiment/script:\n')
+
+        # build a markdown string containing this information
+        kwargs['readme'] = '\n'.join(['# deep-retina model training script',
+                                      '### description', description,
+                                      '### git commit', '[{}](https://github.com/baccuslab/deep-retina/commit/{})'.format(commit, commit),
+                                      '### function call', '```python\n{}(*{}, **{})\n```'.format(func.__name__, args, kwargs),
+                                      '### source', '```python', source, '```',
+                                      ])
+
+        func(*args, **kwargs)
+
+    return mainscript
 
 
 def despine(ax):

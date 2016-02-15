@@ -8,6 +8,7 @@ from keras.models import Sequential, Model
 from keras.layers.core import Dropout, Dense, Activation, Flatten, TimeDistributedDense
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
+from keras.layers.advanced_activations import ParametricSoftplus
 from keras.regularizers import l2
 from .utils import notify
 from . import io
@@ -89,6 +90,10 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
 
     l2_reg : float, optional
         l2 regularization on the weights (default: 0.0)
+
+    dropout : float, optional
+        Fraction of units to 'dropout' for regularization (default: 0.0)
+
     """
     layers = list()
 
@@ -116,15 +121,16 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
     # Add relu activation
     layers.append(Activation('relu'))
 
-    # Add a final dense (affine) layer with softplus activation
-    layers.append(Dense(nout, init=weight_init,
-                        W_regularizer=l2(l2_reg),
-                        activation='softplus'))
+    # Add a final dense (affine) layer
+    layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg)))
+
+    # Finish it off with a parameterized softplus
+    layers.append(ParametricSoftplus())
 
     return layers
 
 
-def train(model, data, save_every, num_epochs, name='model', reduce_lr_every=-1, reduce_rate=0.5):
+def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=0.5):
     """Train the given network against the given data
 
     Parameters
@@ -135,22 +141,20 @@ def train(model, data, save_every, num_epochs, name='model', reduce_lr_every=-1,
     data : experiments.Experiment
         An Experiment object
 
-    save_every : int
-        Saves the model parameters after `save_every` training batches.
-        If save_every is less than or equal to zero, nothing gets saved.
+    monitor : io.Monitor
+        Saves the model parameters and plots of performance progress
 
     num_epochs : int
         Number of epochs to train for
 
-    name : string
-        A name for this model
+    reduce_lr_every : int
+        How often to reduce the learning rate
+
+    reduce_rate : float
+        A fraction (constant) to multiply the learning rate by
+
     """
     assert isinstance(model, Model), "model is not a Keras model"
-    assert isinstance(save_every, int), "save_every must be an integer"
-
-    # create monitor for storing / saving model results
-    if save_every > 0:
-        monitor = io.Monitor(name, model, data)
 
     # initialize training iteration
     iteration = 0
@@ -163,14 +167,14 @@ def train(model, data, save_every, num_epochs, name='model', reduce_lr_every=-1,
             # update learning rate on reduce_lr_every, assuming it is positive
             if (reduce_lr_every > 0) and (epoch > 0) and (epoch % reduce_lr_every == 0):
                 lr = model.optimizer.lr.get_value()
-                model.optimizer.lr.set_value(lr*reduce_rate)
-                print(' Reduced learning rate to {} from {}'.format(lr*reduce_rate, lr))
+                model.optimizer.lr.set_value(lr * reduce_rate)
+                print('\t(Reduced learning rate to {} from {})'.format(lr * reduce_rate, lr))
 
             # loop over data batches for this epoch
             for X, y in data.batches(shuffle=True):
 
                 # update on save_every, assuming it is positive
-                if (save_every > 0) and (iteration % save_every == 0):
+                if (monitor is not None) and (iteration % monitor.save_every == 0):
                     monitor.save(epoch, iteration)
 
                 # train on the batch
@@ -178,7 +182,7 @@ def train(model, data, save_every, num_epochs, name='model', reduce_lr_every=-1,
 
                 # update
                 iteration += 1
-                print('  (Batch {} of {}) Loss: {}'.format(iteration, data.num_batches, loss))
+                print('Batch {} of {}\tLoss: {}'.format(iteration % data.num_batches, data.num_batches, loss))
 
     except KeyboardInterrupt:
         print('\nCleaning up')
@@ -272,18 +276,19 @@ def generalizedconvnet(input_shape, nout,
     """
     layers = list()
 
-    # initial convolutional layer
-    layers.append(Convolution2D(num_filters[0], filter_sizes[0], filter_sizes[0],
-                                input_shape=input_shape, init=weight_init,
-                                border_mode='same', subsample=(1, 1), W_regularizer=l2(l2_reg)))
-
-    for layer_id, layer_type in enumerate(architecture[1:]):
+    for layer_id, layer_type in enumerate(architecture):
 
         # convolutional layer
         if layer_type == 'conv':
-            layers.append(Convolution2D(num_filters[layer_id], filter_sizes[layer_id],
-                                        filter_sizes[layer_id], init=weight_init, border_mode='same',
-                                        subsample=(1, 1), W_regularizer=l2(l2_reg)))
+            if layer_id == 0:
+                # initial convolutional layer
+                layers.append(Convolution2D(num_filters[0], filter_sizes[0], filter_sizes[0],
+                                            input_shape=input_shape, init=weight_init,
+                                            border_mode='same', subsample=(1, 1), W_regularizer=l2(l2_reg)))
+            else:
+                layers.append(Convolution2D(num_filters[layer_id], filter_sizes[layer_id],
+                                            filter_sizes[layer_id], init=weight_init, border_mode='same',
+                                            subsample=(1, 1), W_regularizer=l2(l2_reg)))
 
         # Add relu activation
         if layer_type == 'relu':
@@ -299,12 +304,12 @@ def generalizedconvnet(input_shape, nout,
 
         # Add dense (affine) layer
         if layer_type == 'affine':
-            layers.append(Dense(num_filters[layer_id], init=weight_init, W_regularizer=l2(l2_reg)))
-
-        # Add a final dense (affine) layer with softplus activation
-        if layer_type == 'finalaffine':
-            layers.append(Dense(nout, init=weight_init,
-                                W_regularizer=l2(l2_reg),
-                                activation='softplus'))
+            if layer_id == len(architecture) - 1:
+                # add final affine layer with softplus activation
+                layers.append(Dense(nout, init=weight_init,
+                                    W_regularizer=l2(l2_reg),
+                                    activation='softplus'))
+            else:
+                layers.append(Dense(num_filters[layer_id], init=weight_init, W_regularizer=l2(l2_reg)))
 
     return layers

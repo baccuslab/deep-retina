@@ -144,13 +144,18 @@ def get_performance(model, stim_type='natural', cells=[0], metric='cc'):
     return test_results
 
 
-def get_weights(path_to_weights, layer_name='layer_0'):
+def get_weights(path_to_weights, layer_name='layer_0', weight_name='param_0'):
     """
     Return the weights from a saved .h5 file.
+
+    INPUTS:
+    path_to_weights path to weights
+    layer_name      name of the layer you want
+    weight_name     'param_0' or 'param_1' depending on if you want weights or biases
     """
 
     weight_file = h5py.File(path_to_weights, 'r')
 
     # param_0 stores the weights, param_1 stores biases
-    weights = weight_file[layer_name]['param_0']
+    weights = weight_file[layer_name][weight_name]
     return weights

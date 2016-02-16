@@ -5,7 +5,7 @@ Generate commonly used visual stimuli
 
 from __future__ import absolute_import, division, print_function
 import numpy as np
-from .utils import rolling_window
+from .experiments import rolling_window
 
 
 def get_contrast_changes(period=5, low_contrast=0.1, high_contrast=1.0, sample_rate=30, roll=True):
@@ -130,3 +130,65 @@ def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask
         return full_movies
     else:
         return grating_movie
+
+def oms(duration=100, coherent=False, space=(50,50), center=(25,25), object_radius=5, speed=2, roll=True):
+    '''
+        Object motion sensitivity stimulus, where an object moves differentially
+        from the background.
+
+        INPUT:
+        duration        movie duration in frames
+        coherent        are object and background moving coherently?
+        space           spatial dimensions
+        center          location of object center
+        object_width    width in pixels of object
+        speed           speed of random drift
+        roll            whether to roll_axis for model prediction
+
+        OUTPUT:
+        movie           a numpy array of the stimulus
+    '''
+    grating_width = 3
+    contrast = 1
+
+    # make movie
+    movie = np.zeros((duration, 50, 50))
+    
+    # make random drift
+    background_drift = speed*np.random.randn(duration)
+    background_drift = background_drift.astype('int')
+    if not coherent:
+        object_drift = speed*np.random.randn(duration)
+        object_drift = object_drift.astype('int')
+
+    for frame in range(duration):
+        # translate random walk into phase of bars on this frame
+        background_phase = sum(background_drift[:frame+1]) % grating_width
+        object_phase = sum(object_drift[:frame+1]) % grating_width
+
+        # make background grating
+        background_frame = -1*np.ones(space)
+        for i in range(grating_width):
+            background_frame[:,(i+background_phase)::2*grating_width] = 1
+
+        if not coherent:
+            # clear object space
+            background_frame[center[0]-object_radius:center[0]+object_radius,
+                            center[1]-object_radius:center[1]+object_radius] = -1
+            # make center object
+            for i in range(grating_width):
+                background_frame[center[0]-object_radius:center[0]+object_radius,
+                                (center[1]-object_radius+i+object_phase):center[1]+object_radius:2*grating_width] = 1
+
+        # adjust contrast
+        background_frame *= contrast
+        movie[frame] = background_frame
+
+    if roll:
+        # roll movie axes to get the right shape
+        roll_movies = rolling_window(movie, 40)
+        roll_movies = np.rollaxis(roll_movies, 2)
+        roll_movies = np.rollaxis(roll_movies, 3, 1)
+        return roll_movies
+    else:
+        return movie 

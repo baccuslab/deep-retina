@@ -163,8 +163,7 @@ def oms(duration=100, coherent=False, space=(50,50), center=(25,25), object_radi
 
     for frame in range(duration):
         # translate random walk into phase of bars on this frame
-        background_phase = sum(background_drift[:frame+1]) % grating_width
-        object_phase = sum(object_drift[:frame+1]) % grating_width
+        background_phase = sum(background_drift[:frame+1]) % (2*grating_width)
 
         # make background grating
         background_frame = -1*np.ones(space)
@@ -172,14 +171,18 @@ def oms(duration=100, coherent=False, space=(50,50), center=(25,25), object_radi
             background_frame[:,(i+background_phase)::2*grating_width] = 1
 
         if not coherent:
-            # clear object space
-            background_frame[center[0]-object_radius:center[0]+object_radius,
-                            center[1]-object_radius:center[1]+object_radius] = -1
-            # make center object
-            for i in range(grating_width):
-                background_frame[center[0]-object_radius:center[0]+object_radius,
-                                (center[1]-object_radius+i+object_phase):center[1]+object_radius:2*grating_width] = 1
+            # object motion to phase
+            object_phase = sum(object_drift[:frame+1]) % (2*grating_width)
 
+            # make object frame
+            object_frame = -1*np.ones(space)
+            for i in range(grating_width):
+                object_frame[:,(i+object_phase)::2*grating_width] = 1
+
+            # set center of background frame to object
+            object_mask = cmask(center, object_radius, object_frame)
+            background_frame[object_mask] = object_frame[object_mask]
+            
         # adjust contrast
         background_frame *= contrast
         movie[frame] = background_frame
@@ -192,3 +195,11 @@ def oms(duration=100, coherent=False, space=(50,50), center=(25,25), object_radi
         return roll_movies
     else:
         return movie 
+
+def cmask(center,radius,array):
+    a,b = center
+    nx,ny = array.shape
+    y,x = np.ogrid[-a:nx-a,-b:ny-b]
+    mask = x*x + y*y <= radius*radius
+    return mask
+

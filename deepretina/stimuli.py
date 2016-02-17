@@ -190,8 +190,8 @@ def oms(duration=100, coherent=False, space=(50,50), center=(25,25), object_radi
     if roll:
         # roll movie axes to get the right shape
         roll_movies = rolling_window(movie, 40)
-        roll_movies = np.rollaxis(roll_movies, 2)
-        roll_movies = np.rollaxis(roll_movies, 3, 1)
+        #roll_movies = np.rollaxis(roll_movies, 2)
+        #roll_movies = np.rollaxis(roll_movies, 3, 1)
         return roll_movies
     else:
         return movie 

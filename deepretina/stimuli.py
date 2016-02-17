@@ -131,7 +131,8 @@ def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask
     else:
         return grating_movie
 
-def oms(duration=100, coherent=False, space=(50,50), center=(25,25), object_radius=5, speed=2, roll=True):
+def oms(duration=100, coherent=False, space=(50,50), center=(25,25), object_radius=5, speed=2, 
+        motion_type='periodic', roll=True):
     '''
         Object motion sensitivity stimulus, where an object moves differentially
         from the background.
@@ -143,6 +144,7 @@ def oms(duration=100, coherent=False, space=(50,50), center=(25,25), object_radi
         center          location of object center
         object_width    width in pixels of object
         speed           speed of random drift
+        motion_type     'periodic' or 'drift'
         roll            whether to roll_axis for model prediction
 
         OUTPUT:
@@ -155,11 +157,20 @@ def oms(duration=100, coherent=False, space=(50,50), center=(25,25), object_radi
     movie = np.zeros((duration, 50, 50))
     
     # make random drift
-    background_drift = speed*np.random.randn(duration)
-    background_drift = background_drift.astype('int')
-    if not coherent:
-        object_drift = speed*np.random.randn(duration)
-        object_drift = object_drift.astype('int')
+    if motion_type == 'drift':
+        background_drift = speed*np.random.randn(duration)
+        background_drift = background_drift.astype('int')
+        if not coherent:
+            object_drift = speed*np.random.randn(duration)
+            object_drift = object_drift.astype('int')
+    elif motion_type == 'periodic':
+        background_drift = (speed+1)*np.sin(range(speed*duration))
+        background_drift = background_drift.astype('int')
+        if not coherent:
+            object_drift = (speed+1)*np.cos(range(speed*duration))
+            object_drift = object_drift.astype('int')
+    else:
+        print('motion_type {} not understood. Should be either periodic or drift.' .format(motion_type))
 
     for frame in range(duration):
         # translate random walk into phase of bars on this frame

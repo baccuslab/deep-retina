@@ -102,12 +102,16 @@ class Monitor:
             mkdir(path.join(directory, self.dirname))
         self.datadir = path.join(directories['database'], self.dirname)
 
-        # write files to disk
+        # writes files to disk (and copy them to dropbox)
         self.write('architecture.json', self.model.to_json())
         self.write('architecture.yaml', self.model.to_yaml())
         self.write('experiment.json', dumps(data.info))
         self.write('metadata.json', dumps(self.metadata))
         self.write('README.md', readme)
+
+        # save model architecture as a figure and copy it to dropbox
+        keras.utils.visualize_util.plot(self.model, to_file=self.savepath('architecture.png'))
+        self.copy_to_dropbox('architecture.png')
 
         # start CSV files for performance
         headers = ','.join(('Epoch', 'Iteration') +

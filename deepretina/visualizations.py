@@ -67,20 +67,22 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
         for x in range(num_cols):
             for y in range(num_rows):
                 plt_idx = y * num_cols + x + 1
-                spatial,temporal = ft.decompose(weights[plt_idx-1])
-                #plt.subplot(num_rows, num_cols, plt_idx)
-                ax = plt.subplot2grid((num_rows*4, num_cols), (4*y, x), rowspan=3)
-                if normalize:
-                    ax.imshow(spatial, interpolation='nearest', cmap=cmap, clim=colorlimit)
-                else:
-                    ax.imshow(spatial, interpolation='nearest', cmap=cmap)
-                plt.grid('off')
-                plt.axis('off')
+                # in case fewer weights than fit neatly in rows and cols
+                if plt_idx <= len(weights):
+                    spatial,temporal = ft.decompose(weights[plt_idx-1])
+                    #plt.subplot(num_rows, num_cols, plt_idx)
+                    ax = plt.subplot2grid((num_rows*4, num_cols), (4*y, x), rowspan=3)
+                    if normalize:
+                        ax.imshow(spatial, interpolation='nearest', cmap=cmap, clim=colorlimit)
+                    else:
+                        ax.imshow(spatial, interpolation='nearest', cmap=cmap)
+                    plt.grid('off')
+                    plt.axis('off')
 
-                ax = plt.subplot2grid((num_rows*4, num_cols), (4*y+3, x), rowspan=1)
-                ax.plot(np.linspace(0,len(temporal)*10,len(temporal)), temporal, 'k', linewidth=2)
-                plt.grid('off')
-                plt.axis('off')
+                    ax = plt.subplot2grid((num_rows*4, num_cols), (4*y+3, x), rowspan=1)
+                    ax.plot(np.linspace(0,len(temporal)*10,len(temporal)), temporal, 'k', linewidth=2)
+                    plt.grid('off')
+                    plt.axis('off')
         if save:
             plt.savefig(fig_dir + title + '_spatiotemporal_profiles.png', dpi=dpi)
             plt.close()
@@ -97,11 +99,13 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
         for x in range(num_cols):
             for y in range(num_rows):
                 plt_idx = y * num_cols + x + 1
-                spatial, temporal = ft.decompose(weights[plt_idx-1])
-                plt.subplot(num_rows, num_cols, plt_idx)
-                plt.imshow(spatial, interpolation='nearest', cmap=cmap, clim=colorlimit)
-                plt.grid('off')
-                plt.axis('off')
+                # in case fewer weights than fit neatly in rows and cols
+                if plt_idx <= len(weights):
+                    spatial, temporal = ft.decompose(weights[plt_idx-1])
+                    plt.subplot(num_rows, num_cols, plt_idx)
+                    plt.imshow(spatial, interpolation='nearest', cmap=cmap, clim=colorlimit)
+                    plt.grid('off')
+                    plt.axis('off')
         if save:
             plt.savefig(fig_dir + title + '_spatiotemporal_profiles.png', dpi=dpi)
             plt.close()
@@ -118,11 +122,13 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
         for x in range(num_cols):
             for y in range(num_rows):
                 plt_idx = y * num_cols + x + 1
-                spatial, temporal = ft.decompose(weights[plt_idx-1])
-                plt.subplot(num_rows, num_cols, plt_idx)
-                plt.plot(np.linspace(0,len(temporal)*10,len(temporal)), temporal, 'k', linewidth=2)
-                plt.grid('off')
-                plt.axis('off')
+                # in case fewer weights than fit neatly in rows and cols
+                if plt_idx <= len(weights):
+                    spatial, temporal = ft.decompose(weights[plt_idx-1])
+                    plt.subplot(num_rows, num_cols, plt_idx)
+                    plt.plot(np.linspace(0,len(temporal)*10,len(temporal)), temporal, 'k', linewidth=2)
+                    plt.grid('off')
+                    plt.axis('off')
         if save:
             plt.savefig(fig_dir + title + '_spatiotemporal_profiles.png', dpi=dpi)
             plt.close()

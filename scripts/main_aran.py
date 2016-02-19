@@ -10,7 +10,7 @@ from deepretina.io import Monitor, main_wrapper
 
 
 @main_wrapper
-def fit_convnet(cells, stimulus, exptdate, l2_reg, dropout_probability):
+def fit_convnet(cells, stimulus, exptdate, l2_reg, dropout_probability, readme=None):
     """Main script for fitting a convnet
     
     author: Aran Nayebi

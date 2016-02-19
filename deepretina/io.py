@@ -9,7 +9,6 @@ from json import dumps
 from collections import defaultdict
 from itertools import product
 from functools import wraps
-from scipy.stats import sem
 from . import metrics
 import numpy as np
 import inspect
@@ -22,13 +21,12 @@ import deepretina
 import hashlib
 import h5py
 
-
 # Force matplotlib to not use any X-windows backend
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-__all__ = ['Monitor']
+__all__ = ['Monitor', 'main_wrapper']
 
 directories = {
     'dropbox': path.expanduser('~/Dropbox/deep-retina/saved/'),
@@ -39,6 +37,26 @@ directories = {
 class Monitor:
 
     def __init__(self, name, model, data, readme, save_every):
+        """Builds a Monitor object to keep track of train/test performance
+
+        Parameters
+        ----------
+        name : string
+            a name for this model
+
+        model : Keras model
+            reference to the Keras model object
+
+        data : Experiment
+            a collection of experimental data (see experiments.py)
+
+        readme : string
+            a markdown formatted string to save as the README
+
+        save_every : int
+            how often to save (in terms of the number of batches)
+
+        """
 
         # pointer to Keras model and experimental data
         self.name = name
@@ -313,8 +331,8 @@ def plot_performance(metrics, results):
         for key, color in [('test', 'lightcoral'), ('train', 'skyblue')]:
 
             # plot the performance curves (mean + sem across cells)
-            y = np.mean(results[key][metric], axis=1)
-            ye = sem(results[key][metric], axis=1)
+            y = np.nanmean(results[key][metric], axis=1)
+            ye = np.nanstd(results[key][metric], axis=1) / np.sqrt(results[key][metric].shape[1])
             ax.fill_between(x, y - ye, y + ye, interpolate=True, alpha=0.2, color=color)
             ax.plot(x, y, '-', color=color, label=key)
 

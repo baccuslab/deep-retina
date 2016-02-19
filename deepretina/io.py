@@ -213,17 +213,13 @@ class Monitor:
             plot_rates(iteration, self.data.dt,
                        train=(r_train[:, ix], rhat_train[:, ix]),
                        test=(r_test[:, ix], rhat_test[:, ix]))
-            plt.savefig(self.savepath(filename), dpi=100, bbox_inches='tight')
-            plt.close('all')
-            self.copy_to_dropbox(filename)
+            self._save_and_copy(filename, filetype='jpg', dpi=100)
 
         # plot the performance curves
-        plot_performance(self.metrics, self.results)
-        plt.savefig(self.savepath('performance.jpg'), dpi=100, bbox_inches='tight')
-        plt.close('all')
-        self.copy_to_dropbox('performance.jpg')
-
-        # TODO: store results in SQL
+        for plottype in ('summary', 'traces'):
+            filename = 'performance_{}.jpg'.format(plottype)
+            plot_performance(self.metrics, self.results, plottype=plottype)
+            self._save_and_copy(filename, filetype='jpg', dpi=100)
 
     def write(self, filename, text, copy=True):
         """Writes the given text to a file
@@ -255,6 +251,13 @@ class Monitor:
         except FileNotFoundError:
             print('\n*******\nWarning\n*******')
             print('Could not copy {} to Dropbox.\n'.format(filename))
+
+    def _save_and_copy(self, filename, filetype='jpg', dpi=100):
+        """Saves the current figure as a jpg and copies it to Dropbox"""
+        filename = filename + '.' + filetype
+        plt.savefig(self.savepath(filename), dpi=dpi, bbox_inches='tight')
+        plt.close('all')
+        self.copy_to_dropbox(filename)
 
     def test(self):
         """Evaluates metrics on the train and test datasets"""
@@ -317,7 +320,7 @@ def plot_rates(iteration, dt, **rates):
     return fig
 
 
-def plot_performance(metrics, results):
+def plot_performance(metrics, results, plottype='summary'):
     """Plots performance traces"""
 
     assert len(metrics) == 4, "plot_performance assumes there are four metrics to plot"
@@ -328,13 +331,18 @@ def plot_performance(metrics, results):
         ax = axs[inds[0]][inds[1]]
 
         x = results['iter']
-        for key, color in [('test', 'lightcoral'), ('train', 'skyblue')]:
+        for key, color, fmt in [('test', 'lightcoral', '-'), ('train', 'skyblue', '--')]:
 
-            # plot the performance curves (mean + sem across cells)
-            y = np.nanmean(results[key][metric], axis=1)
-            ye = np.nanstd(results[key][metric], axis=1) / np.sqrt(results[key][metric].shape[1])
-            ax.fill_between(x, y - ye, y + ye, interpolate=True, alpha=0.2, color=color)
-            ax.plot(x, y, '-', color=color, label=key)
+            # plot the performance summary (mean + sem across cells)
+            if plottype == 'summary':
+                y = np.nanmean(results[key][metric], axis=1)
+                ye = np.nanstd(results[key][metric], axis=1) / np.sqrt(results[key][metric].shape[1])
+                ax.fill_between(x, y - ye, y + ye, interpolate=True, alpha=0.2, color=color)
+                ax.plot(x, y, '-', color=color, label=key)
+
+            # plot the performance traces (one curve for each cell)
+            elif plottype == 'traces':
+                ax.plot(x, results[key][metric], fmt, alpha=0.5)
 
         ax.set_title(str.upper(metric), fontsize=20)
         ax.set_xlabel('Iteration', fontsize=16)

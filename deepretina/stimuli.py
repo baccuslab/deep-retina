@@ -6,6 +6,7 @@ Generate commonly used visual stimuli
 from __future__ import absolute_import, division, print_function
 import numpy as np
 from .experiments import rolling_window
+from scipy.signal import convolve2d
 
 
 def get_contrast_changes(period=5, low_contrast=0.1, high_contrast=1.0, sample_rate=30, roll=True):
@@ -150,11 +151,13 @@ def oms(duration=100, coherent=False, space=(50,50), center=(25,25), object_radi
         OUTPUT:
         movie           a numpy array of the stimulus
     '''
-    grating_width = 3
+    upsample = 10
+    grating_width = upsample*3
     contrast = 1
+    new_space = (upsample*space[0], upsample*space[1])
 
     # make movie
-    movie = np.zeros((duration, 50, 50))
+    movie = np.zeros((duration, space[0], space[1]))
     
     # make random drift
     if motion_type == 'drift':
@@ -174,21 +177,27 @@ def oms(duration=100, coherent=False, space=(50,50), center=(25,25), object_radi
 
     for frame in range(duration):
         # translate random walk into phase of bars on this frame
-        background_phase = sum(background_drift[:frame+1]) % (2*grating_width)
+        background_phase = sum(background_drift[:frame+1]) #% (2*grating_width)
 
         # make background grating
-        background_frame = -1*np.ones(space)
+        background_frame = -1*np.ones(new_space)
         for i in range(grating_width):
             background_frame[:,(i+background_phase)::2*grating_width] = 1
+
+        # smooth in higher resolution
+        background_frame = convolve2d(background_frame, (1.0/(upsample**2))*np.ones((upsample, upsample)), mode='same')[::upsample, ::upsample]
 
         if not coherent:
             # object motion to phase
             object_phase = sum(object_drift[:frame+1]) % (2*grating_width)
 
             # make object frame
-            object_frame = -1*np.ones(space)
+            object_frame = -1*np.ones(new_space)
             for i in range(grating_width):
                 object_frame[:,(i+object_phase)::2*grating_width] = 1
+
+            # smooth in higher resolution
+            object_frame = convolve2d(object_frame, (1.0/(upsample**2))*np.ones((upsample, upsample)), mode='same')[::upsample, ::upsample]
 
             # set center of background frame to object
             object_mask = cmask(center, object_radius, object_frame)

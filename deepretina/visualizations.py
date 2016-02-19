@@ -78,13 +78,14 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
                 plt.axis('off')
 
                 ax = plt.subplot2grid((num_rows*4, num_cols), (4*y+3, x), rowspan=1)
-                ax.plot(np.linspace(0,400,40), temporal, 'k', linewidth=2)
+                ax.plot(np.linspace(0,len(temporal)*10,len(temporal)), temporal, 'k', linewidth=2)
                 plt.grid('off')
                 plt.axis('off')
-        if display:
-            plt.show()
         if save:
             plt.savefig(fig_dir + title + '_spatiotemporal_profiles.png', dpi=dpi)
+            plt.close()
+        if display:
+            plt.show()
 
     # plot just spatial profile
     elif space and not time:
@@ -101,10 +102,11 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
                 plt.imshow(spatial, interpolation='nearest', cmap=cmap, clim=colorlimit)
                 plt.grid('off')
                 plt.axis('off')
-        if display:
-            plt.show()
         if save:
             plt.savefig(fig_dir + title + '_spatiotemporal_profiles.png', dpi=dpi)
+            plt.close()
+        if display:
+            plt.show()
 
     # plot just temporal profile
     elif time and not space:
@@ -118,13 +120,14 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
                 plt_idx = y * num_cols + x + 1
                 spatial, temporal = ft.decompose(weights[plt_idx-1])
                 plt.subplot(num_rows, num_cols, plt_idx)
-                plt.plot(np.linspace(0,400,40), temporal, 'k', linewidth=2)
+                plt.plot(np.linspace(0,len(temporal)*10,len(temporal)), temporal, 'k', linewidth=2)
                 plt.grid('off')
                 plt.axis('off')
-        if display:
-            plt.show()
         if save:
             plt.savefig(fig_dir + title + '_spatiotemporal_profiles.png', dpi=dpi)
+            plt.close()
+        if display:
+            plt.show()
 
     # don't plot anything, just return spatial and temporal profiles
     else:
@@ -191,7 +194,7 @@ def visualize_affine_weights(weights, num_conv_filters, layer_name='layer_4', ti
             plt_idx = y * num_cols + x + 1
             G[y*(spatial_size)+y:(y+1)*spatial_size+y,x*(spatial_size)+x:(x+1)*spatial_size+x] = one_unit[x]
 
-    plt.imshow(G, cmap=cmap, clim=colorlimit)
+    plt.imshow(G, interpolation='nearest', cmap=cmap, clim=colorlimit)
     plt.grid('off')
     plt.xticks([])
     plt.yticks([])
@@ -199,10 +202,11 @@ def visualize_affine_weights(weights, num_conv_filters, layer_name='layer_4', ti
     plt.xlabel('Weights per Convolutional Filter Type', fontsize=20)
 
 
-    if display:
-        plt.show()
     if save:
         plt.savefig(fig_dir + title + '_weights.png', dpi=dpi)
+        plt.close()
+    if display:
+        plt.show()
 
 
 # TO-DO:
@@ -416,13 +420,14 @@ def visualize_sta(sta, fig_size=(8, 10), display=True, save=False, normalize=Tru
             plt.axis('off')
 
             ax = plt.subplot2grid((num_rows*4, num_cols), (4*y+3, x), rowspan=1)
-            ax.plot(np.linspace(0,400,40), temporal, 'k', linewidth=2)
+            ax.plot(np.linspace(0,len(temporal)*10,len(temporal)), temporal, 'k', linewidth=2)
             plt.grid('off')
             plt.axis('off')
-    if display:
-        plt.show()
     if save:
         plt.savefig(fig_dir + title + '.png', dpi=300)
+        plt.close()
+    if display:
+        plt.show()
 
 
 # add some handy style for keeping matplotlib axes

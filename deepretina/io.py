@@ -324,17 +324,18 @@ def plot_performance(metrics, results, batchsize, plottype='summary'):
         # the current epoch
         x = np.array(results['iter']) / float(batchsize)
         for key, color, fmt in [('validation', 'lightcoral', '-'), ('train', 'skyblue', '--')]:
+            res = np.array(results[key][metric])
 
             # plot the performance summary (mean + sem across cells)
             if plottype == 'summary':
-                y = np.nanmean(results[key][metric], axis=1)
-                ye = np.nanstd(results[key][metric], axis=1) / np.sqrt(results[key][metric].shape[1])
+                y = np.nanmean(res, axis=1)
+                ye = np.nanstd(res, axis=1) / np.sqrt(res.shape[1])
                 ax.fill_between(x, y - ye, y + ye, interpolate=True, alpha=0.2, color=color)
                 ax.plot(x, y, '-', color=color, label=key)
 
             # plot the performance traces (one curve for each cell)
             elif plottype == 'traces':
-                ax.plot(x, results[key][metric], fmt, alpha=0.5)
+                ax.plot(x, res, fmt, alpha=0.5)
 
         ax.set_title(str.upper(metric), fontsize=20)
         ax.set_xlabel('Iteration', fontsize=16)

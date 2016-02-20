@@ -72,13 +72,14 @@ for dirs, subdirs, files in walker:
                 num_epochs = 0
 
             if num_epochs > 0:
+                # avoid header
                 train_numbers = train_table[1:, :].astype('float')
                 test_numbers = test_table[1:, :].astype('float')
 
-                max_train_cc = np.nanmax(train_numbers[:,0])
-                mean_train_cc = np.nanmean(train_numbers[:,0])
-                max_test_cc = np.nanmax(test_numbers[:,0])
-                mean_test_cc = np.nanmean(test_numbers[:,0])
+                max_train_cc = np.nanmax(train_numbers[:,2])
+                mean_train_cc = np.nanmean(train_numbers[:,2])
+                max_test_cc = np.nanmax(test_numbers[:,2])
+                mean_test_cc = np.nanmean(test_numbers[:,2])
             else:
                 max_train_cc = 0
                 mean_train_cc = 0

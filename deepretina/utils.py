@@ -5,56 +5,34 @@ Generic utilities for use in deepretina
 
 from __future__ import absolute_import, division, print_function
 import sys
-from collections import namedtuple
 from contextlib import contextmanager
-import numpy as np
+from . import metrics
 
-__all__ = ['batchify', 'Batch', 'notify']
-
-Batch = namedtuple('Batch', ['X', 'y'])
+__all__ = ['notify', 'allmetrics']
 
 
-def batchify(batchsize, X, y, shuffle):
-    """Returns a generator that yields batches of data (one epoch)
+def allmetrics(r, rhat, functions):
+    """Evaluates the given responses on all of the given metrics
 
     Parameters
     ----------
-    batchsize : int
-        The number of samples to include in each batch
+    r : array_like
+        True response, with shape (# of samples, # of cells)
 
-    X : array_like
-        Array of stimuli, the first dimension indexes each sample
+    rhat : array_like
+        Model response, with shape (# of samples, # of cells)
 
-    y : array_like
-        Array of responses, the first dimension indexes each sample
-
-    shuffle : boolean
-        If true, the samples are shuffled before being put into batches
-
+    functions : list of strings
+        Which functions from the metrics module to evaluate on
     """
+    avg_scores = {}
+    all_scores = {}
+    for function in functions:
+        avg, cells = getattr(metrics, function)(r.T, rhat.T)
+        avg_scores[function] = avg
+        all_scores[function] = cells
 
-    # total number of samples
-    training_data_maxlength = y.shape[0]
-
-    # compute the number of available batches of a fixed size
-    num_batches = int(np.floor(float(training_data_maxlength) / batchsize))
-
-    # number of samples we are going to used
-    N = int(num_batches * batchsize)
-
-    # generate indices
-    indices = np.arange(N)
-    if shuffle:
-        np.random.shuffle(indices)
-
-    # reshape into batches
-    indices = indices.reshape(num_batches, batchsize)
-
-    # for each batch in this epoch
-    for inds in indices:
-
-        # yield data
-        yield X[inds, ...], y[inds]
+    return avg_scores, all_scores
 
 
 @contextmanager

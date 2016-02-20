@@ -131,7 +131,7 @@ class Experiment(object):
         rhat = modelrate(X)
 
         # evaluate using the given metrics
-        avg_scores, all_scores = allmetrics(r, rhat, metrics)
+        return allmetrics(r, rhat, metrics)
 
     def test(self, modelrate, metrics):
         """Tests model predictions on the repeat stimuli
@@ -237,13 +237,6 @@ def _train_val_split(length, batchsize, holdout):
     num_holdout = int(np.round(holdout * num_batches))
 
     return batch_indices[num_holdout:].copy(), batch_indices[:num_holdout].copy()
-
-
-def interleave(generators):
-    """Creates a generator that interleaves values from the given generators"""
-    for values in zip(generators):
-        for v in values:
-            yield v
 
 
 def rolling_window(array, window, time_axis=0):

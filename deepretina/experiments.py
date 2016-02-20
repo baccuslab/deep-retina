@@ -131,7 +131,7 @@ class Experiment(object):
         rhat = modelrate(X)
 
         # evaluate using the given metrics
-        return allmetrics(r, rhat, metrics)
+        return allmetrics(r, rhat, metrics), r, rhat
 
     def test(self, modelrate, metrics):
         """Tests model predictions on the repeat stimuli

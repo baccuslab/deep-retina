@@ -176,7 +176,7 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
                 if (monitor is not None) and (iteration % monitor.save_every == 0):
 
                     # performs validation, updates performance plots, saves results to dropbox
-                    monitor.save(epoch, iteration)
+                    monitor.save(epoch, iteration, y, model.predict(X))
 
                 # train on the batch
                 loss = model.train_on_batch(X, y)[0]

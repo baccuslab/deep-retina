@@ -9,7 +9,7 @@ from json import dumps
 from collections import defaultdict
 from itertools import product
 from functools import wraps
-from . import metrics
+from .utils import notify, allmetrics
 import numpy as np
 import inspect
 import subprocess
@@ -21,10 +21,9 @@ import deepretina
 import hashlib
 import h5py
 
-# Force matplotlib to not use any X-windows backend
+# Force matplotlib to not use any X-windows with the Agg backend
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 
 __all__ = ['Monitor', 'main_wrapper']
 
@@ -35,7 +34,6 @@ directories = {
 
 
 class Monitor:
-
     def __init__(self, name, model, data, readme, save_every):
         """Builds a Monitor object to keep track of train/test performance
 
@@ -69,8 +67,9 @@ class Monitor:
             'iter': list(),
             'epoch': list(),
             'train': defaultdict(list),
-            'test': defaultdict(list),
+            'validation': defaultdict(list),
         }
+        self.test_results = {fname: defaultdict(list) for fname in self.data._test_data.keys()}
 
         # metrics to use (names of functions in the metrics module)
         self.metrics = ('cc', 'lli', 'rmse', 'fev')
@@ -95,29 +94,30 @@ class Monitor:
                                 self.model.to_yaml()))
         self.hashkey = md5(hashstring)
 
-        # make the necessary folders on disk
-        print('Creating directories and files for model {}\n'.format(self.hashkey))
-        self.dirname = ' '.join((self.hashkey, self.name))
-        for _, directory in directories.items():
-            mkdir(path.join(directory, self.dirname))
-        self.datadir = path.join(directories['database'], self.dirname)
+        with notify('Creating directories and files for model {}\n'.format(self.hashkey)):
 
-        # writes files to disk (and copy them to dropbox)
-        self.write('architecture.json', self.model.to_json())
-        self.write('architecture.yaml', self.model.to_yaml())
-        self.write('experiment.json', dumps(data.info))
-        self.write('metadata.json', dumps(self.metadata))
-        self.write('README.md', readme)
+            # make the necessary folders on disk
+            self.dirname = ' '.join((self.hashkey, self.name))
+            for _, directory in directories.items():
+                mkdir(path.join(directory, self.dirname))
+            self.datadir = path.join(directories['database'], self.dirname)
 
-        # save model architecture as a figure and copy it to dropbox
-        keras.utils.visualize_util.plot(self.model, to_file=self.savepath('architecture.png'))
-        self.copy_to_dropbox('architecture.png')
+            # writes files to disk (and copy them to dropbox)
+            self.write('architecture.json', self.model.to_json())
+            self.write('architecture.yaml', self.model.to_yaml())
+            self.write('experiment.json', dumps(data.info))
+            self.write('metadata.json', dumps(self.metadata))
+            self.write('README.md', readme)
 
-        # start CSV files for performance
-        headers = ','.join(('Epoch', 'Iteration') +
-                           tuple(map(str.upper, self.metrics))) + '\n'
-        self.write('train.csv', headers)
-        self.write('test.csv', headers)
+            # save model architecture as a figure and copy it to dropbox
+            keras.utils.visualize_util.plot(self.model, to_file=self.savepath('architecture.png'))
+            self.copy_to_dropbox('architecture.png')
+
+            # start CSV files for performance
+            headers = ','.join(('Epoch', 'Iteration') +
+                               tuple(map(str.upper, self.metrics))) + '\n'
+            self.write('train.csv', headers)
+            self.write('validation.csv', headers)
 
         # keep track of the iteration with the best held out performance
         self.best = (-1, 0)
@@ -135,9 +135,13 @@ class Monitor:
 
             # initialize some datasets
             f['train'] = 0
-            f['test'] = 0
+            f['validation'] = 0
             f['iter'] = 0
             f['epoch'] = 0
+
+            # store the test performance for each filetype
+            for fname in self.test_results.keys():
+                f['test'][fname] = 0
 
     def savepath(self, filename):
         """Generates a fullpath to save the given file in the data directory"""
@@ -153,7 +157,7 @@ class Monitor:
             del f['epoch']
             f['epoch'] = self.results['epoch']
 
-            for dset in ('train', 'test'):
+            for dset in ('train', 'validation'):
 
                 # delete the dataset (TODO: perhaps handle this more elegantly)
                 del f[dset]
@@ -161,7 +165,12 @@ class Monitor:
                 for metric in self.metrics:
                     f[dset + '/' + metric] = np.array(self.results[dset][metric])
 
-    def save(self, epoch, iteration):
+            del f['test']
+            for key, result in self.test_results:
+                for metric in self.metrics:
+                    f['/'.join(('test', key, metric))] = np.array(result[metric])
+
+    def save(self, epoch, iteration, r_train, rhat_train):
         """Saves relevant information for this epoch/iteration of training
 
         Saves the:
@@ -177,36 +186,46 @@ class Monitor:
 
         iteration : int
             Current iteration of training
+
+        r : array_like
+            The true responses on this training batch
+
+        rhat : array_like
+            The model responses on this training batch
         """
         self.results['iter'].append(iteration)
         self.results['epoch'].append(epoch)
 
-        # compute the test metrics and predicted firing rates
-        avg_scores, all_scores, r_train, rhat_train, r_test, rhat_test = self.test()
+        # STORE TRAINING PERFORMANCE
+        avg_train, all_train = allmetrics(r_train, rhat_train, self.metrics)
+        data_row = [epoch, iteration] + [avg_train[metric] for metric in self.metrics]
+        self.write('train.csv', ','.join(map(str, data_row)) + '\n')
+        [self.results['train'][metric].append(all_train[metric]) for metric in self.metrics]
 
-        for key in ('train', 'test'):
-
-            # update performance CSV files with the average score across cells
-            data_row = [epoch, iteration] + [avg_scores[key][metric] for metric in self.metrics]
-            csv_row = ','.join(map(str, data_row)) + '\n'
-            self.write(key + '.csv', csv_row)
-
-            # append to results
-            [self.results[key][metric].append(all_scores[key][metric])
-             for metric in self.metrics]
+        # STORE VALIDATION PERFORMANCE
+        avg_val, all_val, r_val, rhat_val = self.data.validate(self.model.predict, self.metrics)
+        data_row = [epoch, iteration] + [avg_val[metric] for metric in self.metrics]
+        self.write('validation.csv', ','.join(map(str, data_row)) + '\n')
+        [self.results['validation'][metric].append(all_val[metric]) for metric in self.metrics]
 
         # save the weights
         filename = 'epoch{:03d}_iter{:05d}_weights.h5'.format(epoch, iteration)
         self.model.save_weights(self.savepath(filename))
 
+        # EVALUATE TEST PERFORMANCE
+        avg_test, all_test = self.data.test(self.model.predict, self.metrics)
+        [self.test_results[key][metric].append(all_test[key][metric])
+         for metric in self.metrics
+         for key in self.test_results]
+
         # update the results.h5 file
         self.update_results()
 
         # update the 'best' iteration we have seen
-        if avg_scores['test']['cc'] > self.best[1]:
+        if avg_val['cc'] > self.best[1]:
 
             # update the best iteration and held-out CC performance
-            self.best = (iteration, avg_scores['test']['cc'])
+            self.best = (iteration, avg_val['cc'])
 
             # save best weights
             self.model.save_weights(self.savepath('best_weights.h5'), overwrite=True)
@@ -216,13 +235,13 @@ class Monitor:
             filename = 'cell{}.jpg'.format(cell)
             plot_rates(iteration, self.data.dt,
                        train=(r_train[:, ix], rhat_train[:, ix]),
-                       test=(r_test[:, ix], rhat_test[:, ix]))
+                       validation=(r_val[:, ix], rhat_val[:, ix]))
             self._save_and_copy(filename, filetype='jpg', dpi=100)
 
         # plot the performance curves
         for plottype in ('summary', 'traces'):
             filename = 'performance_{}.jpg'.format(plottype)
-            plot_performance(self.metrics, self.results, plottype=plottype)
+            plot_performance(self.metrics, self.results, self.data.batchsize, plottype=plottype)
             self._save_and_copy(filename, filetype='jpg', dpi=100)
 
     def write(self, filename, text, copy=True):
@@ -259,50 +278,16 @@ class Monitor:
     def _save_and_copy(self, filename, filetype='jpg', dpi=100):
         """Saves the current figure as a jpg and copies it to Dropbox"""
         filename = filename + '.' + filetype
-        plt.savefig(self.savepath(filename), dpi=dpi, bbox_inches='tight')
-        plt.close('all')
+        matplotlib.pyplot.savefig(self.savepath(filename), dpi=dpi, bbox_inches='tight')
+        matplotlib.pyplot.close('all')
         self.copy_to_dropbox(filename)
-
-    def test(self):
-        """Evaluates metrics on the train and test datasets"""
-
-        # performance on the entire holdout set
-        r_test = self.data.test.y
-        rhat_test = self.model.predict(self.data.test.X)
-
-        # performance on a random continuous subset of the training data
-        training_sample_size = rhat_test.shape[0]
-        start_idx = np.random.randint(self.data.train.y.shape[0] - training_sample_size)
-        inds = slice(start_idx, start_idx + training_sample_size)
-        r_train = self.data.train.y[inds]
-        rhat_train = self.model.predict(self.data.train.X[inds, ...])
-
-        # evalue using the given metrics (computes an average over the different cells)
-        avg_scores = defaultdict(dict)
-        all_scores = defaultdict(dict)
-        for function in self.metrics:
-
-            rates = {
-                'train': (r_train.T, rhat_train.T),
-                'test': (r_test.T, rhat_test.T),
-            }
-
-            # iterates over 'train' and 'test'
-            for key, args in rates.items():
-
-                # store the average across cells, and the individual scores for each cell
-                avg, cells = getattr(metrics, function)(*args)
-                avg_scores[key][function] = avg
-                all_scores[key][function] = cells
-
-        return avg_scores, all_scores, r_train, rhat_train, r_test, rhat_test
 
 
 def plot_rates(iteration, dt, **rates):
     """Plots the given pairs of firing rates"""
 
     # create the figure
-    fig, axs = plt.subplots(len(rates), 1, figsize=(16, 10))
+    fig, axs = matplotlib.pyplot.subplots(len(rates), 1, figsize=(16, 10))
 
     # for now, manually choose indices to plot
     i0, i1 = (2000, 3000)
@@ -319,23 +304,24 @@ def plot_rates(iteration, dt, **rates):
         ax.set_xlim(t[i0], t[i1])
         despine(ax)
 
-    plt.legend(loc='best', fancybox=True, frameon=True)
-    plt.tight_layout()
+    matplotlib.pyplot.legend(loc='best', fancybox=True, frameon=True)
+    matplotlib.pyplot.tight_layout()
     return fig
 
 
-def plot_performance(metrics, results, plottype='summary'):
+def plot_performance(metrics, results, batchsize, plottype='summary'):
     """Plots performance traces"""
 
     assert len(metrics) == 4, "plot_performance assumes there are four metrics to plot"
 
-    fig, axs = plt.subplots(2, 2, figsize=(16, 10))
+    fig, axs = matplotlib.pyplot.subplots(2, 2, figsize=(16, 10))
 
     for metric, inds in zip(metrics, product((0, 1), repeat=2)):
         ax = axs[inds[0]][inds[1]]
 
-        x = results['iter']
-        for key, color, fmt in [('test', 'lightcoral', '-'), ('train', 'skyblue', '--')]:
+        # the current epoch
+        x = results['iter'] / float(batchsize)
+        for key, color, fmt in [('validation', 'lightcoral', '-'), ('train', 'skyblue', '--')]:
 
             # plot the performance summary (mean + sem across cells)
             if plottype == 'summary':
@@ -353,7 +339,7 @@ def plot_performance(metrics, results, plottype='summary'):
         despine(ax)
 
     axs[0][0].legend(loc='best', frameon=True, fancybox=True)
-    plt.tight_layout()
+    matplotlib.pyplot.tight_layout()
     return fig
 
 

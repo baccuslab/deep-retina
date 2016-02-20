@@ -25,6 +25,7 @@ import h5py
 # Force matplotlib to not use any X-windows with the Agg backend
 import matplotlib
 matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 __all__ = ['Monitor', 'main_wrapper']
 
@@ -95,7 +96,7 @@ class Monitor:
                                 self.model.to_yaml()))
         self.hashkey = md5(hashstring)
 
-        with notify('Creating directories and files for model {}\n'.format(self.hashkey)):
+        with notify('\nCreating directories and files for model {}'.format(self.hashkey)):
 
             # make the necessary folders on disk
             self.dirname = ' '.join((self.hashkey, self.name))
@@ -167,7 +168,7 @@ class Monitor:
                     f[dset + '/' + metric] = np.array(self.results[dset][metric])
 
             del f['test']
-            for key, result in self.test_results:
+            for key, result in self.test_results.items():
                 for metric in self.metrics:
                     f['/'.join(('test', key, metric))] = np.array(result[metric])
 
@@ -279,8 +280,8 @@ class Monitor:
     def _save_and_copy(self, filename, filetype='jpg', dpi=100):
         """Saves the current figure as a jpg and copies it to Dropbox"""
         filename = filename + '.' + filetype
-        matplotlib.pyplot.savefig(self.savepath(filename), dpi=dpi, bbox_inches='tight')
-        matplotlib.pyplot.close('all')
+        plt.savefig(self.savepath(filename), dpi=dpi, bbox_inches='tight')
+        plt.close('all')
         self.copy_to_dropbox(filename)
 
 
@@ -288,7 +289,7 @@ def plot_rates(iteration, dt, **rates):
     """Plots the given pairs of firing rates"""
 
     # create the figure
-    fig, axs = matplotlib.pyplot.subplots(len(rates), 1, figsize=(16, 10))
+    fig, axs = plt.subplots(len(rates), 1, figsize=(16, 10))
 
     # for now, manually choose indices to plot
     i0, i1 = (2000, 3000)
@@ -305,8 +306,8 @@ def plot_rates(iteration, dt, **rates):
         ax.set_xlim(t[i0], t[i1])
         despine(ax)
 
-    matplotlib.pyplot.legend(loc='best', fancybox=True, frameon=True)
-    matplotlib.pyplot.tight_layout()
+    plt.legend(loc='best', fancybox=True, frameon=True)
+    plt.tight_layout()
     return fig
 
 
@@ -315,13 +316,13 @@ def plot_performance(metrics, results, batchsize, plottype='summary'):
 
     assert len(metrics) == 4, "plot_performance assumes there are four metrics to plot"
 
-    fig, axs = matplotlib.pyplot.subplots(2, 2, figsize=(16, 10))
+    fig, axs = plt.subplots(2, 2, figsize=(16, 10))
 
     for metric, inds in zip(metrics, product((0, 1), repeat=2)):
         ax = axs[inds[0]][inds[1]]
 
         # the current epoch
-        x = results['iter'] / float(batchsize)
+        x = np.array(results['iter']) / float(batchsize)
         for key, color, fmt in [('validation', 'lightcoral', '-'), ('train', 'skyblue', '--')]:
 
             # plot the performance summary (mean + sem across cells)
@@ -340,7 +341,7 @@ def plot_performance(metrics, results, batchsize, plottype='summary'):
         despine(ax)
 
     axs[0][0].legend(loc='best', frameon=True, fancybox=True)
-    matplotlib.pyplot.tight_layout()
+    plt.tight_layout()
     return fig
 
 

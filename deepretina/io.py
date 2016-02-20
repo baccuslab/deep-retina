@@ -10,6 +10,7 @@ from collections import defaultdict
 from itertools import product
 from functools import wraps
 from .utils import notify, allmetrics
+from keras.utils import visualize_util
 import numpy as np
 import inspect
 import subprocess
@@ -110,7 +111,7 @@ class Monitor:
             self.write('README.md', readme)
 
             # save model architecture as a figure and copy it to dropbox
-            keras.utils.visualize_util.plot(self.model, to_file=self.savepath('architecture.png'))
+            visualize_util.plot(self.model, to_file=self.savepath('architecture.png'))
             self.copy_to_dropbox('architecture.png')
 
             # start CSV files for performance
@@ -141,7 +142,7 @@ class Monitor:
 
             # store the test performance for each filetype
             for fname in self.test_results.keys():
-                f['test'][fname] = 0
+                f['test/' + fname] = 0
 
     def savepath(self, filename):
         """Generates a fullpath to save the given file in the data directory"""
@@ -203,7 +204,7 @@ class Monitor:
         [self.results['train'][metric].append(all_train[metric]) for metric in self.metrics]
 
         # STORE VALIDATION PERFORMANCE
-        avg_val, all_val, r_val, rhat_val = self.data.validate(self.model.predict, self.metrics)
+        (avg_val, all_val), r_val, rhat_val = self.data.validate(self.model.predict, self.metrics)
         data_row = [epoch, iteration] + [avg_val[metric] for metric in self.metrics]
         self.write('validation.csv', ','.join(map(str, data_row)) + '\n')
         [self.results['validation'][metric].append(all_val[metric]) for metric in self.metrics]

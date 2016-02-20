@@ -27,6 +27,9 @@ for dirs, subdirs, files in walker:
         with open(os.path.join(dirs, architecture_name), 'r') as f:
             arch = json.load(f)
 
+        subparts = dirs.split('/')
+        model_id = subparts[-1]
+
         # check if trained on deepretina v0.2
         if metadata_name in files:
             with open(os.path.join(dirs, metadata_name), 'r') as f:
@@ -137,37 +140,47 @@ for dirs, subdirs, files in walker:
             model_type = 'lstm'
         else:
             model_type = 'convnet' 
-        
+
+        if 'Dropout' in layer_names:
+            dropout = [l['p'] for l in layers if 'Dropout' in l['name']][0]
+        else:
+            dropout = 0
+
+        l2 = layers[0]['W_regularizer']['l2']
         
         
 
-            model = {
-                'type': model_type, # from architecture.json
-                'date': date,
-                'machine': machine,
-                'user': user,
-                'stimulus': stimulus,
-                'experiment': experiment,
-                'cells': cells,
-                'epochs': num_epochs,
-                'loss': loss,
-                'nlayers': len(layers),
-                'nconvlayers': len([l for l in layers if 'Convolution2D' in l['name']]),
-                'naffinelayers': len([l for l in layers if 'Dense' in l['name']]),
-                'npoollayers': len([l for l in layers if 'MaxPooling2D' in l['name']]),
-                'nfilters': [l['nb_filter'] for l in layers if 'Convolution2D' in l['name']],
-                'filtershapes': [l['nb_row'] for l in layers if 'Convolution2D' in l['name']],
-                'history': history,
-                'deepretina version': deepretina_ver,
-                'max_train_cc': max_train_cc,
-                'mean_train_cc': mean_train_cc,
-                'max_test_cc': max_test_cc,
-                'mean_test_cc': mean_test_cc
-            }
-            all_models.append(model)
-            models_parsed += 1
-            print('Saved model %i' %(models_parsed))
-        
+        model = {
+            'model_id': model_id,
+            'type': model_type, # from architecture.json
+            'date': date,
+            'machine': machine,
+            'user': user,
+            'stimulus': stimulus,
+            'experiment': experiment,
+            'cells': cells,
+            'epochs': num_epochs,
+            'loss': loss,
+            'dropout': dropout,
+            'l2': l2,
+            'nlayers': len(layers),
+            'nconvlayers': len([l for l in layers if 'Convolution2D' in l['name']]),
+            'naffinelayers': len([l for l in layers if 'Dense' in l['name']]),
+            'npoollayers': len([l for l in layers if 'MaxPooling2D' in l['name']]),
+            'nfilters': [l['nb_filter'] for l in layers if 'Convolution2D' in l['name']],
+            'filtershapes': [l['nb_row'] for l in layers if 'Convolution2D' in l['name']],
+            'layers': [l['name'] for l in layers],
+            'history': history,
+            'deepretina version': deepretina_ver,
+            'max_train_cc': max_train_cc,
+            'mean_train_cc': mean_train_cc,
+            'max_test_cc': max_test_cc,
+            'mean_test_cc': mean_test_cc
+        }
+        all_models.append(model)
+        models_parsed += 1
+        print('Saved model %i' %(models_parsed))
+    
 header = {}
 for k in sorted(all_models[0].keys()):
     header[k] = k

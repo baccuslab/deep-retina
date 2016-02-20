@@ -154,6 +154,12 @@ class Experiment(object):
 
         return avg_scores, all_scores
 
+    @property
+    def ndim(self):
+        """Returns the number of filter dimensions"""
+        key, _ = self._train_batches[0]
+        return self._train_data['whitenoise'].X.shape[1:]
+
 
 def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0):
     """Loads an experiment from an h5 file on disk

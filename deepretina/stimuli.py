@@ -132,8 +132,17 @@ def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask
     else:
         return grating_movie
 
-def oms(duration=100, coherent=False, space=(50,50), center=(25,25), object_radius=5, speed=2, 
-        motion_type='periodic', roll=True):
+
+def cmask(center,radius,array):
+    a,b = center
+    nx,ny = array.shape
+    y,x = np.ogrid[-a:nx-a,-b:ny-b]
+    mask = x*x + y*y <= radius*radius
+    return mask
+
+
+def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=0.93, 
+        magnitude=5, space=(50,50), center=(25,25), object_radius=5, coherent=False, roll=False):
     '''
         Object motion sensitivity stimulus, where an object moves differentially
         from the background.
@@ -151,53 +160,55 @@ def oms(duration=100, coherent=False, space=(50,50), center=(25,25), object_radi
         OUTPUT:
         movie           a numpy array of the stimulus
     '''
-    upsample = 10
-    grating_width = upsample*3
+    # fixed params
     contrast = 1
-    new_space = (upsample*space[0], upsample*space[1])
+    grating_width = 3
+
+
+    transition_frames = int(transition_duration/sample_rate)
+    silent_frames = int(silent_duration/sample_rate)
+    total_frames = int(duration/sample_rate)
+    
+    # silence, one direction, silence, opposite direction
+    obj_position = np.hstack([np.zeros((silent_frames,)), np.linspace(0, magnitude, transition_frames),
+                            magnitude*np.ones((silent_frames,)), np.linspace(magnitude, 0, transition_frames)])
+
+    half_silent = silent_frames/2
+    back_position = np.hstack([obj_position[half_silent:], obj_position[:-half_silent]])
+
+    #import pdb
+    #import matplotlib.pyplot as plt
+    #pdb.set_trace()
+
+    # make position sequence last total_frames
+    if len(back_position) > total_frames:
+        print("Warning: movie won't be {} shorter than a full period.".format(np.float(2*transition_frames + 2*silent_frames)/total_frames))
+        back_position[:total_frames]
+        obj_position[:total_frames]
+    else:
+        reps = np.ceil(np.float(total_frames)/len(back_position))
+        back_position = np.tile(back_position, reps)[:total_frames]
+        obj_position = np.tile(obj_position, reps)[:total_frames]
+
+    # create a larger fixed world of bars that we'll just crop from later
+    padding = 2*grating_width + magnitude
+    fixed_world = -1*np.ones((space[0], space[1]+padding))
+    for i in range(grating_width):
+        fixed_world[:,i::2*grating_width] = 1
 
     # make movie
-    movie = np.zeros((duration, space[0], space[1]))
-    
-    # make random drift
-    if motion_type == 'drift':
-        background_drift = speed*np.random.randn(duration)
-        background_drift = background_drift.astype('int')
-        if not coherent:
-            object_drift = speed*np.random.randn(duration)
-            object_drift = object_drift.astype('int')
-    elif motion_type == 'periodic':
-        background_drift = (speed+1)*np.sin(range(speed*duration))
-        background_drift = background_drift.astype('int')
-        if not coherent:
-            object_drift = (speed+1)*np.cos(range(speed*duration))
-            object_drift = object_drift.astype('int')
-    else:
-        print('motion_type {} not understood. Should be either periodic or drift.' .format(motion_type))
-
-    for frame in range(duration):
-        # translate random walk into phase of bars on this frame
-        background_phase = sum(background_drift[:frame+1]) #% (2*grating_width)
-
+    movie = np.zeros((total_frames, space[0], space[1]))
+    for frame in range(total_frames):
         # make background grating
-        background_frame = -1*np.ones(new_space)
-        for i in range(grating_width):
-            background_frame[:,(i+background_phase)::2*grating_width] = 1
+        background_frame = np.copy(fixed_world[:,back_position[frame]:back_position[frame]+space[0]])
 
-        # smooth in higher resolution
-        background_frame = convolve2d(background_frame, (1.0/(upsample**2))*np.ones((upsample, upsample)), mode='same')[::upsample, ::upsample]
+        #import pdb
+        #import matplotlib.pyplot as plt
+        #pdb.set_trace()
 
         if not coherent:
-            # object motion to phase
-            object_phase = sum(object_drift[:frame+1]) % (2*grating_width)
-
             # make object frame
-            object_frame = -1*np.ones(new_space)
-            for i in range(grating_width):
-                object_frame[:,(i+object_phase)::2*grating_width] = 1
-
-            # smooth in higher resolution
-            object_frame = convolve2d(object_frame, (1.0/(upsample**2))*np.ones((upsample, upsample)), mode='same')[::upsample, ::upsample]
+            object_frame = np.copy(fixed_world[:,obj_position[frame]:obj_position[frame]+space[0]])
 
             # set center of background frame to object
             object_mask = cmask(center, object_radius, object_frame)
@@ -210,16 +221,16 @@ def oms(duration=100, coherent=False, space=(50,50), center=(25,25), object_radi
     if roll:
         # roll movie axes to get the right shape
         roll_movies = rolling_window(movie, 40)
-        #roll_movies = np.rollaxis(roll_movies, 2)
-        #roll_movies = np.rollaxis(roll_movies, 3, 1)
         return roll_movies
     else:
-        return movie 
+        return movie
 
-def cmask(center,radius,array):
-    a,b = center
-    nx,ny = array.shape
-    y,x = np.ogrid[-a:nx-a,-b:ny-b]
-    mask = x*x + y*y <= radius*radius
-    return mask
+        
+    
+    
+
+
+        
+
+
 

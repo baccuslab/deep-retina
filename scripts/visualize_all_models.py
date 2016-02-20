@@ -37,7 +37,7 @@ for dirs, subdirs, files in walker:
                 plt_title = '%02i conv layer' %(idl)
                 weights = dirs + '/' + weight_name
                 layer_name = 'layer_%i' %(idl)
-                fig_dir = dirs + '/'
+                fig_dir = dirs + ' ' #+ '/'
 
                 visualize_convnet_weights(weights, title=plt_title, layer_name=layer_name,
                     fig_dir=fig_dir, fig_size=(8,10), dpi=100, space=True, time=True, display=False,
@@ -48,7 +48,7 @@ for dirs, subdirs, files in walker:
                 plt_title = '%02i affine layer' %(idl)
                 weights = dirs + '/' + weight_name
                 layer_name = 'layer_%i' %(idl)
-                fig_dir = dirs + '/'
+                fig_dir = dirs + ' ' #+ '/'
 
                 visualize_affine_weights(weights, num_filters, layer_name=layer_name, title=plt_title,
                     fig_dir=fig_dir, fig_size=(8,10), dpi=100, display=False, save=True, cmap='seismic')

@@ -8,17 +8,13 @@ f = raw_input("Please type in the path you want to start from and press 'Enter':
 print('Starting to walk down directories')
 # e.g. first run from os.path.expanduser('~/Dropbox/deep-retina/saved')
 walker = os.walk(f, topdown=True)
-
-full_paths = []
-for dirs, subdirs, files in walker:
-    full_paths.append([dirs, subdirs, files])
+architecture_name = 'architecture.json'
+performance_name = 'performance.csv'
 
 models_parsed = 0
 all_models = []
-for path in full_paths:
-    readme_name = 'README.md'
-    performance_name = 'performance.csv'
-    if readme_name in path[2]:
+for dirs, subdirs, files in walker:
+    if architecture_name in files:
         # Parse README.md
         readme_path = path[0] + '/' + readme_name
         f = open(readme_path, 'r')

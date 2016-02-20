@@ -26,8 +26,10 @@ for dirs, subdirs, files in walker:
     #subdirs = subpaths[-2]
     #dirs = subpaths[-3]
     if architecture_name in files:
-        f = open(dirs + '/' + architecture_name, 'r')
-        arch = json.load(f)
+        with open(dirs + '/' + architecture_name, 'r') as f:
+            arch = json.load(f)
+
+        # save layers of model
         layers = arch['layers']
 
         for idl, l in enumerate(layers):

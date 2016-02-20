@@ -6,36 +6,47 @@ Preprocessing utility functions for loading and formatting experimental data
 from __future__ import absolute_import, division, print_function
 import os
 from functools import partial
+from itertools import repeat
+from collections import namedtuple
 import numpy as np
 import h5py
 from scipy.stats import zscore
-from .utils import notify, Batch, batchify
+from .utils import notify, allmetrics
 
-__all__ = ['loadexpt']
+Exptdata = namedtuple('Exptdata', ['X', 'y'])
+__all__ = ['Experiment', 'loadexpt']
 
 
 class Experiment(object):
     """Lightweight class to keep track of loaded experiment data"""
 
-    def __init__(self, expt, cells, filename, history, batchsize, dt=1e-2, load_fraction=1.0):
+    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, dt=1e-2, load_fraction=1.0):
         """Keeps track of experimental data
 
         Parameters
         ----------
         expt : string
-            The experiment date
+            The experiment date or name
 
         cells : list
-            Which cells to train on
+            Which cells from this experiment to train on
 
-        filename : string
-            Which h5 file to load (e.g. 'whitenoise' or 'naturalscene')
+        train_filenames : list of strings
+            Which h5 file to load for training (e.g. 'whitenoise' or 'naturalscene')
+            If a list of strings is given (e.g. ['whitenoise', 'naturalscene']),
+            the two experiments are concatenated
+
+        test_filenames : list of strings
+            Which h5 file to load for testing (same as train_filenames)
 
         history : int
             Temporal history, in samples, for the rolling window (Toeplitz stimulus)
 
         batchsize : int
             How many samples to include in each training batch
+
+        holdout : fraction
+            How much data to holdout (fraction of batches)
 
         dt : float
             The sampling period (in seconds). (default: 0.01)
@@ -44,35 +55,104 @@ class Experiment(object):
             What fraction of the training stimulus to load (default: 1.0)
 
         """
+
         # store experiment variables (for saving later)
         self.info = {
             'date': expt,
             'cells': cells,
-            'filename': filename,
+            'train_datasets': ' + '.join(train_filenames),
+            'test_datasets': ' + '.join(test_filenames),
             'history': history,
             'batchsize': batchsize,
             'load_fraction': load_fraction
         }
 
-        # load data from disk
-        load_data = partial(loadexpt, expt, cells, filename, history=history, load_fraction=load_fraction)
-
-        # store train/test data and compute the number of batches
-        self.test = load_data('test')
-        self.train = load_data('train')
+        assert holdout > 0 and holdout < 1, "holdout must be between 0 and 1"
         self.batchsize = batchsize
-        self.num_batches = np.floor(self.train.X.shape[0] / self.batchsize).astype('int')
         self.dt = dt
 
-    def batches(self, shuffle):
-        """Returns a generator that yields training batches of data
+        # partially apply function arguments to the loadexpt function
+        load_data = partial(loadexpt, expt, cells, history=history, load_fraction=load_fraction)
+
+        # load training data, and generate the train/validation split, for each filename
+        self._train_data = {}
+        self._train_batches = list()
+        self._validation_batches = list()
+        for filename in train_filenames:
+
+            # load the training experiment as an Exptdata tuple
+            self._train_data[filename] = load_data(filename, 'train')
+
+            # generate the train/validation split
+            length = self._train_data[filename].X.shape[0]
+            train, val = _train_val_split(length, self.batchsize, holdout)
+
+            # append these train/validation batches to the master list
+            self._train_batches.extend(zip(repeat(filename), train))
+            self._validation_batches.extend(zip(repeat(filename), val))
+
+        # load the data for each experiment, store as a list of Exptdata tuple
+        self._test_data = {filename: load_data(filename, 'test') for filename in test_filenames}
+
+    def train(self, shuffle):
+        """Returns a generator that yields batches of *training* data
 
         Parameters
         ----------
         shuffle : boolean
             Whether or not to shuffle the time points before making batches
         """
-        return batchify(self.batchsize, self.train.X, self.train.y, shuffle)
+        # generate an order in which to go through the batches
+        indices = np.arange(len(self._train_batches))
+        if shuffle:
+            np.random.shuffle(indices)
+
+        # yield training data, one batch at a time
+        for ix in indices:
+            expt, inds = self._train_batches[ix]
+            yield self._train_data[expt].X[inds], self._train_data[expt].y[inds]
+
+    def validate(self, modelrate, metrics):
+        """Evaluates the model on the validation set
+
+        Parameters
+        ----------
+        modelrate : function
+            A function that takes a spatiotemporal stimulus and predicts a firing rate
+        """
+        # choose a random validation batch
+        expt, inds = self._validation_batches[np.random.randint(len(self._validation_batches))]
+
+        # load the stimulus and response on this batch
+        X = self._train_data[expt].X[inds]
+        r = self._train_data[expt].y[inds]
+
+        # make predictions
+        rhat = modelrate(X)
+
+        # evaluate using the given metrics
+        avg_scores, all_scores = allmetrics(r, rhat, metrics)
+
+    def test(self, modelrate, metrics):
+        """Tests model predictions on the repeat stimuli
+
+        Parameters
+        ----------
+        modelrate : function
+            A function that takes a spatiotemporal stimulus and predicts a firing rate
+        """
+        avg_scores = {}
+        all_scores = {}
+        for fname, exptdata in self._test_data.items():
+
+            # get data and model firing rates
+            r = exptdata.y
+            rhat = modelrate(exptdata.X)
+
+            # evaluate
+            avg_scores[fname], all_scores[fname] = allmetrics(r, rhat, metrics)
+
+        return avg_scores, all_scores
 
 
 def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0):
@@ -104,7 +184,7 @@ def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0):
     assert history > 0 and type(history) is int, "Temporal history parameter must be a positive integer"
     assert train_or_test in ('train', 'test'), "The train_or_test parameter must be 'train' or 'test'"
 
-    with notify('Loading {}ing data'.format(train_or_test)):
+    with notify('Loading {}ing data for {}/{}'.format(train_or_test, expt, filename)):
 
         # load the hdf5 file
         filepath = os.path.join(os.path.expanduser('~/experiments/data'),
@@ -126,7 +206,44 @@ def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0):
             # get the response for this cell (nsamples, ncells)
             resp = np.array(f[train_or_test]['response/firing_rate_10ms'][cells, history:num_samples]).T
 
-    return Batch(stim_reshaped, resp)
+    return Exptdata(stim_reshaped, resp)
+
+
+def _train_val_split(length, batchsize, holdout):
+    """Returns a set of training and a set of validation indices
+
+    Parameters
+    ----------
+    length : int
+        The total number of samples of data
+
+    batchsize : int
+        The number of samples to include in each batch
+
+    holdout : float
+        The fraction of batches to hold out for validation
+    """
+    # compute the number of available batches, given the fixed batch size
+    num_batches = int(np.floor(length / batchsize))
+
+    # the total number of samples for training
+    total = int(num_batches * batchsize)
+
+    # generate batch indices, and shuffle the deck of batches
+    batch_indices = np.arange(total).reshape(num_batches, batchsize)
+    np.random.shuffle(batch_indices)
+
+    # compute the held out (validation) batches
+    num_holdout = int(np.round(holdout * num_batches))
+
+    return batch_indices[num_holdout:].copy(), batch_indices[:num_holdout].copy()
+
+
+def interleave(generators):
+    """Creates a generator that interleaves values from the given generators"""
+    for values in zip(generators):
+        for v in values:
+            yield v
 
 
 def rolling_window(array, window, time_axis=0):

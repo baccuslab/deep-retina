@@ -234,7 +234,7 @@ class Monitor:
 
         # plot the train / test firing rates
         for ix, cell in enumerate(self.data.info['cells']):
-            filename = 'cell{}.jpg'.format(cell)
+            filename = 'cell{}'.format(cell)
             plot_rates(iteration, self.data.dt,
                        train=(r_train[:, ix], rhat_train[:, ix]),
                        validation=(r_val[:, ix], rhat_val[:, ix]))
@@ -242,7 +242,7 @@ class Monitor:
 
         # plot the performance curves
         for plottype in ('summary', 'traces'):
-            filename = 'performance_{}.jpg'.format(plottype)
+            filename = 'performance_{}'.format(plottype)
             plot_performance(self.metrics, self.results, self.data.batchsize, plottype=plottype)
             self._save_and_copy(filename, filetype='jpg', dpi=100)
 
@@ -341,7 +341,8 @@ def plot_performance(metrics, results, batchsize, plottype='summary'):
         ax.set_xlabel('Iteration', fontsize=16)
         despine(ax)
 
-    axs[0][0].legend(loc='best', frameon=True, fancybox=True)
+    if plottype == 'summary':
+        axs[0][0].legend(loc='best', frameon=True, fancybox=True)
     plt.tight_layout()
     return fig
 

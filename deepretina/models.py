@@ -11,7 +11,6 @@ from keras.layers.recurrent import LSTM
 from keras.layers.advanced_activations import ParametricSoftplus
 from keras.regularizers import l2
 from .utils import notify
-from . import io
 
 __all__ = ['sequential', 'train', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet']
 
@@ -130,7 +129,7 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
     return layers
 
 
-def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=0.5):
+def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0):
     """Train the given network against the given data
 
     Parameters
@@ -154,7 +153,7 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=0.5)
         A fraction (constant) to multiply the learning rate by
 
     """
-    assert isinstance(model, Model), "model is not a Keras model"
+    assert isinstance(model, Model), "'model' must be a Keras model"
 
     # initialize training iteration
     iteration = 0
@@ -168,21 +167,23 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=0.5)
             if (reduce_lr_every > 0) and (epoch > 0) and (epoch % reduce_lr_every == 0):
                 lr = model.optimizer.lr.get_value()
                 model.optimizer.lr.set_value(lr * reduce_rate)
-                print('\t(Reduced learning rate to {} from {})'.format(lr * reduce_rate, lr))
+                print('\t(Changed learning rate to {} from {})'.format(lr * reduce_rate, lr))
 
             # loop over data batches for this epoch
-            for X, y in data.batches(shuffle=True):
+            for X, y in data.train(shuffle=True):
 
                 # update on save_every, assuming it is positive
                 if (monitor is not None) and (iteration % monitor.save_every == 0):
-                    monitor.save(epoch, iteration)
+
+                    # performs validation, updates performance plots, saves results to dropbox
+                    monitor.save(epoch, iteration, y, model.predict(X))
 
                 # train on the batch
                 loss = model.train_on_batch(X, y)[0]
 
                 # update
                 iteration += 1
-                print('Batch {} of {}\tLoss: {}'.format(iteration % data.num_batches, data.num_batches, loss))
+                print('{}\tLoss: {}'.format(iteration, loss))
 
     except KeyboardInterrupt:
         print('\nCleaning up')

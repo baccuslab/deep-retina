@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import theano
 import h5py
+import os
 import tableprint
 from keras.models import model_from_json
 from .experiments import loadexpt
@@ -27,10 +28,10 @@ def load_model(model_path, weight_filename):
     """
 
     architecture_filename = 'architecture.json'
-    architecture_data = open(model_path + architecture_filename, 'r')
-    architecture_string = architecture_data.read()
-    model = model_from_json(architecture_string)
-    model.load_weights(model_path + weight_filename)
+    with open(os.path.join(model_path, architecture_filename), 'r') as architecture_data:
+        architecture_string = architecture_data.read()
+        model = model_from_json(architecture_string)
+        model.load_weights(os.path.join(model_path, weight_filename))
 
     return model
 

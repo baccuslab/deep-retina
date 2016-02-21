@@ -10,7 +10,7 @@ from deepretina.io import Monitor, main_wrapper
 
 
 @main_wrapper
-def fit_convnet(cells, stimulus, exptdate, readme=None):
+def fit_convnet(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     """Main script for fitting a convnet
 
     author: Lane McIntosh
@@ -28,7 +28,7 @@ def fit_convnet(cells, stimulus, exptdate, readme=None):
     model = sequential(layers, 'adam', loss='sub_poisson_loss')
 
     # load experiment data
-    data = Experiment(exptdate, cells, stimulus, stim_shape[0], batchsize)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor to track progress
     monitor = Monitor('convnet', model, data, readme, save_every=10)
@@ -71,9 +71,39 @@ def fit_generalizedconvnet(cells, stimulus, exptdate, readme=None):
     return model
 
 
+def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, readme=None):
+    """Main script for fitting a convnet
+
+    author: Lane McIntosh
+    """
+
+    stim_shape = (64,)
+    ncells = len(cells)
+    batchsize = 1000
+
+    # get the convnet layers
+    layers = fixedlstm(stim_shape, ncells, num_filters=(8, 64),
+                     filter_size=(13, 13), weight_init='normal', l2_reg=0.01)
+
+    # compile the keras model
+    model = sequential(layers, 'adam', loss='sub_poisson_loss')
+
+    # load experiment data
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+
+    # create a monitor to track progress
+    monitor = Monitor('convnet', model, data, readme, save_every=10)
+
+    # train
+    train(model, data, monitor, num_epochs=100)
+
+    return model
+
+
+@main_wrapper
 if __name__ == '__main__':
     # list(range(37)) for 'all-cells'
     # [0,2,7,10,11,12,31] for '16-01-07'
     # [0,3,7,9,11] for '16-01-08'
     #mdl = fit_convnet(list(range(37)), 'naturalscene', 'all-cells')
-    mdl = fit_convnet([0,2,7,10,11,12,31], ['whitenoise', 'naturalscene', 'naturalmovie'], '16-01-07')
+    mdl = fit_convnet([0,2,7,10,11,12,31], ['whitenoise', 'naturalscene', 'naturalmovie'], ['whitenoise', 'naturalscene', 'naturalmovie', 'structured'], '16-01-07')

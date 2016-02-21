@@ -338,7 +338,7 @@ def plot_performance(metrics, results, batchsize, plottype='summary'):
                 ax.plot(x, res, fmt, alpha=0.5)
 
         ax.set_title(str.upper(metric), fontsize=20)
-        ax.set_xlabel('Iteration', fontsize=16)
+        ax.set_xlabel('Epoch', fontsize=16)
         despine(ax)
 
     if plottype == 'summary':

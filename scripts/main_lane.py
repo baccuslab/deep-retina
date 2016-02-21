@@ -4,7 +4,7 @@ Main script for training deep retinal models
 """
 
 from __future__ import absolute_import
-from deepretina.models import sequential, convnet, train, generalizedconvnet
+from deepretina.models import sequential, convnet, train, generalizedconvnet, fixedlstm
 from deepretina.experiments import Experiment
 from deepretina.io import Monitor, main_wrapper
 
@@ -71,6 +71,7 @@ def fit_generalizedconvnet(cells, stimulus, exptdate, readme=None):
     return model
 
 
+@main_wrapper
 def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     """Main script for fitting a convnet
 
@@ -99,7 +100,6 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     return model
 
 
-@main_wrapper
 if __name__ == '__main__':
     # list(range(37)) for 'all-cells'
     # [0,2,7,10,11,12,31] for '16-01-07'

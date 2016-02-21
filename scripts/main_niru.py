@@ -8,6 +8,7 @@ from deepretina.models import sequential, convnet, ln, train
 from deepretina.experiments import Experiment, _loadexpt_h5
 from deepretina.io import Monitor, main_wrapper
 import numpy as np
+from keras.optimizers import Adam, RMSprop
 
 
 @main_wrapper
@@ -21,7 +22,7 @@ def fit_ln(cells, train_stimuli, exptdate, readme=None):
     layers = ln(stim_shape, ncells, weight_init='normal', l2_reg=1.0)
 
     # compile it
-    model = sequential(layers, 'rmsprop', loss='sub_poisson_loss')
+    model = sequential(layers, RMSprop(lr=1e-4), loss='sub_poisson_loss')
 
     # load the STAs
     stas = []

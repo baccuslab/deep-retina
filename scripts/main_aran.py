@@ -12,7 +12,7 @@ from deepretina.io import Monitor, main_wrapper
 @main_wrapper
 def fit_convnet(cells, stimulus, exptdate, l2_reg, dropout_probability, readme=None):
     """Main script for fitting a convnet
-    
+
     author: Aran Nayebi
     """
 
@@ -39,10 +39,11 @@ def fit_convnet(cells, stimulus, exptdate, l2_reg, dropout_probability, readme=N
 
     return model
 
+
 @main_wrapper
 def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, timesteps, l2_reg, readme=None):
     """Main script for fitting a fixedlstm
-    
+
     author: Aran Nayebi
     """
 
@@ -68,7 +69,7 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, timesteps, l2_re
     return model
 
 if __name__ == '__main__':
-	mdl = fit_fixedlstm(list(range(37)), ['naturalscenes_affine'], ['naturalscenes_affine'], 'all-cells', 1000, 0.01) 
+    mdl = fit_fixedlstm(list(range(37)), ['naturalscenes_affine'], ['whitenoise_affine', 'naturalscenes_affine'], 'all-cells', 1000, 0.01)
 #    reg_arr = [0, 0.0001, 0.001, 0.01, 0.1]
 #    p_arr = [0, 0.25, 0.5, 0.75]
 #    for reg in reg_arr:

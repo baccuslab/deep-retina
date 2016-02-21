@@ -5,7 +5,7 @@ Construct and train deep neural network models using Keras
 
 from __future__ import absolute_import, division, print_function
 from keras.models import Sequential, Model
-from keras.layers.core import Dropout, Dense, Activation, Flatten, TimeDistributedDense
+from keras.layers.core import Dropout, Dense, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
 from keras.layers.advanced_activations import ParametricSoftplus
@@ -219,23 +219,17 @@ def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='he_normal', l2_re
     """
     layers = list()
 
-    # TODO: Add relu activation separately for threshold visualization
+    # Optional: Add relu activation separately
     # layers.append(Activation('relu', input_shape=input_shape))
 
-    # Add LSTM, forget gate bias automatically initialized to 1, default weight initializations recommended
-#    layers.append(LSTM(num_hidden, forget_bias_init='one', return_sequences=True))
-
-    # Add a final dense (affine) layer with softplus activation
-#    layers.append(TimeDistributedDense(nout, init=weight_init,
-#                                       W_regularizer=l2(l2_reg),
-#                                       activation='softplus'))
-
+    # add the LSTM layer
     layers.append(LSTM(num_hidden, return_sequences=False, input_shape=input_shape))
 
     # Add a final dense (affine) layer with softplus activation
-    layers.append(Dense(nout, init=weight_init,
-                                       W_regularizer=l2(l2_reg),
-                                       activation='softplus'))
+    layers.append(Dense(nout,
+                        init=weight_init,
+                        W_regularizer=l2(l2_reg),
+                        activation='softplus'))
 
     return layers
 

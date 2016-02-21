@@ -215,6 +215,16 @@ def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0):
     return Exptdata(stim_reshaped, resp)
 
 
+def _loadexpt_h5(expt, filename):
+    """Loads an h5py reference to an experiment on disk"""
+
+    filepath = os.path.join(os.path.expanduser('~/experiments/data'),
+                            expt,
+                            filename + '.h5')
+
+    return h5py.File(filepath, mode='r')
+
+
 def _train_val_split(length, batchsize, holdout):
     """Returns a set of training and a set of validation indices
 

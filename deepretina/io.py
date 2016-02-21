@@ -292,7 +292,7 @@ def plot_rates(iteration, dt, **rates):
     fig, axs = plt.subplots(len(rates), 1, figsize=(16, 10))
 
     # for now, manually choose indices to plot
-    batchsize = len(rates[rates.keys()[0]])
+    batchsize = rates['train'][0].shape[0]
     if batchsize > 3000:
         i0, i1 = (2000, 3000)
     else:

@@ -191,7 +191,7 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
     print('\nTraining complete!')
 
 
-def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='normal', l2_reg=0.0):
+def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='he_normal', l2_reg=0.0):
     """LSTM network with fixed input (e.g. input from the CNN output)
 
     Parameters
@@ -223,10 +223,17 @@ def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='normal', l2_reg=0
     # layers.append(Activation('relu', input_shape=input_shape))
 
     # Add LSTM, forget gate bias automatically initialized to 1, default weight initializations recommended
-    layers.append(LSTM(num_hidden, forget_bias_init='one', return_sequences=True))
+#    layers.append(LSTM(num_hidden, forget_bias_init='one', return_sequences=True))
 
     # Add a final dense (affine) layer with softplus activation
-    layers.append(TimeDistributedDense(nout, init=weight_init,
+#    layers.append(TimeDistributedDense(nout, init=weight_init,
+#                                       W_regularizer=l2(l2_reg),
+#                                       activation='softplus'))
+
+    layers.append(LSTM(num_hidden, return_sequences=False, input_shape=input_shape))
+
+    # Add a final dense (affine) layer with softplus activation
+    layers.append(Dense(nout, init=weight_init,
                                        W_regularizer=l2(l2_reg),
                                        activation='softplus'))
 

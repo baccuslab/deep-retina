@@ -4,7 +4,7 @@ Main script for training deep retinal models
 """
 
 from __future__ import absolute_import
-from deepretina.models import sequential, convnet, train
+from deepretina.models import sequential, convnet, fixedlstm, train
 from deepretina.experiments import Experiment
 from deepretina.io import Monitor, main_wrapper
 
@@ -39,10 +39,38 @@ def fit_convnet(cells, stimulus, exptdate, l2_reg, dropout_probability, readme=N
 
     return model
 
+@main_wrapper
+def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, timesteps, l2_reg, readme=None):
+    """Main script for fitting a fixedlstm
+    
+    author: Aran Nayebi
+    """
+
+    input_shape = (timesteps, 64)
+    ncells = len(cells)
+    batchsize = 5000
+
+    # get the fixedlstm layers
+    layers = fixedlstm(input_shape, ncells, l2_reg=l2_reg)
+
+    # compile the keras model
+    model = sequential(layers, 'adam', loss='sub_poisson_loss')
+
+    # load experiment data
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, input_shape[0], batchsize)
+
+    # create a monitor to track progress
+    monitor = Monitor('fixedlstm', model, data, readme, save_every=10)
+
+    # train
+    train(model, data, monitor, num_epochs=100)
+
+    return model
 
 if __name__ == '__main__':
-    reg_arr = [0, 0.0001, 0.001, 0.01, 0.1]
-    p_arr = [0, 0.25, 0.5, 0.75]
-    for reg in reg_arr:
-        for p in p_arr:
-            mdl = fit_convnet([0, 1, 2, 3, 4], 'whitenoise', '15-10-07', reg, p,  description='WN convnet, l2_reg={}, dropout={}'.format(reg, p))
+	mdl = fit_fixedlstm(list(range(37)), ['naturalscenes_affine'], ['naturalscenes_affine'], 'all-cells', 1000, 0.01) 
+#    reg_arr = [0, 0.0001, 0.001, 0.01, 0.1]
+#    p_arr = [0, 0.25, 0.5, 0.75]
+#    for reg in reg_arr:
+#        for p in p_arr:
+#            mdl = fit_convnet([0, 1, 2, 3, 4], 'whitenoise', '15-10-07', reg, p,  description='WN convnet, l2_reg={}, dropout={}'.format(reg, p))

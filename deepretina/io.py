@@ -296,7 +296,7 @@ def plot_rates(iteration, dt, **rates):
     if batchsize > 3000:
         i0, i1 = (2000, 3000)
     else:
-        i0, i1 =(0, batchsize-1)
+        i0, i1 = (0, batchsize - 1)
     inds = slice(i0, i1)
 
     for ax, key in zip(axs, sorted(rates.keys())):

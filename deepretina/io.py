@@ -224,7 +224,7 @@ class Monitor:
         self.update_results()
 
         # update the 'best' iteration we have seen
-        if avg_val['cc'] > self.best[1]:
+        if avg_val['lli'] > self.best[1]:
 
             # update the best iteration and held-out CC performance
             self.best = (iteration, avg_val['cc'])

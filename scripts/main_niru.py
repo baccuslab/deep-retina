@@ -27,8 +27,9 @@ def fit_ln(cells, train_stimuli, exptdate, readme=None):
     # load the STAs
     stas = []
     h5file = _loadexpt_h5(exptdate, train_stimuli[0])
-    for cell in sorted(list(h5file['stas'])):
-        stas.append(np.array(h5file['stas'][cell]).ravel())
+    for ci in cells:
+        key = 'cell{:02}'.format(ci + 1)
+        stas.append(np.array(h5file['stas'][key]).ravel())
 
     # specify the initial weights using the STAs
     W = np.vstack(stas).T
@@ -80,7 +81,17 @@ def fit_convnet(cells, train_stimuli, exptdate, readme=None):
 
 
 if __name__ == '__main__':
-    mdl = fit_ln([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', description='LN models w/ sta initialization (ns)')
-    mdl = fit_ln([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', description='LN models w/ sta initialization (wn)')
+
+    # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['naturalscene'], '15-10-07', description='LN models w/ sta initialization (ns)')
+    # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['whitenoise'], '15-10-07', description='LN models w/ sta initialization (wn)')
+
     # mdl = fit_ln(list(range(37)), ['whitenoise'], 'all-cells', description='LN models on whitenoise')
     # mdl = fit_ln(list(range(37)), ['naturalscene'], 'all-cells', description='LN models on naturalscene')
+
+    gc_151121a = [6, 10, 12, 13]
+    mdl = fit_ln(gc_151121a, ['naturalscene'], '15-11-21a', description='LN models w/ sta initialization (ns)')
+    mdl = fit_ln(gc_151121a, ['whitenoise'], '15-11-21a', description='LN models w/ sta initialization (wn)')
+
+    gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+    mdl = fit_ln(gc_151121b, ['naturalscene'], '15-11-21b', description='LN models w/ sta initialization (ns)')
+    mdl = fit_ln(gc_151121b, ['whitenoise'], '15-11-21b', description='LN models w/ sta initialization (wn)')

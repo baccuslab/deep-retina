@@ -44,7 +44,7 @@ class Monitor:
         name : string
             a name for this model
 
-        model : Keras model
+        model : Keras model or GLM model
             reference to the Keras model object
 
         data : Experiment
@@ -55,9 +55,7 @@ class Monitor:
 
         save_every : int
             how often to save (in terms of the number of batches)
-
         """
-
         # pointer to Keras model and experimental data
         self.name = name
         self.model = model
@@ -283,6 +281,134 @@ class Monitor:
         plt.savefig(self.savepath(filename), dpi=dpi, bbox_inches='tight')
         plt.close('all')
         self.copy_to_dropbox(filename)
+
+
+class MonitorGLM:
+    def __init__(self, model, expt, filename, ci, testdata, r_test, readme, save_every):
+        """Terrible no good hacked together class for keeping track of GLM training"""
+        self.testdata = testdata
+        self.hashkey = md5('Generalized Linear Model (GLM)\n' + readme)
+        self.dirname = ' '.join((self.hashkey, self.name))
+        self.metrics = ('cc', 'lli', 'rmse', 'fev')
+        self.r_test = r_test.copy()
+
+        # store the README file
+        self.write('README.md', readme)
+
+        # start CSV files for performance
+        headers = ','.join(('Epoch', 'Iteration') +
+                           tuple(map(str.upper, self.metrics))) + '\n'
+        self.write('train.csv', headers)
+        self.write('validation.csv', headers)
+
+        # store results in a dictionary
+        self.results = {
+            'iter': list(),
+            'epoch': list(),
+            'train': defaultdict(list),
+            'validation': defaultdict(list),
+        }
+
+        # store results in a (new) h5 file
+        with h5py.File(self.savepath('results.h5'), 'x') as f:
+
+            # store metadata
+            f.attrs.update({
+                'expt': expt,
+                'filename': filename,
+                'cellindex': ci
+            })
+            f.attrs['md5'] = self.hashkey
+            f['cells'] = np.array([ci])
+
+            # initialize some datasets
+            f['train'] = 0
+            f['test'] = 0
+            f['iter'] = 0
+            f['epoch'] = 0
+
+    def write(self, filename, text, copy=True):
+        """Writes the given text to a file
+        Optionally copies the file to Dropbox
+
+        Parameters
+        ----------
+        filename : string
+            Name of the file
+
+        text : string
+            Text to write to the file
+
+        copy : boolean, optional
+            Whether or not to copy the file to Dropbox (default: True)
+        """
+        # write the file, appending if it already exists
+        with open(self.savepath(filename), 'a') as f:
+            f.write(text)
+
+        # copy to dropbox
+        if copy:
+            self.copy_to_dropbox(filename)
+
+    def copy_to_dropbox(self, filename):
+        """Copy the given file to Dropbox. Overwrites existing destination files"""
+        try:
+            shutil.copy(self.savepath(filename), path.join(directories['dropbox'], self.dirname))
+        except FileNotFoundError:
+            print('\n*******\nWarning\n*******')
+            print('Could not copy {} to Dropbox.\n'.format(filename))
+
+    def savepath(self, filename):
+        """Generates a fullpath to save the given file in the data directory"""
+        return path.join(self.datadir, filename)
+
+    def update_results(self):
+
+        with h5py.File(self.savepath('results.h5'), 'r+') as f:
+
+            del f['iter']
+            f['iter'] = self.results['iter']
+
+            del f['epoch']
+            f['epoch'] = self.results['epoch']
+
+            for dset in ('train', 'test'):
+
+                # delete the dataset (TODO: perhaps handle this more elegantly)
+                del f[dset]
+
+                for metric in self.metrics:
+                    f[dset + '/' + metric] = np.array(self.results[dset][metric])
+
+    def save(self, epoch, iteration, r_train, rhat_train, rhat_test):
+
+        self.results['iter'].append(iteration)
+        self.results['epoch'].append(epoch)
+
+        # STORE TRAINING PERFORMANCE
+        train_scores = allmetrics(r_train, rhat_train)[0]
+        data_row = [epoch, iteration] + [train_scores[metric] for metric in self.metrics]
+        self.write('train.csv', ','.join(map(str, data_row)) + '\n')
+        [self.results['train'][metric].append(train_scores[metric]) for metric in self.metrics]
+
+        # STORE TEST PERFORMANCE
+        test_scores = allmetrics(self.r_test, rhat_test)[0]
+        data_row = [epoch, iteration] + [test_scores[metric] for metric in self.metrics]
+        self.write('test.csv', ','.join(map(str, data_row)) + '\n')
+        [self.results['validation'][metric].append(test_scores[metric]) for metric in self.metrics]
+
+        # save the weights
+        filename = 'epoch{:03d}_iter{:05d}_weights.h5'.format(epoch, iteration)
+        self.model.save_weights(self.savepath(filename))
+
+        # EVALUATE TEST PERFORMANCE
+        avg_test, all_test = self.data.test(self.model.predict, self.metrics)
+        [self.test_results[key][metric].append(all_test[key][metric])
+         for metric in self.metrics
+         for key in self.test_results]
+
+        # update the results.h5 file
+        self.update_results()
 
 
 def plot_rates(iteration, dt, **rates):

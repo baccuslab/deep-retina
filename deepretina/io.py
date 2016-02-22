@@ -287,7 +287,7 @@ class MonitorGLM:
     def __init__(self, model, expt, filename, ci, testdata, r_test, readme, save_every):
         """Terrible no good hacked together class for keeping track of GLM training"""
         self.testdata = testdata
-        self.hashkey = md5('Generalized Linear Model (GLM)\n' + readme)
+        self.hashkey = md5('Generalized Linear Model (GLM)\n' + str(np.random.randint(1024)) + readme)
         self.metrics = ('cc', 'lli', 'rmse', 'fev')
         self.r_test = r_test.copy()
         self.save_every = save_every
@@ -306,14 +306,14 @@ class MonitorGLM:
             headers = ','.join(('Epoch', 'Iteration') +
                                tuple(map(str.upper, self.metrics))) + '\n'
             self.write('train.csv', headers)
-            self.write('validation.csv', headers)
+            self.write('test.csv', headers)
 
             # store results in a dictionary
             self.results = {
                 'iter': list(),
                 'epoch': list(),
                 'train': defaultdict(list),
-                'validation': defaultdict(list),
+                'test': defaultdict(list),
             }
 
         # store results in a (new) h5 file
@@ -393,26 +393,16 @@ class MonitorGLM:
         self.results['epoch'].append(epoch)
 
         # STORE TRAINING PERFORMANCE
-        train_scores = allmetrics(r_train, rhat_train)[0]
+        train_scores = allmetrics(r_train, rhat_train, self.metrics)[0]
         data_row = [epoch, iteration] + [train_scores[metric] for metric in self.metrics]
         self.write('train.csv', ','.join(map(str, data_row)) + '\n')
         [self.results['train'][metric].append(train_scores[metric]) for metric in self.metrics]
 
         # STORE TEST PERFORMANCE
-        test_scores = allmetrics(self.r_test, rhat_test)[0]
+        test_scores = allmetrics(self.r_test, rhat_test, self.metrics)[0]
         data_row = [epoch, iteration] + [test_scores[metric] for metric in self.metrics]
         self.write('test.csv', ','.join(map(str, data_row)) + '\n')
-        [self.results['validation'][metric].append(test_scores[metric]) for metric in self.metrics]
-
-        # save the weights
-        filename = 'epoch{:03d}_iter{:05d}_weights.h5'.format(epoch, iteration)
-        self.model.save_weights(self.savepath(filename))
-
-        # EVALUATE TEST PERFORMANCE
-        avg_test, all_test = self.data.test(self.model.predict, self.metrics)
-        [self.test_results[key][metric].append(all_test[key][metric])
-         for metric in self.metrics
-         for key in self.test_results]
+        [self.results['test'][metric].append(test_scores[metric]) for metric in self.metrics]
 
         # update the results.h5 file
         self.update_results()

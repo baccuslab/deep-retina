@@ -40,4 +40,4 @@ def fit_glm(ci, cells, filename, exptdate, readme=None):
 
 
 if __name__ == "__main__":
-    fit_glm()
+    fit_glm(0, [0, 1, 2, 3, 4, 5], 'whitenoise', '15-10-07')

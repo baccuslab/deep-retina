@@ -288,26 +288,33 @@ class MonitorGLM:
         """Terrible no good hacked together class for keeping track of GLM training"""
         self.testdata = testdata
         self.hashkey = md5('Generalized Linear Model (GLM)\n' + readme)
-        self.dirname = ' '.join((self.hashkey, self.name))
         self.metrics = ('cc', 'lli', 'rmse', 'fev')
         self.r_test = r_test.copy()
+        self.save_every = save_every
 
-        # store the README file
-        self.write('README.md', readme)
+        with notify('\nCreating directories and files for model {}'.format(self.hashkey)):
 
-        # start CSV files for performance
-        headers = ','.join(('Epoch', 'Iteration') +
-                           tuple(map(str.upper, self.metrics))) + '\n'
-        self.write('train.csv', headers)
-        self.write('validation.csv', headers)
+            self.dirname = ' '.join((self.hashkey, 'GLM'))
+            for _, directory in directories.items():
+                mkdir(path.join(directory, self.dirname))
+            self.datadir = path.join(directories['database'], self.dirname)
 
-        # store results in a dictionary
-        self.results = {
-            'iter': list(),
-            'epoch': list(),
-            'train': defaultdict(list),
-            'validation': defaultdict(list),
-        }
+            # store the README file
+            self.write('README.md', readme)
+
+            # start CSV files for performance
+            headers = ','.join(('Epoch', 'Iteration') +
+                               tuple(map(str.upper, self.metrics))) + '\n'
+            self.write('train.csv', headers)
+            self.write('validation.csv', headers)
+
+            # store results in a dictionary
+            self.results = {
+                'iter': list(),
+                'epoch': list(),
+                'train': defaultdict(list),
+                'validation': defaultdict(list),
+            }
 
         # store results in a (new) h5 file
         with h5py.File(self.savepath('results.h5'), 'x') as f:

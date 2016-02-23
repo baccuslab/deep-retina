@@ -20,6 +20,7 @@ def fit_glm(cell, cells, filename, exptdate, readme=None):
     batchsize = 5000
     # algorithm = 'adam'
     algorithm = 'nag'
+    num_epochs = 3
 
     # l2 regularization and learning rates for each set of parameters
     l2_stim_params = 2.5
@@ -49,7 +50,7 @@ def fit_glm(cell, cells, filename, exptdate, readme=None):
     monitor = MonitorGLM(glm, exptdate, filename, cell, testdata, r_test, readme, save_every=10)
 
     # train
-    glm.fit(5, monitor)
+    glm.fit(num_epochs, monitor)
 
     return glm
 

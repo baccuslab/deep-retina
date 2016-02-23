@@ -241,7 +241,7 @@ class Monitor:
         # plot the performance curves
         for plottype in ('summary', 'traces'):
             filename = 'performance_{}'.format(plottype)
-            plot_performance(self.metrics, self.results, self.data.batchsize, plottype=plottype)
+            plot_performance(self.metrics, self.results, self.data.batches_per_epoch, plottype=plottype)
             self._save_and_copy(filename, filetype='jpg', dpi=100)
 
     def write(self, filename, text, copy=True):
@@ -438,7 +438,7 @@ def plot_rates(iteration, dt, **rates):
     return fig
 
 
-def plot_performance(metrics, results, batchsize, plottype='summary'):
+def plot_performance(metrics, results, batches_per_epoch, plottype='summary'):
     """Plots performance traces"""
 
     assert len(metrics) == 4, "plot_performance assumes there are four metrics to plot"
@@ -449,7 +449,7 @@ def plot_performance(metrics, results, batchsize, plottype='summary'):
         ax = axs[inds[0]][inds[1]]
 
         # the current epoch
-        x = np.array(results['iter']) / float(batchsize)
+        x = np.array(results['iter']) / float(batches_per_epoch)
         for key, color, fmt in [('validation', 'lightcoral', '-'), ('train', 'skyblue', '--')]:
             res = np.array(results[key][metric])
 

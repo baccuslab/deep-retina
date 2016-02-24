@@ -148,7 +148,8 @@ def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=
         from the background.
 
         INPUT:
-        duration        movie duration in frames
+        duration        movie duration in seconds
+        sample_rate     sample rate of movie in Hz
         coherent        are object and background moving coherently?
         space           spatial dimensions
         center          location of object center
@@ -176,10 +177,6 @@ def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=
     half_silent = silent_frames/2
     back_position = np.hstack([obj_position[half_silent:], obj_position[:-half_silent]])
 
-    #import pdb
-    #import matplotlib.pyplot as plt
-    #pdb.set_trace()
-
     # make position sequence last total_frames
     if len(back_position) > total_frames:
         print("Warning: movie won't be {} shorter than a full period.".format(np.float(2*transition_frames + 2*silent_frames)/total_frames))
@@ -202,10 +199,6 @@ def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=
         # make background grating
         background_frame = np.copy(fixed_world[:,back_position[frame]:back_position[frame]+space[0]])
 
-        #import pdb
-        #import matplotlib.pyplot as plt
-        #pdb.set_trace()
-
         if not coherent:
             # make object frame
             object_frame = np.copy(fixed_world[:,obj_position[frame]:obj_position[frame]+space[0]])
@@ -226,11 +219,72 @@ def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=
         return movie
 
         
+
+def motion_anticipation(duration=4, sample_rate=0.01, bar_speed=8, bar_width=3, 
+        space=(50,50), flash_pos=25, flash_dur=1, flash_time=1, mode='moving', roll=False):
+    '''
+        Object motion sensitivity stimulus, where an object moves differentially
+        from the background.
+
+        INPUT:
+        duration        movie duration in seconds
+        sample_rate     sample rate of movie in Hz
+        mode            'moving' or 'flash'
+        space           spatial dimensions
+        bar_speed       speed of bar in pixels/sec; paper has 0.44mm/s -> 440microns/s -> 8.8pixels/s with 50microns pixels
+        bar_width       width in pixels of bar
+        flash_pos       spatial position of bar center when flashed
+        flash_dur       duration in seconds of flash; will be centered in movie
+        flash_time      time of flash start in seconds
+        roll            whether to roll_axis for model prediction
+
+        OUTPUT:
+        movie           a numpy array of the stimulus
+    '''
+    # fixed params
+    contrast = 1
+    total_frames = int(duration/sample_rate)
     
-    
+    # determine bar position across time
+    if mode == 'flash':
+        # force left edge to always be >= 0
+        leftedge = np.max(flash_pos - bar_width/2, 0)
+        bar_pos = np.zeros((total_frames,)) #flash_pos * np.ones((total_frames,))
+
+        flash_start = int(flash_time/sample_rate)
+        flash_dur = int(flash_start/sample_rate)
+        if flash_start > total_frames:
+            print('Flash time later than duration!!!')
+
+    elif mode == 'moving':
+        bar_speed_frames = bar_speed * sample_rate
+        bar_pos = np.linspace(0, bar_speed_frames*total_frames, total_frames) 
+
+        # start from leftmost edge
+        leftedge = 0
 
 
-        
+    # make movie
+    movie = np.zeros((total_frames, space[0], space[1]))
+    for frame in range(total_frames):
+        ## Draw Frame
+        # draw background
+        background = -1 * np.ones((space[0], space[1]))
+        # start of leftedge on this frame
+        bar_start = bar_pos[frame] + leftedge
+        background[:,bar_start:bar_start+bar_width] = 1
+            
+        # adjust contrast
+        background *= contrast
+        if mode == 'flash':
+            if frame > flash_start and frame < flash_start + flash_dur:
+                movie[frame] = background
+        else:
+            movie[frame] = background
 
-
-
+    if roll:
+        # roll movie axes to get the right shape
+        roll_movies = rolling_window(movie, 40)
+        return roll_movies
+    else:
+        return movie

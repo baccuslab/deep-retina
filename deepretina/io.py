@@ -44,7 +44,7 @@ class Monitor:
         name : string
             a name for this model
 
-        model : Keras model
+        model : Keras model or GLM model
             reference to the Keras model object
 
         data : Experiment
@@ -55,9 +55,7 @@ class Monitor:
 
         save_every : int
             how often to save (in terms of the number of batches)
-
         """
-
         # pointer to Keras model and experimental data
         self.name = name
         self.model = model
@@ -224,7 +222,7 @@ class Monitor:
         self.update_results()
 
         # update the 'best' iteration we have seen
-        if avg_val['cc'] > self.best[1]:
+        if avg_val['lli'] > self.best[1]:
 
             # update the best iteration and held-out CC performance
             self.best = (iteration, avg_val['cc'])
@@ -243,7 +241,7 @@ class Monitor:
         # plot the performance curves
         for plottype in ('summary', 'traces'):
             filename = 'performance_{}'.format(plottype)
-            plot_performance(self.metrics, self.results, self.data.batchsize, plottype=plottype)
+            plot_performance(self.metrics, self.results, self.data.batches_per_epoch, plottype=plottype)
             self._save_and_copy(filename, filetype='jpg', dpi=100)
 
     def write(self, filename, text, copy=True):
@@ -285,6 +283,131 @@ class Monitor:
         self.copy_to_dropbox(filename)
 
 
+class MonitorGLM:
+    def __init__(self, model, expt, filename, ci, testdata, r_test, readme, save_every):
+        """Terrible no good hacked together class for keeping track of GLM training"""
+        self.testdata = testdata
+        self.hashkey = md5('Generalized Linear Model (GLM)\n' + str(np.random.randint(1024)) + readme)
+        self.metrics = ('cc', 'lli', 'rmse', 'fev')
+        self.r_test = r_test.copy()
+        self.save_every = save_every
+
+        with notify('\nCreating directories and files for model {}'.format(self.hashkey)):
+
+            self.dirname = ' '.join((self.hashkey, 'GLM'))
+            for _, directory in directories.items():
+                mkdir(path.join(directory, self.dirname))
+            self.datadir = path.join(directories['database'], self.dirname)
+
+            # store the README file
+            self.write('README.md', readme)
+
+            # start CSV files for performance
+            headers = ','.join(('Epoch', 'Iteration') +
+                               tuple(map(str.upper, self.metrics))) + '\n'
+            self.write('train.csv', headers)
+            self.write('test.csv', headers)
+
+            # store results in a dictionary
+            self.results = {
+                'iter': list(),
+                'epoch': list(),
+                'train': defaultdict(list),
+                'test': defaultdict(list),
+            }
+
+        # store results in a (new) h5 file
+        with h5py.File(self.savepath('results.h5'), 'x') as f:
+
+            # store metadata
+            f.attrs.update({
+                'expt': expt,
+                'filename': filename,
+                'cellindex': ci
+            })
+            f.attrs['md5'] = self.hashkey
+            f['cells'] = np.array([ci])
+
+            # initialize some datasets
+            f['train'] = 0
+            f['test'] = 0
+            f['iter'] = 0
+            f['epoch'] = 0
+
+    def write(self, filename, text, copy=True):
+        """Writes the given text to a file
+        Optionally copies the file to Dropbox
+
+        Parameters
+        ----------
+        filename : string
+            Name of the file
+
+        text : string
+            Text to write to the file
+
+        copy : boolean, optional
+            Whether or not to copy the file to Dropbox (default: True)
+        """
+        # write the file, appending if it already exists
+        with open(self.savepath(filename), 'a') as f:
+            f.write(text)
+
+        # copy to dropbox
+        if copy:
+            self.copy_to_dropbox(filename)
+
+    def copy_to_dropbox(self, filename):
+        """Copy the given file to Dropbox. Overwrites existing destination files"""
+        try:
+            shutil.copy(self.savepath(filename), path.join(directories['dropbox'], self.dirname))
+        except FileNotFoundError:
+            print('\n*******\nWarning\n*******')
+            print('Could not copy {} to Dropbox.\n'.format(filename))
+
+    def savepath(self, filename):
+        """Generates a fullpath to save the given file in the data directory"""
+        return path.join(self.datadir, filename)
+
+    def update_results(self):
+
+        with h5py.File(self.savepath('results.h5'), 'r+') as f:
+
+            del f['iter']
+            f['iter'] = self.results['iter']
+
+            del f['epoch']
+            f['epoch'] = self.results['epoch']
+
+            for dset in ('train', 'test'):
+
+                # delete the dataset (TODO: perhaps handle this more elegantly)
+                del f[dset]
+
+                for metric in self.metrics:
+                    f[dset + '/' + metric] = np.array(self.results[dset][metric])
+
+    def save(self, epoch, iteration, r_train, rhat_train, rhat_test):
+
+        self.results['iter'].append(iteration)
+        self.results['epoch'].append(epoch)
+
+        # STORE TRAINING PERFORMANCE
+        train_scores = allmetrics(r_train, rhat_train, self.metrics)[0]
+        data_row = [epoch, iteration] + [train_scores[metric] for metric in self.metrics]
+        self.write('train.csv', ','.join(map(str, data_row)) + '\n')
+        [self.results['train'][metric].append(train_scores[metric]) for metric in self.metrics]
+
+        # STORE TEST PERFORMANCE
+        test_scores = allmetrics(self.r_test, rhat_test, self.metrics)[0]
+        data_row = [epoch, iteration] + [test_scores[metric] for metric in self.metrics]
+        self.write('test.csv', ','.join(map(str, data_row)) + '\n')
+        [self.results['test'][metric].append(test_scores[metric]) for metric in self.metrics]
+
+        # update the results.h5 file
+        self.update_results()
+
+
 def plot_rates(iteration, dt, **rates):
     """Plots the given pairs of firing rates"""
 
@@ -296,7 +419,7 @@ def plot_rates(iteration, dt, **rates):
     if batchsize > 3000:
         i0, i1 = (2000, 3000)
     else:
-        i0, i1 =(0, batchsize-1)
+        i0, i1 = (0, batchsize - 1)
     inds = slice(i0, i1)
 
     for ax, key in zip(axs, sorted(rates.keys())):
@@ -315,7 +438,7 @@ def plot_rates(iteration, dt, **rates):
     return fig
 
 
-def plot_performance(metrics, results, batchsize, plottype='summary'):
+def plot_performance(metrics, results, batches_per_epoch, plottype='summary'):
     """Plots performance traces"""
 
     assert len(metrics) == 4, "plot_performance assumes there are four metrics to plot"
@@ -326,7 +449,7 @@ def plot_performance(metrics, results, batchsize, plottype='summary'):
         ax = axs[inds[0]][inds[1]]
 
         # the current epoch
-        x = np.array(results['iter']) / float(batchsize)
+        x = np.array(results['iter']) / float(batches_per_epoch)
         for key, color, fmt in [('validation', 'lightcoral', '-'), ('train', 'skyblue', '--')]:
             res = np.array(results[key][metric])
 

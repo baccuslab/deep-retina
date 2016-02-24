@@ -94,6 +94,9 @@ class Experiment(object):
         # load the data for each experiment, store as a list of Exptdata tuple
         self._test_data = {filename: load_data(filename, 'test') for filename in test_filenames}
 
+        # save batches_per_epoch for calculating # epochs later
+        self.batches_per_epoch = len(self._train_batches) / self.batchsize
+
     def train(self, shuffle):
         """Returns a generator that yields batches of *training* data
 

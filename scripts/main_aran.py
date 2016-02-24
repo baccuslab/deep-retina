@@ -46,10 +46,10 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, timesteps, l2_re
 
     author: Aran Nayebi
     """
-
+    print(timesteps)
     input_shape = (timesteps, 64)
     ncells = len(cells)
-    batchsize = 5000
+    batchsize = 100
 
     # get the fixedlstm layers
     layers = fixedlstm(input_shape, ncells, l2_reg=l2_reg)

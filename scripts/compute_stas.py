@@ -6,6 +6,7 @@ Computes STAs for all cells and stores them back in the h5 files
 from pyret.filtertools import getsta
 from tqdm import tqdm
 from deepretina.experiments import _loadexpt_h5
+from deepretina.utils import notify
 from scipy.stats import zscore 
 import h5py
 import numpy as np
@@ -20,7 +21,8 @@ def compute_stas(expt='all-cells'):
     """Computes STAs using the whitenoise.h5 file"""
     with h5py.File(get_filename(expt, 'whitenoise'), 'r') as f:
         stas = {}
-        stim = zscore(np.array(f['train/stimulus']))
+        with notify('z-scoring the stimulus'):
+            stim = zscore(np.array(f['train/stimulus']))
         tarr = np.array(f['train/time'])
         for key in tqdm(f['spikes']):
             spk = np.array(f['spikes'][key])
@@ -37,6 +39,9 @@ def save_stas(stas, filename, expt='all-cells'):
 
 
 if __name__ == "__main__":
-    stas = compute_stas()
+    # stasA = compute_stas(expt='15-11-21a')
+    # stasB = compute_stas(expt='15-11-21b')
+    # stasC = compute_stas(expt='15-10-07')
+    stas = compute_stas(expt='all-cells')
     # save_stas(stas, 'whitenoise')
     # save_stas(stas, 'naturalscene')

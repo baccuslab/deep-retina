@@ -58,15 +58,22 @@ def fit_glm(cell, cells, filename, exptdate, readme=None):
 if __name__ == "__main__":
 
     goodcells = {
-        '15-10-07': [0, 1, 2, 3, 4, 5],
-        '15-11-21a': [6, 10, 12, 13],
-        '15-11-21b': [0, 1, 3, 4, 5, 8, 9, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+        '15-10-07': [0, 1, 2, 3, 4, 5, 6, 7],
+        '15-11-21a': [0, 1, 6, 10, 12, 13],
+        '15-11-21b': [0, 1, 2, 3, 4, 5, 8, 9, 10, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
     }
 
     # for testing
     # fit_glm(2, goodcells['15-10-07'], 'whitenoise', '15-10-07', description='GLM with nag')
-     
-    for exptdate, cells in goodcells.items():
+
+    unfinished = [('15-10-07', [6, 7]), ('15-11-21a', [0, 1]), ('15-11-21b', [2, 10, 15])]
+
+    for exptdate, cells in unfinished:
         for ci in cells:
-            fit_glm(ci, cells, 'whitenoise', exptdate, description='{}, Cell {}, whitenoise (v3)'.format(exptdate, ci))
-            fit_glm(ci, cells, 'naturalscene', exptdate, description='{}, Cell {}, naturalscene (v3)'.format(exptdate, ci))
+            fit_glm(ci, goodcells[exptdate], 'whitenoise', exptdate, description='{}, Cell {}, whitenoise (v3)'.format(exptdate, ci))
+            fit_glm(ci, goodcells[exptdate], 'naturalscene', exptdate, description='{}, Cell {}, whitenoise (v3)'.format(exptdate, ci))
+
+    # for exptdate, cells in goodcells.items():
+        # for ci in cells:
+            # fit_glm(ci, cells, 'whitenoise', exptdate, description='{}, Cell {}, whitenoise (v3)'.format(exptdate, ci))
+            # fit_glm(ci, cells, 'naturalscene', exptdate, description='{}, Cell {}, naturalscene (v3)'.format(exptdate, ci))

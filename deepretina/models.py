@@ -239,6 +239,7 @@ def generalizedconvnet(input_shape, nout,
                        num_filters=(4, -1, -1, -1, 16),
                        filter_sizes=(9, -1, -1, -1, -1),
                        weight_init='normal',
+                       dropout=0.0,
                        l2_reg=0.0):
     """Generic convolutional neural network
 
@@ -303,6 +304,10 @@ def generalizedconvnet(input_shape, nout,
         # flatten
         if layer_type == 'flatten':
             layers.append(Flatten())
+
+        # dropout
+        if layer_type == 'dropout':
+            layers.append(Dropout(dropout))
 
         # Add dense (affine) layer
         if layer_type == 'affine':

@@ -269,7 +269,7 @@ def response_before_threshold(weights, model, layer_id, stimulus):
 
 
 # function that plots the receptive field of the interneurons (i.e. conv or affine layer activations)
-def get_sta(model, layer_id, samples=50000, batch_size=50):
+def get_sta(model, layer_id, samples=50000, batch_size=50, print_every=None):
     '''
     White noise STA of an intermedate unit.
     '''
@@ -308,6 +308,10 @@ def get_sta(model, layer_id, samples=50000, batch_size=50):
         #nonzero_inds = np.where(response > 0)[0]
         #for idx in nonzero_inds:
         #    sta += response[idx] * whitenoise[idx]
+
+        if print_every:
+            if batch % print_every == 0:
+                print('On batch %i of %i...' %(batch, samples/batch_size))
 
     sta /= samples
     #sta = sta.reshape((*(list(true_response_shape) + [-1])))

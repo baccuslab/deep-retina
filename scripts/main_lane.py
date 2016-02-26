@@ -21,8 +21,9 @@ def fit_convnet(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     batchsize = 5000
 
     # get the convnet layers
-    layers = convnet(stim_shape, ncells, num_filters=(16, 48),
-                     filter_size=(13, 13), weight_init='normal', l2_reg=0.01)
+    layers = convnet(stim_shape, ncells, num_filters=(8, 16),
+                     filter_size=(17, 17), weight_init='normal', l2_reg=0.01,
+                     dropout=0.75)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='sub_poisson_loss')
@@ -111,4 +112,4 @@ if __name__ == '__main__':
     #mdl = fit_convnet(list(range(37)), 'naturalscene', 'all-cells')
     #mdl = fit_convnet([0,2,7,10,11,12,31], ['whitenoise', 'naturalscene', 'naturalmovie'], ['whitenoise', 'naturalscene', 'naturalmovie', 'structured'], '16-01-07')
     #mdl = fit_fixedlstm(list(range(37)), ['whitenoise_affine'], ['whitenoise_affine'], 'all-cells')
-    mdl = fit_convnet(gc_15_11_21b, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-11-21b')
+    mdl = fit_convnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')

@@ -9,6 +9,7 @@ from keras.layers.core import Dropout, Dense, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
 from keras.layers.advanced_activations import ParametricSoftplus
+from keras.layers.normalization import BatchNormalization
 from keras.regularizers import l2
 from .utils import notify
 
@@ -260,7 +261,7 @@ def generalizedconvnet(input_shape, nout,
     num_filters : tuple, optional
         Number of filters in each layer. Default: [4, 16]
 
-    filter_size : tuple, optional
+    filter_sizes : tuple, optional
         Convolutional filter size. Default: [9]
         Assumes that the filter is square.
 
@@ -308,6 +309,10 @@ def generalizedconvnet(input_shape, nout,
         # dropout
         if layer_type == 'dropout':
             layers.append(Dropout(dropout))
+
+        # batch normalization
+        if layer_type == 'batchnorm':
+            layers.append(BatchNormalization(epsilon=1e-06, mode=0, axis=-1, momentum=0.9, weights=None))
 
         # Add dense (affine) layer
         if layer_type == 'affine':

@@ -166,4 +166,4 @@ if __name__ == '__main__':
     #mdl = fit_fixedlstm(list(range(37)), ['whitenoise_affine'], ['whitenoise_affine'], 'all-cells')
     #mdl = fit_convnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')
-    mdl = fit_fixedrnn(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')
+    mdl = fit_fixedrnn(gc_15_10_07, ['whitenoise_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-10-07')

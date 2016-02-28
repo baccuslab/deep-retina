@@ -112,7 +112,7 @@ def fit_fixedrnn(cells, train_stimuli, test_stimuli, exptdate, readme=None):
 
     input_shape = (1000,16)
     ncells = len(cells)
-    batchsize = 1000
+    batchsize = 5000
     num_hidden = 100
     l2_reg = 0.01
 

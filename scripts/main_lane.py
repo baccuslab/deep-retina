@@ -7,6 +7,9 @@ from __future__ import absolute_import
 from deepretina.models import sequential, convnet, train, generalizedconvnet, fixedlstm
 from deepretina.experiments import Experiment
 from deepretina.io import Monitor, main_wrapper
+from keras.layers.recurrent import SimpleRNN
+from keras.layers.core import Dense
+from keras.regularizers import l2
 
 
 @main_wrapper
@@ -100,6 +103,56 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, readme=None):
 
     return model
 
+@main_wrapper
+def fit_fixedrnn(cells, train_stimuli, test_stimuli, exptdate, readme=None):
+    """Main script for fitting a convnet
+
+    author: Lane McIntosh
+    """
+
+    input_shape = (1000,64)
+    ncells = len(cells)
+    batchsize = 1000
+    num_hidden = 100
+    l2_reg = 0.01
+
+    # add SimpleRNN layers
+    layers = list()
+    layers.append(SimpleRNN(num_hidden,
+                            input_shape=input_shape,
+                            return_sequences=False,
+                            go_backwards=False,
+                            init='glorot_uniform',
+                            inner_init='orthogonal',
+                            activation='tanh',
+                            W_regularizer=l2(l2_reg),
+                            U_regularizer=l2(l2_reg),
+                            b_regularizer=None,
+                            dropout_W=0.25,
+                            dropout_U=0.25))
+
+    # add dense layer
+    layers.append(Dense(nout,
+                        init='he_normal',
+                        W_regularizer=l2(l2_reg),
+                        activation='softplus'))
+
+    #layers = fixedlstm(input_shape, len(cells), num_hidden=1600, weight_init='normal', l2_reg=0.01)
+
+    # compile the keras model
+    model = sequential(layers, 'adam', loss='sub_poisson_loss')
+
+    # load experiment data
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, input_shape[0], batchsize)
+
+    # create a monitor to track progress
+    monitor = Monitor('fixedrnn', model, data, readme, save_every=10)
+
+    # train
+    train(model, data, monitor, num_epochs=100)
+
+    return model
+
 
 if __name__ == '__main__':
     # list(range(37)) for 'all-cells'
@@ -112,4 +165,5 @@ if __name__ == '__main__':
     #mdl = fit_convnet(list(range(37)), 'naturalscene', 'all-cells')
     #mdl = fit_convnet([0,2,7,10,11,12,31], ['whitenoise', 'naturalscene', 'naturalmovie'], ['whitenoise', 'naturalscene', 'naturalmovie', 'structured'], '16-01-07')
     #mdl = fit_fixedlstm(list(range(37)), ['whitenoise_affine'], ['whitenoise_affine'], 'all-cells')
-    mdl = fit_convnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')
+    #mdl = fit_convnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')
+    mdl = fit_fixedrnn(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')

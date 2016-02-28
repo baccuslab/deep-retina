@@ -110,7 +110,7 @@ def fit_fixedrnn(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     author: Lane McIntosh
     """
 
-    input_shape = (1000,64)
+    input_shape = (1000,16)
     ncells = len(cells)
     batchsize = 1000
     num_hidden = 100

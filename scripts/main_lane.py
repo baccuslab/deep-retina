@@ -127,12 +127,11 @@ def fit_fixedrnn(cells, train_stimuli, test_stimuli, exptdate, readme=None):
                             activation='tanh',
                             W_regularizer=l2(l2_reg),
                             U_regularizer=l2(l2_reg),
-                            b_regularizer=None,
                             dropout_W=0.25,
                             dropout_U=0.25))
 
     # add dense layer
-    layers.append(Dense(nout,
+    layers.append(Dense(len(cells),
                         init='he_normal',
                         W_regularizer=l2(l2_reg),
                         activation='softplus'))

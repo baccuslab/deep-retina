@@ -110,9 +110,9 @@ def fit_fixedrnn(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     author: Lane McIntosh
     """
 
-    input_shape = (1000,64)
+    input_shape = (1000,16)
     ncells = len(cells)
-    batchsize = 1000
+    batchsize = 5000
     num_hidden = 100
     l2_reg = 0.01
 
@@ -127,12 +127,11 @@ def fit_fixedrnn(cells, train_stimuli, test_stimuli, exptdate, readme=None):
                             activation='tanh',
                             W_regularizer=l2(l2_reg),
                             U_regularizer=l2(l2_reg),
-                            b_regularizer=None,
                             dropout_W=0.25,
                             dropout_U=0.25))
 
     # add dense layer
-    layers.append(Dense(nout,
+    layers.append(Dense(len(cells),
                         init='he_normal',
                         W_regularizer=l2(l2_reg),
                         activation='softplus'))
@@ -167,4 +166,4 @@ if __name__ == '__main__':
     #mdl = fit_fixedlstm(list(range(37)), ['whitenoise_affine'], ['whitenoise_affine'], 'all-cells')
     #mdl = fit_convnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')
-    mdl = fit_fixedrnn(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')
+    mdl = fit_fixedrnn(gc_15_10_07, ['whitenoise_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-10-07')

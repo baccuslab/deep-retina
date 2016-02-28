@@ -298,6 +298,14 @@ def generalizedconvnet(input_shape, nout,
         if layer_type == 'relu':
             layers.append(Activation('relu'))
 
+        # Add requ activation
+        if layer_type == 'requ':
+            layers.append(Activation('requ'))
+
+        # Add exp activation
+        if layer_type == 'exp':
+            layers.append(Activation('exp'))
+
         # max pooling layer
         if layer_type =='pool':
             layers.append(MaxPooling2D(pool_size=(2, 2)))

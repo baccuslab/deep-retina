@@ -56,8 +56,8 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, readme=
 
     # get the convnet layers
     layers = generalizedconvnet(stim_shape, ncells, 
-            architecture=('conv', 'requ', 'flatten', 'affine', 'requ', 'flatten', 'affine'),
-            num_filters=[8, -1, -1, 16], filter_sizes=[13], weight_init='normal',
+            architecture=('conv', 'requ', 'batchnorm', 'flatten', 'affine', 'requ', 'batchnorm', 'flatten', 'affine'),
+            num_filters=[8, -1, -1, -1, 16], filter_sizes=[13], weight_init='he_normal',
             l2_reg=0.01)
 
     # compile the keras model

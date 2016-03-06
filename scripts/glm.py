@@ -36,7 +36,7 @@ def fit_glm(cell, cells, filename, exptdate, readme=None):
     r_test = test.y[cutoff:, cellindex]
 
     # initialize proportional to the STA
-    theta_init = 1e-4 * np.array(_loadexpt_h5(exptdate, 'whitenoise')['stas']['cell{:02}'.format(cell+1)])
+    # theta_init = 1e-4 * np.array(_loadexpt_h5(exptdate, 'whitenoise')['stas']['cell{:02}'.format(cell + 1)])
 
     # build GLM features
     f_stim = Feature(train.X, l2=l2_stim_params, learning_rate=lr_stim, algorithm=algorithm)

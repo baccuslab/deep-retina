@@ -44,7 +44,7 @@ class Monitor:
         name : string
             a name for this model
 
-        model : Keras model or GLM model
+        model : Keras model
             reference to the Keras model object
 
         data : Experiment

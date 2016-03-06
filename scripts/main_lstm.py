@@ -69,4 +69,4 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, timesteps, l2_re
     return model
 
 if __name__ == '__main__':
-    mdl = fit_fixedlstm(list(range(37)), ['whitenoise_affine'], ['whitenoise_affine', 'naturalscenes_affine'], 'all-cells', 800, 0.01)
+    mdl = fit_fixedlstm(list(range(37)), ['naturalscenes_affine'], ['whitenoise_affine', 'naturalscenes_affine'], 'all-cells', 800, 0.01)

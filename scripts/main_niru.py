@@ -61,8 +61,8 @@ def fit_convnet(cells, train_stimuli, exptdate, readme=None):
     batchsize = 5000
 
     # get the convnet layers
-    layers = convnet(stim_shape, ncells, num_filters=(8, 16),
-                     filter_size=(13, 13), weight_init='normal', l2_reg=0.1)
+    layers = convnet(stim_shape, ncells, num_filters=(32, 64),
+                     filter_size=(13, 13), weight_init='normal', l2_reg=0.1, dropout=0.75)
 
     # compile the keras model
     model = sequential(layers, 'adam')
@@ -72,7 +72,7 @@ def fit_convnet(cells, train_stimuli, exptdate, readme=None):
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor to track progress
-    monitor = Monitor('convnet', model, data, readme, save_every=5)
+    monitor = Monitor('convnet', model, data, readme, save_every=10)
 
     # train
     train(model, data, monitor, num_epochs=100)
@@ -88,10 +88,13 @@ if __name__ == '__main__':
     # mdl = fit_ln(list(range(37)), ['whitenoise'], 'all-cells', description='LN models on whitenoise')
     # mdl = fit_ln(list(range(37)), ['naturalscene'], 'all-cells', description='LN models on naturalscene')
 
-    gc_151121a = [6, 10, 12, 13]
-    mdl = fit_ln(gc_151121a, ['naturalscene'], '15-11-21a', description='LN models w/ sta initialization (ns)')
-    mdl = fit_ln(gc_151121a, ['whitenoise'], '15-11-21a', description='LN models w/ sta initialization (wn)')
+    # gc_151121a = [6, 10, 12, 13]
+    # mdl = fit_convnet(gc_151121a, ['naturalscene'], '15-11-21a', description='15-11-21a Convnet on natural scenes 2-24-16')
+    # mdl = fit_ln(gc_151121a, ['naturalscene'], '15-11-21a', description='LN models w/ sta initialization (ns)')
+    # mdl = fit_ln(gc_151121a, ['whitenoise'], '15-11-21a', description='LN models w/ sta initialization (wn)')
 
-    gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    mdl = fit_ln(gc_151121b, ['naturalscene'], '15-11-21b', description='LN models w/ sta initialization (ns)')
-    mdl = fit_ln(gc_151121b, ['whitenoise'], '15-11-21b', description='LN models w/ sta initialization (wn)')
+    # gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+    # mdl = fit_ln(gc_151121b, ['naturalscene'], '15-11-21b', description='LN models w/ sta initialization (ns)')
+    # mdl = fit_ln(gc_151121b, ['whitenoise'], '15-11-21b', description='LN models w/ sta initialization (wn)')
+
+    mdl = fit_convnet(list(range(37)), ['whitenoise', 'naturalscene'], 'all-cells')

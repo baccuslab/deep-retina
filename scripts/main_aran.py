@@ -10,7 +10,7 @@ from deepretina.io import Monitor, main_wrapper
 
 
 @main_wrapper
-def fit_convnet(cells, stimulus, exptdate, l2_reg, dropout_probability, readme=None):
+def fit_convnet(cells, train_stimuli, test_stimuli, exptdate, l2_reg, dropout_probability1, dropout_probability2, readme=None):
     """Main script for fitting a convnet
 
     author: Aran Nayebi
@@ -23,13 +23,13 @@ def fit_convnet(cells, stimulus, exptdate, l2_reg, dropout_probability, readme=N
     # get the convnet layers
     layers = convnet(stim_shape, ncells, num_filters=(8, 16),
                      filter_size=(13, 13), weight_init='normal',
-                     l2_reg=l2_reg, dropout=dropout_probability)
+                     l2_reg=l2_reg, dropout1=dropout_probability1, dropout2=dropout_probability2)
 
     # compile the keras model
     model = sequential(layers, 'adam')
 
     # load experiment data
-    data = Experiment(exptdate, cells, stimulus, stim_shape[0], batchsize)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor to track progress
     monitor = Monitor('convnet', model, data, readme, save_every=10)
@@ -69,7 +69,14 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, timesteps, l2_re
     return model
 
 if __name__ == '__main__':
-    mdl = fit_fixedlstm(list(range(37)), ['naturalscenes_affine'], ['whitenoise_affine', 'naturalscenes_affine'], 'all-cells', 1000, 0.01)
+    reg = 0.01
+    p_arr1 = [0.75, 0.5, 0.25, 0]
+    p_arr2 = [0.10, 0.25, 0.5, 0.75, 0.85]
+    for p1 in p_arr1:
+        for p2 in p_arr2:
+            mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], ['whitenoise'], '15-10-07', reg, p1, p2,  description='WN convnet, l2_reg={}, dropout1={}, dropout2={}'.format(reg, p1, p2))
+
+#    mdl = fit_fixedlstm(list(range(37)), ['naturalscenes_affine'], ['whitenoise_affine', 'naturalscenes_affine'], 'all-cells', 1000, 0.01)
 #    reg_arr = [0, 0.0001, 0.001, 0.01, 0.1]
 #    p_arr = [0, 0.25, 0.5, 0.75]
 #    for reg in reg_arr:

@@ -68,7 +68,7 @@ def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
 
 
 def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
-            weight_init='normal', l2_reg=0.0, dropout=0.0):
+            weight_init='normal', l2_reg=0.0, dropout1=0.0, dropout2=0.0):
     """Convolutional neural network
 
     Parameters
@@ -113,13 +113,16 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
     layers.append(Flatten())
 
     # Dropout
-    layers.append(Dropout(dropout))
+    layers.append(Dropout(dropout1))
 
     # Add dense (affine) layer
     layers.append(Dense(num_filters[1], init=weight_init, W_regularizer=l2(l2_reg)))
 
     # Add relu activation
     layers.append(Activation('relu'))
+
+    # Dropout
+    layers.append(Dropout(dropout2))
 
     # Add a final dense (affine) layer
     layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg)))

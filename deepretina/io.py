@@ -6,7 +6,7 @@ Helper utilities for saving models and model outputs
 from __future__ import absolute_import, division, print_function
 from os import mkdir, uname, getenv, path
 from json import dumps
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 from itertools import product
 from functools import wraps
 from .utils import notify, allmetrics
@@ -365,6 +365,10 @@ def plot_performance(metrics, results, batches_per_epoch, plottype='summary'):
 
 
 def main_wrapper(func):
+    """Decorator for wrapping a main script
+    
+    Captures the source code in the script and generates a markdown-formatted README
+    """
     @wraps(func)
     def mainscript(*args, **kwargs):
 

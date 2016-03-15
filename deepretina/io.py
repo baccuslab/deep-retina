@@ -12,6 +12,7 @@ from functools import wraps
 from .utils import notify, allmetrics
 from keras.utils import visualize_util
 from warnings import warn
+from cycler import cycler
 import numpy as np
 import inspect
 import subprocess
@@ -75,11 +76,6 @@ class Monitor:
         self.hashkey = md5('\n'.join(map(str, machine.values())))
         self.directory = ' '.join((self.hashkey, self.name))
 
-        # start CSV files for train and validation performance
-        headers = ','.join(('Epoch', 'Iteration') + tuple(map(str.upper, self.metrics))) + '\n'
-        self._save_text('train.csv', headers)
-        self._save_text('validation.csv', headers)
-
         # keep track of the iteration with the best held out performance
         self.best = namedtuple('Best', ('iteration', 'lli'))(-1, 0)
 
@@ -90,31 +86,36 @@ class Monitor:
                 mkdir(path.join(d, self.directory))
 
             # write some generic data to the file
-            self._save_text('metadata.json', dumps(self.metadata))
+            self._save_text('metadata.json', dumps(machine))
             self._save_text('experiment.json', dumps(self.experiment.info))
             self._save_text('README.md', readme)
 
-        # store results in a (new) h5 file
-        with h5py.File(self._dbpath('results.h5'), 'x') as f:
+            # start CSV files for train and validation performance
+            headers = ','.join(('Epoch', 'Iteration') + tuple(map(str.upper, self.metrics))) + '\n'
+            self._save_text('train.csv', headers)
+            self._save_text('validation.csv', headers)
 
-            # store metadata
-            f.attrs.update(machine)
-            f.attrs['md5'] = self.hashkey
+            # store results in a (new) h5 file
+            with h5py.File(self._dbpath('results.h5'), 'x') as f:
 
-            # store experiment info
-            f['cells'] = np.array(self.experiment.info['cells'])
-            f['cells'].attrs.update(self.experiment.info)
+                # store metadata
+                f.attrs.update(machine)
+                f.attrs['md5'] = self.hashkey
 
-            # initialize some datasets
-            N = len(self.experiment.info['cells'])
-            f.create_dataset('iter', (0,), maxshape=(None,))
-            f.create_dataset('epoch', (0,), maxshape=(None,))
+                # store experiment info
+                f['cells'] = np.array(self.experiment.info['cells'])
+                f['cells'].attrs.update(self.experiment.info)
 
-            for k, m in product(('train', 'validation'), self.metrics):
-                f.create_dataset('/'.join(k, m), (0, N), maxshape=(None, N))
+                # initialize some datasets
+                N = len(self.experiment.info['cells'])
+                f.create_dataset('iter', (0,), maxshape=(None,))
+                f.create_dataset('epoch', (0,), maxshape=(None,))
 
-            for fname, m in product(self.experiment._test_data.keys(), self.metrics):
-                f.create_dataset('/'.join('test', fname, m), (0, N), maxshape=(None, N))
+                for k, m in product(('train', 'validation'), self.metrics):
+                    f.create_dataset('/'.join((k, m)), (0, N), maxshape=(None, N))
+
+                for fname, m in product(self.experiment._test_data.keys(), self.metrics):
+                    f.create_dataset('/'.join(('test', fname, m)), (0, N), maxshape=(None, N))
 
     def _update_best(self, epoch, iteration):
         """Called when there is a new best iteration"""
@@ -172,7 +173,8 @@ class Monitor:
         # plot the performance curves
         for plottype in ('summary', 'traces'):
             filename = 'performance_{}.jpg'.format(plottype)
-            plot_performance(self.metrics, self.results, self.data.batches_per_epoch, plottype=plottype)
+            with h5py.File(self._dbpath('results.h5'), 'r') as f:
+                plot_performance(self.metrics, f, self.experiment.batches_per_epoch, plottype=plottype)
             self._save_figure(filename, dpi=100)
 
     def _dbpath(self, filename):
@@ -195,7 +197,7 @@ class Monitor:
             Whether or not to copy the file to Dropbox (default: True)
         """
         # write the file, appending if it already exists
-        with open(self.dbpath(filename), 'a') as f:
+        with open(self._dbpath(filename), 'a') as f:
             f.write(text)
 
         # copy to dropbox
@@ -206,7 +208,7 @@ class Monitor:
         """Saves the current figure as a jpg and copies it to Dropbox"""
 
         # save the figure
-        plt.savefig(self.dbpath(filename), format=filetype, dpi=dpi, bbox_inches='tight')
+        plt.savefig(self._dbpath(filename), format=filetype, dpi=dpi, bbox_inches='tight')
         plt.close('all')
 
         # copy to dropbox
@@ -219,20 +221,20 @@ class Monitor:
 
             # helper function to extend a dataset along the first dimension
             def extend(key, value):
-                shape = f[key].shape
+                shape = list(f[key].shape)
                 shape[0] += 1
-                f[key].resize(shape)
+                f[key].resize(tuple(shape))
                 f[key][-1] = value
 
             extend('epoch', epoch)
             extend('iter', iteration)
 
             for metric in self.metrics:
-                extend('/'.join('train', metric), all_train[metric])
-                extend('/'.join('validation', metric), all_val[metric])
+                extend('/'.join(('train', metric)), all_train[metric])
+                extend('/'.join(('validation', metric)), all_val[metric])
 
-                for fname, val in all_test.keys():
-                    extend('/'.join('test', fname, metric), all_test[fname][metric])
+                for fname, val in all_test.items():
+                    extend('/'.join(('test', fname, metric)), all_test[fname][metric])
 
     def _append_csv(self, filename, row):
         """Appends the list of elements in row as a line in the CSV specified by filename"""
@@ -241,12 +243,12 @@ class Monitor:
     def _copy_to_dropbox(self, filename):
         """Copy the given file to Dropbox. Overwrites existing destination files"""
         try:
-            shutil.copy(self.dbpath(filename), path.join(directories['dropbox'], self.directory))
+            shutil.copy(self._dbpath(filename), path.join(directories['dropbox'], self.directory))
         except FileNotFoundError:
             warn('Could not copy {} to Dropbox.\n'.format(filename))
 
 
-class KerasMonitor(object):
+class KerasMonitor(Monitor):
     def __init__(self, name, model, experiment, readme, save_every):
         """Builds a Monitor object to keep track of train/test performance
 
@@ -267,7 +269,7 @@ class KerasMonitor(object):
         save_every : int
             how often to save (in terms of the number of batches)
         """
-        super().__init__(self, name, experiment, readme, save_every)
+        super().__init__(name, experiment, readme, save_every)
 
         # pointer to Keras model
         self.model = model
@@ -276,7 +278,7 @@ class KerasMonitor(object):
         self._save_text('architecture.json', self.model.to_json())
         self._save_text('architecture.yaml', self.model.to_yaml())
         visualize_util.plot(self.model, to_file=self._dbpath('architecture.png'))
-        self.copy_to_dropbox('architecture.png')
+        self._copy_to_dropbox('architecture.png')
 
     def save(self, epoch, iteration, X_train, r_train, model_predict):
         """updated iteration"""
@@ -292,8 +294,8 @@ class KerasMonitor(object):
         self.model.save_weights(self._dbpath('best_weights.h5'), overwrite=True)
 
 
-class MonitorGLM:
-    def __init__(self, model, expt, filename, ci, testdata, r_test, readme, save_every):
+class GLMMonior(Monitor):
+    def __init__(self, name, model, experiment, filename, ci, testdata, r_test, readme, save_every):
         """Terrible no good hacked together class for keeping track of GLM training"""
         self.testdata = testdata
         self.hashkey = md5('Generalized Linear Model (GLM)\n' + str(np.random.randint(1024)) + readme)
@@ -458,19 +460,24 @@ def plot_performance(metrics, results, batches_per_epoch, plottype='summary'):
         ax = axs[inds[0]][inds[1]]
 
         # the current epoch
-        x = np.array(results['iter']) / float(batches_per_epoch)
+        x = np.array(results['iter']).astype('float') / float(batches_per_epoch)
         for key, color, fmt in [('validation', 'lightcoral', '-'), ('train', 'skyblue', '--')]:
             res = np.array(results[key][metric])
 
             # plot the performance summary (mean + sem across cells)
             if plottype == 'summary':
+                print('premean')
                 y = np.nanmean(res, axis=1)
+                print('prestd')
                 ye = np.nanstd(res, axis=1) / np.sqrt(res.shape[1])
+                print('post')
                 ax.fill_between(x, y - ye, y + ye, interpolate=True, alpha=0.2, color=color)
                 ax.plot(x, y, '-', color=color, label=key)
 
             # plot the performance traces (one curve for each cell)
             elif plottype == 'traces':
+                color_cycler = cycler('color', [plt.cm.viridis(i) for i in np.linspace(0, 1, res.shape[1])])
+                ax.set_prop_cycle(color_cycler)
                 ax.plot(x, res, fmt, alpha=0.5)
 
         ax.set_title(str.upper(metric), fontsize=20)

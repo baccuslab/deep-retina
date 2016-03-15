@@ -77,7 +77,7 @@ class Monitor:
         self.directory = ' '.join((self.hashkey, self.name))
 
         # keep track of the iteration with the best held out performance
-        self.best = namedtuple('Best', ('iteration', 'lli'))(-1, 0)
+        self.best = namedtuple('Best', ('iteration', 'lli'))(-1, -np.Inf)
 
         with notify('\nCreating directories and files for model {}'.format(self.hashkey)):
 

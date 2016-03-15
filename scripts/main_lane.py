@@ -6,7 +6,7 @@ Main script for training deep retinal models
 from __future__ import absolute_import
 from deepretina.models import sequential, convnet, train, generalizedconvnet, fixedlstm
 from deepretina.experiments import Experiment
-from deepretina.io import Monitor, main_wrapper
+from deepretina.io import KerasMonitor, main_wrapper
 from keras.layers.recurrent import SimpleRNN
 from keras.layers.core import Dense
 from keras.regularizers import l2
@@ -35,7 +35,7 @@ def fit_convnet(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor to track progress
-    monitor = Monitor('convnet', model, data, readme, save_every=10)
+    monitor = KerasMonitor('convnet', model, data, readme, save_every=10)
 
     # train
     train(model, data, monitor, num_epochs=100)
@@ -67,7 +67,7 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, readme=
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor to track progress
-    monitor = Monitor('convnet', model, data, readme, save_every=10)
+    monitor = KerasMonitor('convnet', model, data, readme, save_every=10)
 
     # train
     train(model, data, monitor, num_epochs=100)
@@ -96,7 +96,7 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, input_shape[0], batchsize)
 
     # create a monitor to track progress
-    monitor = Monitor('fixedlstm', model, data, readme, save_every=10)
+    monitor = KerasMonitor('fixedlstm', model, data, readme, save_every=10)
 
     # train
     train(model, data, monitor, num_epochs=100)
@@ -145,7 +145,7 @@ def fit_fixedrnn(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, input_shape[0], batchsize)
 
     # create a monitor to track progress
-    monitor = Monitor('fixedrnn', model, data, readme, save_every=10)
+    monitor = KerasMonitor('fixedrnn', model, data, readme, save_every=10)
 
     # train
     train(model, data, monitor, num_epochs=100)

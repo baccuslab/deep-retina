@@ -152,8 +152,7 @@ class Monitor:
 
         # update the 'best' iteration we have seen, based on the validation log-likelihood
         if avg_val['lli'] > self.best.lli:
-            self.best.iteration = iteration
-            self.best.lli = avg_val['lli']
+            self.best = namedtuple('Best', ('iteration', 'lli'))(iteration, avg_val['lli'])
             self._update_best(epoch, iteration)
 
         # evaluate test performance
@@ -341,13 +340,13 @@ def plot_performance(metrics, results, batches_per_epoch, plottype='summary'):
 
             # plot the performance summary (mean + sem across cells)
             if plottype == 'summary':
-                print('premean')
-                y = np.nanmean(res, axis=1)
-                print('prestd')
-                ye = np.nanstd(res, axis=1) / np.sqrt(res.shape[1])
-                print('post')
-                ax.fill_between(x, y - ye, y + ye, interpolate=True, alpha=0.2, color=color)
-                ax.plot(x, y, '-', color=color, label=key)
+
+                # only plot if we have some non-NaN values
+                if not np.all(np.isnan(res)):
+                    y = np.nanmean(res, axis=1)
+                    ye = np.nanstd(res, axis=1) / np.sqrt(res.shape[1])
+                    ax.fill_between(x, y - ye, y + ye, interpolate=True, alpha=0.2, color=color)
+                    ax.plot(x, y, '-', color=color, label=key)
 
             # plot the performance traces (one curve for each cell)
             elif plottype == 'traces':

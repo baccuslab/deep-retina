@@ -73,7 +73,7 @@ class GLM:
 
         # update objective and gradient with the l2 penalty
         for key in gradient.keys():
-            obj += 0.5 * self.l2[key] * np.linalg.norm(self.theta[key], 2) ** 2
+            obj += 0.5 * self.l2[key] * np.linalg.norm(self.theta[key].ravel(), 2) ** 2
             gradient[key] += self.l2[key] * self.theta[key]
 
         # pass the gradient to the optimizer

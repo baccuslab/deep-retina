@@ -14,8 +14,20 @@ __all__ = ['GLM']
 
 
 class GLM:
-    def __init__(self, shape, lr=1e-4):
-        """GLM model class"""
+    def __init__(self, shape, lr=1e-4, l2=0.0):
+        """GLM model class
+
+        Parameters
+        ----------
+        shape : tuple
+            The dimensions of the stimulus filter, e.g. (nt, nx, ny)
+
+        lr : float, optional
+            Learning rate for RMSprop (Default: 1e-4)
+
+        l2 : float, optional
+            l2 regularization penalty on the weights (Default: 0.0)
+        """
 
         # initialize parameters
         self.theta_init = {
@@ -26,6 +38,22 @@ class GLM:
         # initialize optimizer
         self.opt = RMSProp(destruct(self.theta_init).copy(), lr=lr)
 
+        # regularization
+        if type(l2) is float:
+            # same value for all keys
+            self.l2 = {key: l2 for key in self.theta_init.keys()}
+
+        elif type(l2) is dict:
+
+            # default value is zero for every parameter
+            self.l2 = {key: 0.0 for key in self.theta_init.keys()}
+
+            # update with the given values
+            self.l2.update(l2)
+
+        else:
+            raise ValueError("l2 keyword argument must be a float or a dictionary")
+
     @property
     def theta(self):
         return restruct(self.opt.xk, self.theta_init)
@@ -35,10 +63,18 @@ class GLM:
         return np.exp(self.project(X))
 
     def train_on_batch(self, X, y):
-        """Updates the parameters on the given batch"""
+        """Updates the parameters on the given batch
+
+        (with the corresponding regularization penalties)
+        """
 
         # compute the objective and gradient
         obj, gradient = self.loss(X, y)
+
+        # update objective and gradient with the l2 penalty
+        for key in gradient.keys():
+            obj += 0.5 * self.l2[key] * np.linalg.norm(self.theta[key], 2) ** 2
+            gradient[key] += self.l2[key] * self.theta[key]
 
         # pass the gradient to the optimizer
         self.opt(destruct(gradient))
@@ -46,7 +82,10 @@ class GLM:
         return obj, gradient
 
     def loss(self, X, y):
-        """Gets the objective and gradient for the given batch of data"""
+        """Gets the objective and gradient for the given batch of data
+
+        (ignores the l2 regularization penalty)
+        """
         u = self.project(X)
         rhat = np.exp(u)
 

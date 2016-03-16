@@ -56,9 +56,9 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, readme=
 
     # get the convnet layers
     layers = generalizedconvnet(stim_shape, ncells, 
-            architecture=('conv', 'relu', 'dropout', 'conv', 'relu', 'flatten', 'affine'),
-            num_filters=[8, -1, -1, 16], filter_sizes=[15, -1, 7], weight_init='normal',
-            l2_reg=0.01, dropout=0.25)
+            architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine'),
+            num_filters=[8, -1, -1, 16], filter_sizes=[15, -1, -1, 7], weight_init='normal',
+            l2_reg=0.01, dropout=0.25, sigma=0.01)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='sub_poisson_loss')
@@ -67,7 +67,7 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, readme=
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor to track progress
-    monitor = Monitor('convnet', model, data, readme, save_every=20)
+    monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
 
     # train
     train(model, data, monitor, num_epochs=100)
@@ -170,5 +170,6 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')
     #mdl = fit_fixedrnn(gc_15_10_07, ['whitenoise_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-10-07')
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-10-07')
-    mdl = fit_convnet(gc_15_10_07, ['whitenoise', 'naturalscene'], ['whitenoise', 'naturalscene'], '15-10-07')
+    #mdl = fit_convnet(gc_15_10_07, ['whitenoise', 'naturalscene'], ['whitenoise', 'naturalscene'], '15-10-07')
     #mdl = fit_generalizedconvnet(gc_16_01_08, ['whitenoise', 'naturalscene', 'naturalmovie', 'whitenoise', 'naturalmovie', 'naturalmovie'], ['whitenoise', 'naturalscene', 'naturalmovie', 'structured'], '16-01-08')
+    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')

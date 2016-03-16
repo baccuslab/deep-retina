@@ -192,7 +192,7 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
 
                 # update
                 iteration += 1
-                print('[{0:3d}]\tLoss: {0:5.2f}\t\tElapsed time: {0:5.2f} seconds'.format(iteration, loss, elapsed_time))
+                print('[{}]\tLoss: {:5.2f}\t\tElapsed time: {:5.2f} seconds'.format(iteration, float(loss), elapsed_time))
 
     except KeyboardInterrupt:
         print('\nCleaning up')

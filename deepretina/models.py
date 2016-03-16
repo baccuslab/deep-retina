@@ -10,6 +10,7 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM, SimpleRNN
 from keras.layers.advanced_activations import ParametricSoftplus
 from keras.layers.normalization import BatchNormalization
+from keras.layers.noise import GaussianNoise, GaussianDropout
 from keras.regularizers import l2
 from time import time
 from .utils import notify
@@ -248,7 +249,9 @@ def generalizedconvnet(input_shape, nout,
                        filter_sizes=(9, -1, -1, -1, -1),
                        weight_init='normal',
                        dropout=0.0,
-                       l2_reg=0.0):
+                       dropout_type='binary',
+                       l2_reg=0.0,
+                       sigma=0.01):
     """Generic convolutional neural network
 
     Parameters
@@ -323,7 +326,10 @@ def generalizedconvnet(input_shape, nout,
 
         # dropout
         if layer_type == 'dropout':
-            layers.append(Dropout(dropout))
+            if dropout_type == 'gaussian':
+                layers.append(GaussianDropout(dropout))
+            else:
+                layers.append(Dropout(dropout))
 
         # batch normalization
         if layer_type == 'batchnorm':
@@ -336,6 +342,10 @@ def generalizedconvnet(input_shape, nout,
                         init='glorot_uniform', inner_init='orthogonal', activation='tanh',
                         W_regularizer=l2(l2_reg), U_regularizer=l2(l2_reg), dropout_W=0.1,
                         dropout_U=0.1))
+
+        # noise layer
+        if layer_type == 'noise':
+            layers.append(GaussianNoise(sigma))
 
         # Add dense (affine) layer
         if layer_type == 'affine':

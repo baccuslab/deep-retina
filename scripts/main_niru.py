@@ -6,7 +6,8 @@ Main script for training deep retinal models
 from __future__ import absolute_import
 from deepretina.models import sequential, convnet, ln, train
 from deepretina.experiments import Experiment, _loadexpt_h5
-from deepretina.io import KerasMonitor, main_wrapper
+from deepretina.io import KerasMonitor, Monitor, main_wrapper
+from deepretina.glms import GLM
 import numpy as np
 from keras.optimizers import Adam, RMSprop
 
@@ -80,9 +81,38 @@ def fit_convnet(cells, train_stimuli, exptdate, readme=None):
     return model
 
 
+@main_wrapper
+def fit_glm(cell_index, train_stimuli, exptdate, readme=None):
+    """Main script for fitting a GLM
+
+    author: Niru Maheswaranathan
+    """
+
+    stim_shape = (40, 50, 50)
+    batchsize = 5000
+
+    # build the GLM
+    model = GLM(stim_shape)
+
+    # load experimental data
+    test_stimuli = ['whitenoise']
+    data = Experiment(exptdate, cell_index, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+
+    # create a monitor to track progress
+    monitor = Monitor('GLM', data, readme, save_every=20)
+
+    # train
+    train(model, data, monitor, num_epochs=100)
+
+    return model
+
+
 if __name__ == '__main__':
 
-    mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise', 'whitenoise'], '15-10-07', description='Double whitenoise training')
+    # testing GLM
+    mdl = fit_glm(0, ['whitenoise'], '15-10-07', description='Testing GLM model code')
+
+    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise', 'whitenoise'], '15-10-07', description='Double whitenoise training')
 
     # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['naturalscene'], '15-10-07', description='LN models w/ sta initialization (ns)')
     # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['whitenoise'], '15-10-07', description='LN models w/ sta initialization (wn)')

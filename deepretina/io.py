@@ -293,6 +293,11 @@ class KerasMonitor(Monitor):
         self.model.save_weights(self._dbpath('best_weights.h5'), overwrite=True)
 
 
+class GLMMonitor(Monitor):
+    # TODO: have the GLM monitor save weights during training
+    pass
+
+
 def plot_rates(iteration, dt, **rates):
     """Plots the given pairs of firing rates"""
 
@@ -366,7 +371,7 @@ def plot_performance(metrics, results, batches_per_epoch, plottype='summary'):
 
 def main_wrapper(func):
     """Decorator for wrapping a main script
-    
+
     Captures the source code in the script and generates a markdown-formatted README
     """
     @wraps(func)

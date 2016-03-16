@@ -11,7 +11,9 @@ from keras.layers.recurrent import LSTM, SimpleRNN
 from keras.layers.advanced_activations import ParametricSoftplus
 from keras.layers.normalization import BatchNormalization
 from keras.regularizers import l2
+from time import time
 from .utils import notify
+from .glms import GLM
 
 __all__ = ['sequential', 'train', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet']
 
@@ -138,8 +140,8 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
 
     Parameters
     ----------
-    model : keras.models.Model
-        A Keras Model object
+    model : keras.models.Model or glms.GLM
+        A GLM or Keras Model object
 
     data : experiments.Experiment
         An Experiment object
@@ -157,7 +159,7 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
         A fraction (constant) to multiply the learning rate by
 
     """
-    assert isinstance(model, Model), "'model' must be a Keras model"
+    assert isinstance(model, (Model, GLM)), "'model' must be a GLM or Keras model"
 
     # initialize training iteration
     iteration = 0
@@ -183,11 +185,13 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
                     monitor.save(epoch, iteration, X, y, model.predict)
 
                 # train on the batch
+                tstart = time()
                 loss = model.train_on_batch(X, y)[0]
+                elapsed_time = time() - tstart
 
                 # update
                 iteration += 1
-                print('{}\tLoss: {}'.format(iteration, loss))
+                print('[{}]\tLoss: {:5.2f}\t\tElapsed time: {:5.2f} seconds'.format(iteration, loss, elapsed_time))
 
     except KeyboardInterrupt:
         print('\nCleaning up')

@@ -100,10 +100,10 @@ def fit_glm(cell_index, train_stimuli, exptdate, l2, readme=None):
     data = Experiment(exptdate, cell_index, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor to track progress
-    monitor = GLMMonitor('GLM', data, readme, save_every=20)
+    monitor = GLMMonitor('GLM', model, data, readme, save_every=20)
 
     # train
-    train(model, data, monitor, num_epochs=100)
+    train(model, data, monitor, num_epochs=10)
 
     return model
 

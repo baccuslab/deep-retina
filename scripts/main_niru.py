@@ -6,10 +6,10 @@ Main script for training deep retinal models
 from __future__ import absolute_import
 from deepretina.models import sequential, convnet, ln, train
 from deepretina.experiments import Experiment, _loadexpt_h5
-from deepretina.io import KerasMonitor, Monitor, main_wrapper
+from deepretina.io import KerasMonitor, GLMMonitor, main_wrapper
 from deepretina.glms import GLM
 import numpy as np
-from keras.optimizers import Adam, RMSprop
+from keras.optimizers import RMSprop
 
 
 @main_wrapper
@@ -99,7 +99,7 @@ def fit_glm(cell_index, train_stimuli, exptdate, readme=None):
     data = Experiment(exptdate, cell_index, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor to track progress
-    monitor = Monitor('GLM', data, readme, save_every=20)
+    monitor = GLMMonitor('GLM', data, readme, save_every=20)
 
     # train
     train(model, data, monitor, num_epochs=100)

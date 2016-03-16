@@ -5,6 +5,8 @@ Implementation of GLMs with post-spike history and coupling filters
 (see Pillow et. al. 2008 for details)
 """
 import numpy as np
+import h5py
+from os import path
 from descent.utils import destruct, restruct
 from descent.algorithms import RMSProp
 
@@ -18,7 +20,7 @@ class GLM:
         # initialize parameters
         self.theta_init = {
             'filter': np.random.randn(*shape) * 1e-6,
-            'bias': 0.0,
+            'bias': np.array([0.0]),
         }
 
         # initialize optimizer
@@ -62,3 +64,14 @@ class GLM:
     def project(self, X):
         """Projects the given stimulus onto the filter parameters"""
         return np.tensordot(X, self.theta['filter'], axes=self.theta['filter'].ndim) + self.theta['bias']
+
+    def save_weights(self, filepath, overwrite=False):
+        """Saves weights to an HDF5 file"""
+
+        if not overwrite and path.isfile(filepath):
+            raise FileExistsError("The file '{}' already exists\n(did you mean to set overwrite=True ?)".format(filepath))
+
+        with h5py.File(filepath, 'w') as f:
+            for key, value in self.theta.items():
+                dset = f.create_dataset(key, value.shape, dtype=value.dtype)
+                dset[:] = value

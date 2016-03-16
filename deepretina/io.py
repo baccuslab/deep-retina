@@ -306,8 +306,43 @@ class KerasMonitor(Monitor):
 
 
 class GLMMonitor(Monitor):
-    # TODO: have the GLM monitor save weights during training
-    pass
+    def __init__(self, name, model, experiment, readme, save_every):
+        """Builds a Monitor object to keep track of train/test performance
+
+        Parameters
+        ----------
+        name : string
+            a name for this model
+
+        model : a GLM object
+            reference to the GLM object
+
+        experiment : Experiment
+            a collection of experimental data (see experiments.py)
+
+        readme : string
+            a markdown formatted string to save as the README
+
+        save_every : int
+            how often to save (in terms of the number of batches)
+        """
+        super().__init__(name, experiment, readme, save_every)
+
+        # pointer to the model
+        self.model = model
+
+    def save(self, epoch, iteration, X_train, r_train, model_predict):
+        """updated iteration"""
+        super().save(epoch, iteration, X_train, r_train, model_predict)
+
+        # save the weights
+        filename = 'epoch{:03d}_iter{:05d}_weights.h5'.format(epoch, iteration)
+        self.model.save_weights(self._dbpath(filename))
+
+    def _update_best(self, epoch, iteration):
+        """Runs whenever there is a new 'best' iteration"""
+        # save best weights
+        self.model.save_weights(self._dbpath('best_weights.h5'), overwrite=True)
 
 
 def plot_rates(iteration, dt, **rates):

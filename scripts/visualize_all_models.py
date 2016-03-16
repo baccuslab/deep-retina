@@ -4,7 +4,7 @@ import csv
 import json
 from deepretina.visualizations import *
 
-f = raw_input("Please type in the path you want to start from and press 'Enter': ")
+f = input("Please type in the path you want to start from and press 'Enter': ")
 
 print('Starting to walk down directories')
 # e.g. first run from os.path.expanduser('~/Dropbox/deep-retina/saved')
@@ -25,7 +25,7 @@ for dirs, subdirs, files in walker:
     #files = path[-1]
     #subdirs = subpaths[-2]
     #dirs = subpaths[-3]
-    if architecture_name in files:
+    if (architecture_name in files) and (weight_name in files):
         with open(dirs + '/' + architecture_name, 'r') as f:
             arch = json.load(f)
 
@@ -41,9 +41,16 @@ for dirs, subdirs, files in walker:
                 layer_name = 'layer_%i' %(idl)
                 fig_dir = dirs + ' ' #+ '/'
 
+                # rank 1 visualizations
                 visualize_convnet_weights(weights, title=plt_title, layer_name=layer_name,
                     fig_dir=fig_dir, fig_size=(8,10), dpi=100, space=True, time=True, display=False,
                     save=True, cmap='seismic', normalize=True)
+
+                # movies of weights
+                animate_convnet_weights(weights, title=plt_title, layer_name=layer_name,
+                    fig_dir=fig_dir, fig_size=(6,6), dpi=100, display=False,
+                    save=True, cmap='seismic', normalize=True)
+
 
             elif l['name'] == 'Dense':
                 output_dim = l['output_dim']
@@ -52,8 +59,11 @@ for dirs, subdirs, files in walker:
                 layer_name = 'layer_%i' %(idl)
                 fig_dir = dirs + ' ' #+ '/'
 
-                visualize_affine_weights(weights, num_filters, layer_name=layer_name, title=plt_title,
-                    fig_dir=fig_dir, fig_size=(8,10), dpi=100, display=False, save=True, cmap='seismic')
+                try:
+                    visualize_affine_weights(weights, num_filters, layer_name=layer_name, title=plt_title,
+                        fig_dir=fig_dir, fig_size=(8,10), dpi=100, display=False, save=True, cmap='seismic')
+                except:
+                    print('Failed for {} model, {} filters, layer {}.'.format(dirs, num_filters, idl))
 
                 num_filters = output_dim
         

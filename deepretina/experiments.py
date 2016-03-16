@@ -95,7 +95,7 @@ class Experiment(object):
         self._test_data = {filename: load_data(filename, 'test') for filename in test_filenames}
 
         # save batches_per_epoch for calculating # epochs later
-        self.batches_per_epoch = len(self._train_batches) / self.batchsize
+        self.batches_per_epoch = len(self._train_batches)
 
     def train(self, shuffle):
         """Returns a generator that yields batches of *training* data
@@ -218,6 +218,63 @@ def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0):
     return Exptdata(stim_reshaped, resp)
 
 
+def deprecated_loadexpt(cellidx, filename, method, history, fraction=1., cutout=False, cutout_cell=0):
+    """
+    Loads an experiment from disk
+
+    ..Warning This function is deprecated!!! Only use this with old weights files
+
+    Parameters
+    ----------
+    cellidx : int
+        Index of the cell to load
+    filename : string
+        Name of the hdf5 file to load
+    method : string
+        The key in the hdf5 file to load ('train' or 'test')
+    history : int
+        Number of samples of history to include in the toeplitz stimulus
+    fraction : float, optional
+        Fraction of the experiment to load, must be between 0 and 1. (Default: 1.0)
+    """
+
+    assert fraction > 0 and fraction <= 1, "Fraction of data to load must be between 0 and 1"
+
+    # currently only works with the Oct. 07, 15 experiment
+    expt = '15-10-07'
+
+    with notify('Loading {}ing data'.format(method)):
+
+        # select different filename if you want a cutout
+        if cutout:
+            filename = filename + '_cutout_cell%02d' %(cutout_cell + 1)
+
+        # load the hdf5 file
+        filepath = os.path.join(os.path.expanduser('~/experiments/data'),
+                                expt,
+                                filename + '.h5')
+        f = h5py.File(filepath, 'r')
+
+        # length of the experiment
+        expt_length = f[method]['time'].size
+        num_samples = int(np.floor(expt_length * fraction))
+
+        # load the stimulus
+        stim = zscore(np.array(f[method]['stimulus'][:num_samples]).astype('float32'))
+
+        # reshaped stimulus (nsamples, time/channel, space, space)
+        if history == 0:
+            # don't create the toeplitz matrix
+            stim_reshaped = stim
+        else:
+            stim_reshaped = np.rollaxis(np.rollaxis(rolling_window(stim, history, time_axis=0), 2), 3, 1)
+
+        # get the response for this cell
+        resp = np.array(f[method]['response/firing_rate_10ms'][cellidx, history:num_samples]).T
+
+    return Exptdata(stim_reshaped, resp)
+
+
 def _loadexpt_h5(expt, filename):
     """Loads an h5py reference to an experiment on disk"""
 
@@ -314,3 +371,56 @@ def rolling_window(array, window, time_axis=0):
         return np.rollaxis(arr.T, 1, 0)
     else:
         return arr
+
+
+def deprecated_rolling_window(array, window, time_axis=0):
+    """
+    Make an ndarray with a rolling window of the last dimension
+
+    Parameters
+    ----------
+    array : array_like
+        Array to add rolling window to
+
+    window : int
+        Size of rolling window
+
+    time_axis : int, optional
+        The axis of the temporal dimension, either 0 or -1 (Default: 0)
+
+    Returns
+    -------
+    Array that is a view of the original array with a added dimension
+    of size w.
+
+    Examples
+    --------
+    >>> x=np.arange(10).reshape((2,5))
+    >>> rolling_window(x, 3)
+    array([[[0, 1, 2], [1, 2, 3], [2, 3, 4]],
+           [[5, 6, 7], [6, 7, 8], [7, 8, 9]]])
+
+    Calculate rolling mean of last dimension:
+
+    >>> np.mean(rolling_window(x, 3), -1)
+    array([[ 1.,  2.,  3.],
+           [ 6.,  7.,  8.]])
+
+    """
+
+    if time_axis == 0:
+        array = array.T
+
+    elif time_axis == -1:
+        pass
+
+    else:
+        raise ValueError('Time axis must be 0 (first dimension) or -1 (last)')
+
+    assert window >= 1, "`window` must be at least 1."
+    assert window < array.shape[-1], "`window` is too long."
+
+    # with strides
+    shape = array.shape[:-1] + (array.shape[-1] - window, window)
+    strides = array.strides + (array.strides[-1],)
+    return np.lib.stride_tricks.as_strided(array, shape=shape, strides=strides)

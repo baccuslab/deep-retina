@@ -10,6 +10,7 @@ import pyret.filtertools as ft
 import theano
 import os
 import h5py
+from matplotlib import animation
 
 
 def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
@@ -467,3 +468,129 @@ def adjust_spines(ax, spines):
     else:
         # no xaxis ticks
         ax.xaxis.set_ticks([])
+
+
+def animate_convnet_weights(weights, title='convnet', layer_name='layer_0',
+        fig_dir=None, fig_size=(6,6), dpi=300, display=True,
+        save=False, cmap='seismic', normalize=True):
+    '''
+    Visualize convolutional spatiotemporal filters in a convolutional neural
+    network.
+
+    Computes the spatial and temporal profiles by SVD.
+
+    INPUTS:
+    weights         weight array of shape (num_filters, history, space, space)
+                        or full path to weight file
+    title           title of plots; also the saved plot file base name
+    fig_dir         where to save figures
+    fig_size        figure size in inches
+    dpi             resolution in dots per inch
+    space           bool; if True plots the spatial profiles of weights
+    time            bool; if True plots the temporal profiles of weights
+                    NOTE: if space and time are both False, function returns
+                    spatial and temporal profiles instead of plotting
+    display         bool; display figure?
+    save            bool; save figure?
+
+    OUTPUT:
+    When space or time are true, ouputs are plots saved to fig_dir.
+    When neither space nor time are true, output is:
+        spatial_profiles        list of spatial profiles of filters
+        temporal_profiles       list of temporal profiles of filters
+    '''
+
+    if fig_dir is None:
+        fig_dir = os.getcwd()
+
+    # if user supplied path instead of array of weights
+    if type(weights) is str:
+        weight_file = h5py.File(weights, 'r')
+        weights = weight_file[layer_name]['param_0']
+
+    num_filters = weights.shape[0]
+
+    if normalize:
+        max_val = np.max(abs(weights[:]))
+        colorlimit = [-max_val, max_val]
+
+    # set up the figure
+    fig = plt.gcf()
+    fig.set_size_inches(fig_size)
+    fig.suptitle(title + ' frame 0', fontsize=20)
+    num_cols = int(np.sqrt(num_filters))
+    num_rows = int(np.ceil(num_filters/num_cols))
+    imgs = []
+    filenames = []
+    for x in range(num_cols):
+        for y in range(num_rows):
+            plt_idx = y * num_cols + x + 1
+            # in case fewer weights than fit neatly in rows and cols
+            if plt_idx <= len(weights):
+                plt.subplot(num_rows, num_cols, plt_idx)
+                img_i = plt.imshow(weights[plt_idx-1][0], interpolation='nearest', cmap=cmap, clim=colorlimit)
+                imgs.append(img_i)
+                plt.grid('off')
+                plt.axis('off')
+
+
+    def animate(i):
+        fig.suptitle(title + ' frame %i' %i, fontsize=20)
+        for x in range(num_cols):
+            for y in range(num_rows):
+                plt_idx = y * num_cols + x + 1
+                # in case fewer weights than fit neatly in rows and cols
+                if plt_idx <= len(weights):
+                    plt.subplot(num_rows, num_cols, plt_idx)
+                    imgs[plt_idx-1].set_data(weights[plt_idx-1][i])
+                    #plt.imshow(weights[plt_idx-1][i], interpolation='nearest', cmap=cmap, clim=colorlimit)
+                    plt.grid('off')
+                    plt.axis('off')
+
+        if save:
+            name = fig_dir + title + ' frame %02i.png' %i
+            name = name.replace(" ", "")
+            plt.savefig(name)
+            filenames.append(name)
+            #plt.close()
+
+        return imgs
+
+    anim = animation.FuncAnimation(fig, animate, np.arange(weights.shape[1]),
+            interval=100, repeat=True)
+
+        
+    if save:
+        # Set up formatting for the movie files
+        #Writer = animation.writers['ffmpeg'](fps=10)
+        #anim.save(fig_dir + title + '_spatiotemporal_profiles.mp4', writer=Writer, dpi=dpi)
+        #return anim
+
+        # save each frame of animation as an image;
+        # we're going to convert it to a gif later
+        #filenames = []
+        for i in range(weights.shape[1]):
+            imgs = animate(i)
+            #name = fig_dir + title + ' frame %02i.png' %i
+            #name = name.replace(" ", "")
+            #plt.savefig(name)
+            #filenames.append(name)
+            #plt.close()
+        
+        brackets = ' {} '
+        all_brackets = weights.shape[1] * brackets
+        gif_name = fig_dir + title + '.gif'
+        gif_name = gif_name.replace(" ", "")
+        system_command = 'convert' + all_brackets + gif_name 
+        system_command = system_command .format(*filenames)
+        os.system(system_command)
+        for f in filenames:
+            remove_command = 'rm {}' .format(f)
+            os.system(remove_command)
+
+
+    if display:
+        plt.show()
+        plt.draw()
+
+

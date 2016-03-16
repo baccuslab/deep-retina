@@ -11,7 +11,9 @@ from keras.layers.recurrent import LSTM, SimpleRNN
 from keras.layers.advanced_activations import ParametricSoftplus
 from keras.layers.normalization import BatchNormalization
 from keras.regularizers import l2
+from time import time
 from .utils import notify
+from .glms import GLM
 
 __all__ = ['sequential', 'train', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet']
 
@@ -68,7 +70,7 @@ def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
 
 
 def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
-            weight_init='normal', l2_reg=0.0, dropout=0.0):
+            weight_init='normal', l2_reg=0.0, dropout1=0.0, dropout2=0.0):
     """Convolutional neural network
 
     Parameters
@@ -113,13 +115,16 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
     layers.append(Flatten())
 
     # Dropout
-    layers.append(Dropout(dropout))
+    layers.append(Dropout(dropout1))
 
     # Add dense (affine) layer
     layers.append(Dense(num_filters[1], init=weight_init, W_regularizer=l2(l2_reg)))
 
     # Add relu activation
     layers.append(Activation('relu'))
+
+    # Dropout
+    layers.append(Dropout(dropout2))
 
     # Add a final dense (affine) layer
     layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg)))
@@ -135,8 +140,8 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
 
     Parameters
     ----------
-    model : keras.models.Model
-        A Keras Model object
+    model : keras.models.Model or glms.GLM
+        A GLM or Keras Model object
 
     data : experiments.Experiment
         An Experiment object
@@ -154,7 +159,7 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
         A fraction (constant) to multiply the learning rate by
 
     """
-    assert isinstance(model, Model), "'model' must be a Keras model"
+    assert isinstance(model, (Model, GLM)), "'model' must be a GLM or Keras model"
 
     # initialize training iteration
     iteration = 0
@@ -177,14 +182,16 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
                 if (monitor is not None) and (iteration % monitor.save_every == 0):
 
                     # performs validation, updates performance plots, saves results to dropbox
-                    monitor.save(epoch, iteration, y, model.predict(X))
+                    monitor.save(epoch, iteration, X, y, model.predict)
 
                 # train on the batch
+                tstart = time()
                 loss = model.train_on_batch(X, y)[0]
+                elapsed_time = time() - tstart
 
                 # update
                 iteration += 1
-                print('{}\tLoss: {}'.format(iteration, loss))
+                print('[{}]\tLoss: {:5.2f}\t\tElapsed time: {:5.2f} seconds'.format(iteration, loss, elapsed_time))
 
     except KeyboardInterrupt:
         print('\nCleaning up')

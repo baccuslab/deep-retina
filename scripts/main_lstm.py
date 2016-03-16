@@ -6,7 +6,7 @@ Main script for training deep retinal models
 from __future__ import absolute_import
 from deepretina.models import sequential, convnet, fixedlstm, train
 from deepretina.experiments import Experiment
-from deepretina.io import Monitor, main_wrapper
+from deepretina.io import KerasMonitor, main_wrapper
 
 
 @main_wrapper
@@ -32,7 +32,7 @@ def fit_convnet(cells, stimulus, exptdate, l2_reg, dropout_probability, readme=N
     data = Experiment(exptdate, cells, stimulus, stim_shape[0], batchsize)
 
     # create a monitor to track progress
-    monitor = Monitor('convnet', model, data, readme, save_every=10)
+    monitor = KerasMonitor('convnet', model, data, readme, save_every=10)
 
     # train
     train(model, data, monitor, num_epochs=100)
@@ -61,7 +61,7 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, timesteps, l2_re
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, input_shape[0], batchsize)
 
     # create a monitor to track progress
-    monitor = Monitor('fixedlstm', model, data, readme, save_every=10)
+    monitor = KerasMonitor('fixedlstm', model, data, readme, save_every=10)
 
     # train
     train(model, data, monitor, num_epochs=100)
@@ -69,4 +69,4 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, timesteps, l2_re
     return model
 
 if __name__ == '__main__':
-    mdl = fit_fixedlstm(list(range(37)), ['whitenoise_affine'], ['whitenoise_affine', 'naturalscenes_affine'], 'all-cells', 800, 0.01)
+    mdl = fit_fixedlstm(list(range(37)), ['naturalscenes_affine'], ['whitenoise_affine', 'naturalscenes_affine'], 'all-cells', 800, 0.01)

@@ -12,13 +12,13 @@ __all__ = ['GLM']
 
 
 class GLM:
-    def __init__(self, shape, lr=1e-3):
+    def __init__(self, shape, lr=1e-4):
         """GLM model class"""
 
         # initialize parameters
         self.theta_init = {
-            'filter': np.random.randn(*shape) * 1e-3,
-            'bias': -1,
+            'filter': np.random.randn(*shape) * 1e-6,
+            'bias': 0.0,
         }
 
         # initialize optimizer

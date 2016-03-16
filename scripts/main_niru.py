@@ -92,7 +92,7 @@ def fit_glm(cell_index, train_stimuli, exptdate, readme=None):
     batchsize = 5000
 
     # build the GLM
-    model = GLM(stim_shape)
+    model = GLM(stim_shape, lr=1e-4)
 
     # load experimental data
     test_stimuli = ['whitenoise']

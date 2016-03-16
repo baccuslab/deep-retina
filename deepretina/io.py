@@ -107,7 +107,7 @@ class Monitor:
                 f['cells'].attrs.update(self.experiment.info)
 
                 # initialize some datasets
-                N = len(self.experiment.info['cells'])
+                N = np.array(self.experiment.info['cells']).size
                 f.create_dataset('iter', (0,), maxshape=(None,))
                 f.create_dataset('epoch', (0,), maxshape=(None,))
 
@@ -162,12 +162,24 @@ class Monitor:
         self._save_h5(epoch, iteration, all_train, all_val, all_test)
 
         # plot the train / test firing rates
-        for ix, cell in enumerate(self.experiment.info['cells']):
-            filename = 'cell{}.jpg'.format(cell)
+        cells = self.experiment.info['cells']
+        if np.array(cells).size == 1:
+
+            # for one cell
+            filename = 'cell{}.jpg'.format(cells)
             plot_rates(iteration, self.experiment.dt,
-                       train=(r_train[:, ix], rhat_train[:, ix]),
-                       validation=(r_val[:, ix], rhat_val[:, ix]))
+                       train=(r_train, rhat_train),
+                       validation=(r_val, rhat_val))
             self._save_figure(filename)
+
+        else:
+            # for all cells
+            for ix, cell in enumerate(cells):
+                filename = 'cell{}.jpg'.format(cell)
+                plot_rates(iteration, self.experiment.dt,
+                           train=(r_train[:, ix], rhat_train[:, ix]),
+                           validation=(r_val[:, ix], rhat_val[:, ix]))
+                self._save_figure(filename)
 
         # plot the performance curves
         for plottype in ('summary', 'traces'):

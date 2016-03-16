@@ -4,7 +4,8 @@ Main script for training deep retinal models
 """
 
 from __future__ import absolute_import
-from deepretina.models import sequential, convnet, ln, train
+from deepretina.models import sequential, convnet, ln
+from deepretina.core import train
 from deepretina.experiments import Experiment, _loadexpt_h5
 from deepretina.io import KerasMonitor, GLMMonitor, main_wrapper
 from deepretina.glms import GLM

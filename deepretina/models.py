@@ -10,6 +10,7 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
 from keras.layers.advanced_activations import ParametricSoftplus
 from keras.layers.normalization import BatchNormalization
+from keras.layers.noise import GaussianNoise, GaussianDropout
 from keras.regularizers import l2
 from time import time
 from .utils import notify
@@ -191,7 +192,7 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
 
                 # update
                 iteration += 1
-                print('[{}]\tLoss: {:5.2f}\t\tElapsed time: {:5.2f} seconds'.format(iteration, loss, elapsed_time))
+                print('[{0:3d}]\tLoss: {0:5.2f}\t\tElapsed time: {0:5.2f} seconds'.format(iteration, loss, elapsed_time))
 
     except KeyboardInterrupt:
         print('\nCleaning up')
@@ -248,7 +249,9 @@ def generalizedconvnet(input_shape, nout,
                        filter_sizes=(9, -1, -1, -1, -1),
                        weight_init='normal',
                        dropout=0.0,
-                       l2_reg=0.0):
+                       dropout_type='binary',
+                       l2_reg=0.0,
+                       sigma=0.01):
     """Generic convolutional neural network
 
     Parameters
@@ -323,11 +326,26 @@ def generalizedconvnet(input_shape, nout,
 
         # dropout
         if layer_type == 'dropout':
-            layers.append(Dropout(dropout))
+            if dropout_type == 'gaussian':
+                layers.append(GaussianDropout(dropout))
+            else:
+                layers.append(Dropout(dropout))
 
         # batch normalization
         if layer_type == 'batchnorm':
             layers.append(BatchNormalization(epsilon=1e-06, mode=0, axis=-1, momentum=0.9, weights=None))
+
+        # rnn
+        if layer_type == 'rnn':
+            num_hidden = 100
+            layers.append(SimpleRNN(num_hidden, return_sequences=False, go_backwards=False, 
+                        init='glorot_uniform', inner_init='orthogonal', activation='tanh',
+                        W_regularizer=l2(l2_reg), U_regularizer=l2(l2_reg), dropout_W=0.1,
+                        dropout_U=0.1))
+
+        # noise layer
+        if layer_type == 'noise':
+            layers.append(GaussianNoise(sigma))
 
         # Add dense (affine) layer
         if layer_type == 'affine':

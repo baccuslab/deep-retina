@@ -322,6 +322,14 @@ def generalizedconvnet(input_shape, nout,
         if layer_type == 'batchnorm':
             layers.append(BatchNormalization(epsilon=1e-06, mode=0, axis=-1, momentum=0.9, weights=None))
 
+        # rnn
+        if layer_type == 'rnn':
+            num_hidden = 100
+            layers.append(SimpleRNN(num_hidden, return_sequences=False, go_backwards=False, 
+                        init='glorot_uniform', inner_init='orthogonal', activation='tanh',
+                        W_regularizer=l2(l2_reg), U_regularizer=l2(l2_reg), dropout_W=0.1,
+                        dropout_U=0.1))
+
         # Add dense (affine) layer
         if layer_type == 'affine':
             if layer_id == len(architecture) - 1:

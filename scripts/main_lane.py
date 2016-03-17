@@ -58,7 +58,7 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, readme=
     layers = generalizedconvnet(stim_shape, ncells, 
             architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine'),
             num_filters=[8, -1, -1, 16], filter_sizes=[15, -1, -1, 7], weight_init='normal',
-            l2_reg=0.01, dropout=0.25, sigma=0.01)
+            l2_reg=0.05, dropout=0.25, sigma=0.1)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='sub_poisson_loss')

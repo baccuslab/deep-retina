@@ -4,7 +4,8 @@ Main script for training deep retinal models
 """
 
 from __future__ import absolute_import
-from deepretina.models import sequential, convnet, ln, train
+from deepretina.models import sequential, convnet, ln
+from deepretina.core import train
 from deepretina.experiments import Experiment, _loadexpt_h5
 from deepretina.io import KerasMonitor, GLMMonitor, main_wrapper
 from deepretina.glms import GLM
@@ -82,7 +83,7 @@ def fit_convnet(cells, train_stimuli, exptdate, readme=None):
 
 
 @main_wrapper
-def fit_glm(cell_index, train_stimuli, exptdate, readme=None):
+def fit_glm(cell_index, train_stimuli, exptdate, l2, readme=None):
     """Main script for fitting a GLM
 
     author: Niru Maheswaranathan
@@ -92,17 +93,17 @@ def fit_glm(cell_index, train_stimuli, exptdate, readme=None):
     batchsize = 5000
 
     # build the GLM
-    model = GLM(stim_shape, lr=1e-4)
+    model = GLM(stim_shape, lr=1e-4, l2={'filter': l2})
 
     # load experimental data
     test_stimuli = ['whitenoise']
     data = Experiment(exptdate, cell_index, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor to track progress
-    monitor = GLMMonitor('GLM', data, readme, save_every=20)
+    monitor = GLMMonitor('GLM', model, data, readme, save_every=20)
 
     # train
-    train(model, data, monitor, num_epochs=100)
+    train(model, data, monitor, num_epochs=10)
 
     return model
 
@@ -110,7 +111,8 @@ def fit_glm(cell_index, train_stimuli, exptdate, readme=None):
 if __name__ == '__main__':
 
     # testing GLM
-    mdl = fit_glm(0, ['whitenoise'], '15-10-07', description='Testing GLM model code')
+    for l2 in np.logspace(-3, 0, 4):
+        mdl = fit_glm(0, ['whitenoise'], '15-10-07', l2, description='Testing GLM model code, l2 penalty is {}'.format(l2))
 
     # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise', 'whitenoise'], '15-10-07', description='Double whitenoise training')
 

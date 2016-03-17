@@ -4,7 +4,8 @@ Main script for training deep retinal models
 """
 
 from __future__ import absolute_import
-from deepretina.models import sequential, convnet, fixedlstm, train
+from deepretina.models import sequential, convnet, fixedlstm
+from deepretina.core import train
 from deepretina.experiments import Experiment
 from deepretina.io import KerasMonitor, main_wrapper
 

@@ -58,6 +58,9 @@ class GLM:
     def theta(self):
         return restruct(self.opt.xk, self.theta_init)
 
+    def set_theta(self, theta):
+        self.opt.xk = destruct(theta).copy()
+
     def predict(self, X):
         """Predicts the firing rate given the stimulus"""
         return np.exp(self.project(X))

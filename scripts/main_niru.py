@@ -83,36 +83,38 @@ def fit_convnet(cells, train_stimuli, exptdate, readme=None):
 
 
 @main_wrapper
-def fit_glm(cell_index, train_stimuli, exptdate, l2, readme=None):
+def fit_glm(cells, train_stimuli, exptdate, l2, readme=None):
     """Main script for fitting a GLM
 
     author: Niru Maheswaranathan
     """
 
     stim_shape = (40, 50, 50)
+    coupling_history = 20
     batchsize = 5000
 
     # build the GLM
-    model = GLM(stim_shape, lr=1e-4, l2={'filter': l2})
+    model = GLM(stim_shape, coupling_history, len(cells), lr=1e-4, l2={'filter': l2[0], 'history': l2[1]})
 
     # load experimental data
     test_stimuli = ['whitenoise']
-    data = Experiment(exptdate, cell_index, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor to track progress
     monitor = GLMMonitor('GLM', model, data, readme, save_every=20)
 
     # train
-    train(model, data, monitor, num_epochs=10)
+    train(model, data, monitor, num_epochs=25)
 
     return model
 
 
 if __name__ == '__main__':
 
-    # testing GLM
-    for l2 in np.logspace(-3, 0, 4):
-        mdl = fit_glm(0, ['whitenoise'], '15-10-07', l2, description='Testing GLM model code, l2 penalty is {}'.format(l2))
+    # GLM
+    for l2a in np.logspace(-2, 1, 4):
+        for l2b in np.logspace(-3, 0, 4):
+            mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b), description='full GLM, l2=({}, {})'.format(l2a, l2b))
 
     # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise', 'whitenoise'], '15-10-07', description='Double whitenoise training')
 

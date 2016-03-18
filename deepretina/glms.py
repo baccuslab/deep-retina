@@ -33,7 +33,7 @@ class GLM:
         """
         # initialize parameters
         self.theta_init = {
-            'filter': np.random.randn(*filter_shape, ncells) * 1e-6,
+            'filter': np.random.randn(*(filter_shape + (ncells,))) * 1e-6,
             'bias': np.zeros(ncells),
             'history': np.random.randn(coupling_history, ncells, ncells) * 1e-6
         }
@@ -77,7 +77,7 @@ class GLM:
 
         # store the augmented history matrix
         h = self.theta['history'].shape[0]
-        H = np.zeros((X.shape[0], *self.theta['history'].shape[:-1]))
+        H = np.zeros((X.shape[0],) + self.theta['history'].shape[:-1])
 
         # incrementally apply the spike history and coupling filters
         for t in range(1, spikes.shape[1]):

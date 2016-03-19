@@ -80,20 +80,20 @@ class GLM:
         H = np.zeros((X.shape[0],) + self.theta['history'].shape[:-1])
 
         # incrementally apply the spike history and coupling filters
-        for t in range(1, spikes.shape[1]):
-
-            # draw poisson spikes for this time point
-            spikes[t] = np.random.poisson(np.exp(u[t]))
+        for t in range(spikes.shape[1]):
 
             # pad the spikes
             if t < h:
-                spikepad = np.pad(spikes[:t], ((0, h - t), (0, 0)), 'constant')
+                spikepad = np.pad(spikes[:t], ((h - t, 0), (0, 0)), 'constant')
             else:
                 spikepad = spikes[(t - h):t]
             H[t] = spikepad
 
             # project spike history onto coupling filters
             u[t] += np.tensordot(H[t], self.theta['history'], axes=2)
+
+            # draw poisson spikes for this time point
+            spikes[t] = np.random.poisson(np.exp(u[t]))
 
         return u, H
 

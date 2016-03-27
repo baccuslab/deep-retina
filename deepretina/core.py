@@ -67,3 +67,4 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
         print('\nCleaning up')
 
     print('\nTraining complete!')
+    # monitor.cleanup

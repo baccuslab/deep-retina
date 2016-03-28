@@ -1,6 +1,5 @@
 """
 Preprocessing utility functions for loading and formatting experimental data
-
 """
 
 from __future__ import absolute_import, division, print_function
@@ -72,7 +71,7 @@ class Experiment(object):
             'load_fraction': load_fraction
         }
 
-        assert holdout > 0 and holdout < 1, "holdout must be between 0 and 1"
+        assert holdout >= 0 and holdout < 1, "holdout must be between 0 and 1"
         self.batchsize = batchsize
         self.dt = dt
 
@@ -211,8 +210,13 @@ def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0, n
             # get the length of the experiment
             expt_length = f[train_or_test]['time'].size
 
+            # hard coded number of repeats
+            if train_or_test is 'train':
+                num_repeats = 6
+            else:
+                num_repeats = 1
+
             # clip the front of each repeat by nskip samples (d
-            num_repeats = 6  # the number of repeats used in this experiment (hard coded for now)
             clipped_indices = np.arange(expt_length).reshape(num_repeats, -1)[:, nskip:].ravel()
 
             # sub select the indices based on the given load_fraction
@@ -220,13 +224,13 @@ def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0, n
             indices = clipped_indices[:num_samples]
 
             # load the stimulus as a float32 array, and z-score it
-            stim = zscore(np.array(f[train_or_test]['stimulus'][indices]).astype('float32'))
+            stim = zscore(np.array(f[train_or_test]['stimulus']).astype('float32'))[indices]
 
             # reshape into the Toeplitz matrix (nsamples, history, *stim_dims)
             stim_reshaped = rolling_window(stim, history, time_axis=0)
 
             # get the response for this cell (nsamples, ncells)
-            resp = np.array(f[train_or_test]['response/firing_rate_10ms'][cells, indices]).T
+            resp = np.array(f[train_or_test]['response/firing_rate_10ms'][cells]).T[indices]
             resp = resp[history:]
 
     return Exptdata(stim_reshaped, resp)

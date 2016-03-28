@@ -64,14 +64,14 @@ def fit_convnet(cells, train_stimuli, exptdate, readme=None):
 
     # get the convnet layers
     layers = convnet(stim_shape, ncells, num_filters=(8, 16),
-                     filter_size=(13, 13), weight_init='normal', l2_reg=0.01, dropout=0.00)
+                     filter_size=(13, 13), weight_init='normal', l2_reg=0.01, dropout1=0.0, dropout2=0.0)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='poisson')
 
     # load experiment data
     test_stimuli = ['whitenoise', 'naturalscene']
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=6000)
 
     # create a monitor to track progress
     monitor = KerasMonitor('convnet', model, data, readme, save_every=10)
@@ -94,7 +94,7 @@ def fit_glm(cells, train_stimuli, exptdate, l2, readme=None):
     batchsize = 5000
 
     # build the GLM
-    model = GLM(stim_shape, coupling_history, len(cells), lr=1e-4, l2={'filter': l2[0], 'history': l2[1]})
+    model = GLM(stim_shape, coupling_history, len(cells), lr=2e-4, l2={'filter': l2[0], 'history': l2[1]})
 
     # load experimental data
     test_stimuli = ['whitenoise']
@@ -112,11 +112,15 @@ def fit_glm(cells, train_stimuli, exptdate, l2, readme=None):
 if __name__ == '__main__':
 
     # GLM
-    for l2a in np.logspace(-2, 1, 4):
-        for l2b in np.logspace(-3, 0, 4):
-            mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b), description='full GLM, l2=({}, {})'.format(l2a, l2b))
+    # for l2a in np.logspace(-2, 1, 4):
+        # for l2b in np.logspace(-3, 0, 4):
+            # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b), description='full GLM, l2=({}, {})'.format(l2a, l2b))
 
-    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise', 'whitenoise'], '15-10-07', description='Double whitenoise training')
+    # l2a = 0.1
+    # l2b = 0.0
+    # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b), description='Testing full GLM, l2=({}, {}), lr=2e-4'.format(l2a, l2b))
+
+    mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', description='Naturalscene training')
 
     # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['naturalscene'], '15-10-07', description='LN models w/ sta initialization (ns)')
     # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['whitenoise'], '15-10-07', description='LN models w/ sta initialization (wn)')

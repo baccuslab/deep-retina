@@ -1,6 +1,5 @@
 """
 Toolbox with helpful utilities for exploring Keras models
-
 """
 
 from __future__ import absolute_import, division, print_function
@@ -12,6 +11,55 @@ import tableprint
 from keras.models import model_from_json
 from .experiments import loadexpt
 from . import metrics
+from .utils import notify
+from functools import partial
+
+
+class Models:
+
+    def __init__(self, basedir):
+        """Creates a data structure to hold the list of models"""
+
+        self.basedir = basedir
+        self.models = {}
+
+        # scan base directory for models folders
+        with notify('Scanning {} for all models'.format(basedir)):
+            for folder in os.listdir(basedir):
+
+                try:
+                    # load the description string
+                    with open(os.path.join(basedir, folder, 'README.md'), 'r') as f:
+                        lines = f.readlines()
+                        desc_index = [line.strip() for line in lines].index('### description')
+                        self.models[folder] = lines[desc_index + 1].strip()
+
+                except (NotADirectoryError, FileNotFoundError, ValueError):
+                    pass
+
+    def search(self, text, disp=True):
+        """Searches model descriptions for the given text"""
+
+        keys = list()
+        for key, value in self.models.items():
+            if text in value:
+                keys.append(key)
+                if disp:
+                    highlighted = value.replace(text, '\033[94m{}\033[0m'.format(text))
+                    print('{}: {}'.format(key, highlighted))
+
+        if len(keys) == 0:
+            print('Did not find "{}" in any model descriptions!'.format(text))
+
+        return keys
+
+    def filepath(self, *args):
+        """Returns the filepath of the given key + arguments"""
+        return os.path.join(self.basedir, *args)
+
+    def weights(self, key, filename='best_weights.h5'):
+        """Returns a function that loads weights from the given filename, for the given key"""
+        return partial(get_weights, filepath(key, filename))
 
 
 def load_model(model_path, weight_filename):
@@ -90,9 +138,7 @@ def list_layers(model_path, weight_filename):
 
 
 def get_test_responses(model, stim_type='whitenoise', cells=[0], exptdate='15-10-07'):
-    '''
-        Get a list of [true_responses, model_responses] on the same test data.
-    '''
+    """Get a list of [true_responses, model_responses] on the same test data."""
     test_data = loadexpt(cells, stim_type, 'test', 40, exptdate=exptdate)
 
     truth = []
@@ -145,18 +191,35 @@ def get_performance(model, stim_type='natural', cells=[0], metric='cc'):
     return test_results
 
 
-def get_weights(path_to_weights, layer_name='layer_0', weight_name='param_0'):
+def get_weights(filepath, layer=0, param=0):
     """
     Return the weights from a saved .h5 file.
 
-    INPUTS:
-    path_to_weights path to weights
-    layer_name      name of the layer you want
-    weight_name     'param_0' or 'param_1' depending on if you want weights or biases
+    Parameters
+    ----------
+    filepath : str
+        Path to the weights h5 file
+
+    layer : int or str
+        name of the layer. If an int, assumed to be 'layer_x', where x is the int,
+        otherwise, the given string is used
+
+    param : int or str
+        name of the parameter within this layer. If an int, assumed to be 'param_x',
+        where x is the int, otherwise, the given string is used. param_0 stores the
+        weights, and param_1 stores the biases
     """
 
-    weight_file = h5py.File(path_to_weights, 'r')
+    assert isinstance(layer, (str, int)), "Layer argument must be an int or a string"
+    assert isinstance(param, (str, int)), "Param argument must be an int or a string"
 
-    # param_0 stores the weights, param_1 stores biases
-    weights = weight_file[layer_name][weight_name]
+    if isinstance(layer, int):
+        layer = 'layer_{:d}'.format(layer)
+
+    if isinstance(param, int):
+        param = 'param_{:d}'.format(param)
+
+    with h5py.File(filepath, 'r') as f:
+        weights = np.array(f[layer][param]).astype('float64')
+
     return weights

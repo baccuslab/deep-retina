@@ -8,10 +8,7 @@ f = input("Please type in the path you want to start from and press 'Enter': ")
 
 print('Starting to walk down directories')
 # e.g. first run from os.path.expanduser('~/Dropbox/deep-retina/saved')
-if f[0] == '~':
-    walker = os.walk(os.path.expanduser(f), topdown=True)
-else:
-    walker = os.walk(f, topdown=True)
+walker = os.walk(os.path.expanduser(f), topdown=True)
 weight_name = 'best_weights.h5'
 architecture_name = 'architecture.json'
 

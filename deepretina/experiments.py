@@ -1,6 +1,5 @@
 """
 Preprocessing utility functions for loading and formatting experimental data
-
 """
 
 from __future__ import absolute_import, division, print_function
@@ -20,7 +19,7 @@ __all__ = ['Experiment', 'loadexpt']
 class Experiment(object):
     """Lightweight class to keep track of loaded experiment data"""
 
-    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, dt=1e-2, load_fraction=1.0):
+    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, nskip=0, dt=1e-2, load_fraction=1.0):
         """Keeps track of experimental data
 
         Parameters
@@ -45,8 +44,13 @@ class Experiment(object):
         batchsize : int
             How many samples to include in each training batch
 
-        holdout : fraction
-            How much data to holdout (fraction of batches)
+        holdout : float
+            How much data to holdout (fraction of batches) (must be between 0 and 1)
+
+        nskip : int
+            The number of stimulus frames to skip at the beginning of each stimulus block.
+            Used to remove times when the retina is rapidly adapting to the change in stimulus
+            statistics. (Default: 0)
 
         dt : float
             The sampling period (in seconds). (default: 0.01)
@@ -67,7 +71,7 @@ class Experiment(object):
             'load_fraction': load_fraction
         }
 
-        assert holdout > 0 and holdout < 1, "holdout must be between 0 and 1"
+        assert holdout >= 0 and holdout < 1, "holdout must be between 0 and 1"
         self.batchsize = batchsize
         self.dt = dt
 
@@ -81,7 +85,7 @@ class Experiment(object):
         for filename in train_filenames:
 
             # load the training experiment as an Exptdata tuple
-            self._train_data[filename] = load_data(filename, 'train')
+            self._train_data[filename] = load_data(filename, 'train', nskip=nskip)
 
             # generate the train/validation split
             length = self._train_data[filename].X.shape[0]
@@ -164,7 +168,7 @@ class Experiment(object):
         return self._train_data['whitenoise'].X.shape[1:]
 
 
-def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0):
+def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0, nskip=0):
     """Loads an experiment from an h5 file on disk
 
     Parameters
@@ -187,6 +191,9 @@ def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0):
     load_fraction : float, optional
         Fraction of the expt to load, must be between 0 and 1 (Default: 1.0)
 
+    nskip : float, optional
+        Number of samples to skip at the beginning of each repeat (Default: 0)
+
     """
 
     assert load_fraction > 0 and load_fraction <= 1, "Fraction of data to load must be between 0 and 1"
@@ -196,24 +203,35 @@ def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0):
     with notify('Loading {}ing data for {}/{}'.format(train_or_test, expt, filename)):
 
         # load the hdf5 file
-        filepath = os.path.join(os.path.expanduser('~/experiments/data'),
-                                expt,
-                                filename + '.h5')
+        filepath = os.path.join(os.path.expanduser('~/experiments/data'), expt, filename + '.h5')
 
         with h5py.File(filepath, mode='r') as f:
 
-            # get the length of the experiment & the number of samples to load
+            # get the length of the experiment
             expt_length = f[train_or_test]['time'].size
-            num_samples = int(np.floor(expt_length * load_fraction))
+
+            # hard coded number of repeats
+            if train_or_test is 'train':
+                num_repeats = 6
+            else:
+                num_repeats = 1
+
+            # clip the front of each repeat by nskip samples (d
+            clipped_indices = np.arange(expt_length).reshape(num_repeats, -1)[:, nskip:].ravel()
+
+            # sub select the indices based on the given load_fraction
+            num_samples = int(np.floor(clipped_indices.size * load_fraction))
+            indices = clipped_indices[:num_samples]
 
             # load the stimulus as a float32 array, and z-score it
-            stim = zscore(np.array(f[train_or_test]['stimulus'][:num_samples]).astype('float32'))
+            stim = zscore(np.array(f[train_or_test]['stimulus']).astype('float32'))[indices]
 
             # reshape into the Toeplitz matrix (nsamples, history, *stim_dims)
             stim_reshaped = rolling_window(stim, history, time_axis=0)
 
             # get the response for this cell (nsamples, ncells)
-            resp = np.array(f[train_or_test]['response/firing_rate_10ms'][cells, history:num_samples]).T
+            resp = np.array(f[train_or_test]['response/firing_rate_10ms'][cells]).T[indices]
+            resp = resp[history:]
 
     return Exptdata(stim_reshaped, resp)
 

@@ -46,13 +46,13 @@ def fit_ln(cells, train_stimuli, exptdate, readme=None):
     monitor = KerasMonitor('ln', model, data, readme, save_every=10)
 
     # train
-    train(model, data, monitor, num_epochs=100)
+    train(model, data, monitor, num_epochs=50)
 
     return model
 
 
 @main_wrapper
-def fit_convnet(cells, train_stimuli, exptdate, readme=None):
+def fit_convnet(cells, train_stimuli, exptdate, nclip=0, readme=None):
     """Main script for fitting a convnet
 
     author: Niru Maheswaranathan
@@ -64,57 +64,65 @@ def fit_convnet(cells, train_stimuli, exptdate, readme=None):
 
     # get the convnet layers
     layers = convnet(stim_shape, ncells, num_filters=(8, 16),
-                     filter_size=(13, 13), weight_init='normal', l2_reg=0.01, dropout=0.00)
+                     filter_size=(13, 13), weight_init='normal', l2_reg=0.01, dropout1=0.0, dropout2=0.0)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='poisson')
 
     # load experiment data
     test_stimuli = ['whitenoise', 'naturalscene']
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip)
 
     # create a monitor to track progress
     monitor = KerasMonitor('convnet', model, data, readme, save_every=10)
 
     # train
-    train(model, data, monitor, num_epochs=100)
+    train(model, data, monitor, num_epochs=50)
 
     return model
 
 
 @main_wrapper
-def fit_glm(cell_index, train_stimuli, exptdate, l2, readme=None):
+def fit_glm(cells, train_stimuli, exptdate, l2, readme=None):
     """Main script for fitting a GLM
 
     author: Niru Maheswaranathan
     """
 
     stim_shape = (40, 50, 50)
+    coupling_history = 20
     batchsize = 5000
 
     # build the GLM
-    model = GLM(stim_shape, lr=1e-4, l2={'filter': l2})
+    model = GLM(stim_shape, coupling_history, len(cells), lr=2e-4, l2={'filter': l2[0], 'history': l2[1]})
 
     # load experimental data
     test_stimuli = ['whitenoise']
-    data = Experiment(exptdate, cell_index, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor to track progress
     monitor = GLMMonitor('GLM', model, data, readme, save_every=20)
 
     # train
-    train(model, data, monitor, num_epochs=10)
+    train(model, data, monitor, num_epochs=25)
 
     return model
 
 
 if __name__ == '__main__':
 
-    # testing GLM
-    for l2 in np.logspace(-3, 0, 4):
-        mdl = fit_glm(0, ['whitenoise'], '15-10-07', l2, description='Testing GLM model code, l2 penalty is {}'.format(l2))
+    # GLM
+    # for l2a in np.logspace(-2, 1, 4):
+        # for l2b in np.logspace(-3, 0, 4):
+            # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b), description='full GLM, l2=({}, {})'.format(l2a, l2b))
 
-    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise', 'whitenoise'], '15-10-07', description='Double whitenoise training')
+    # l2a = 0.1
+    # l2b = 0.0
+    # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b), description='Testing full GLM, l2=({}, {}), lr=2e-4'.format(l2a, l2b))
+
+    # mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', description='Naturalscene training')
+    mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=30000, description='Whitenoise (clipping five  minutes of each repeat)')
+    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=0, description='Whitenoise w/o clipping')
 
     # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['naturalscene'], '15-10-07', description='LN models w/ sta initialization (ns)')
     # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['whitenoise'], '15-10-07', description='LN models w/ sta initialization (wn)')

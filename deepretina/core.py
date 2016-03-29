@@ -33,6 +33,7 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
 
     # initialize training iteration
     iteration = 0
+    train_start = time()
 
     # loop over epochs
     try:
@@ -65,5 +66,10 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
 
     except KeyboardInterrupt:
         print('\nCleaning up')
+
+    # allows the monitor to perform any post-training visualization
+    if monitor is not None:
+        elapsed_time = time() - train_start
+        monitor.cleanup(iteration, elapsed_time)
 
     print('\nTraining complete!')

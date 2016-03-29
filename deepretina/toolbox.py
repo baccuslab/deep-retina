@@ -12,7 +12,10 @@ from keras.models import model_from_json
 from .experiments import loadexpt
 from . import metrics
 from .utils import notify
+from .visualizations import visualize_convnet, visualize_glm
 from functools import partial
+import pandas as pd
+import json
 
 
 class Models:
@@ -59,7 +62,61 @@ class Models:
 
     def weights(self, key, filename='best_weights.h5'):
         """Returns a function that loads weights from the given filename, for the given key"""
-        return partial(get_weights, filepath(key, filename))
+        return partial(get_weights, self.filepath(key, filename))
+
+
+class Model:
+
+    def __init__(self, basedir, key):
+        self.basedir = basedir
+        self.key = key
+        self.hashkey, self.modeltype = key.split(' ')
+
+    def filepath(self, *args):
+        """Returns the filepath of the given key + arguments"""
+        return os.path.join(self.basedir, self.key, *args)
+
+    def __getitem__(self, filename):
+        """Loads the given file from this model's directory"""
+
+        # add file extension if the filename is one of these special cases
+        if filename in ('metadata', 'architecture', 'experiment'):
+            filename += '.json'
+        elif filename in ('best_weights'):
+            filename += '.h5'
+        elif filename in ('train', 'validation'):
+            filename += '.csv'
+
+        # get the name and extension
+        _, ext = filename.split('.')
+        fullpath = self.filepath(filename)
+
+        if ext == 'json':
+            with open(fullpath, 'r') as f:
+                return json.load(f)
+
+        elif ext == 'h5':
+            return h5py.File(fullpath, 'r')
+
+        elif ext == 'csv':
+            return pd.read_csv(fullpath)
+
+        else:
+            raise ValueError('Could not parse extension "{}"'.format(ext))
+
+    def plot(self, filename='best_weights.h5'):
+        """Plots the parameters of this model"""
+
+        if self.modeltype == 'convnet':
+            figures = visualize_convnet(self[filename], self['architecture.json']['layers'])
+
+        elif self.modeltype.lower() == 'glm':
+            figures = visualize_glm(self[filename])
+
+        else:
+            raise ValueError("I don't know how to plot a model of type '{}'".format(self.modeltype))
+
+        return figures
 
 
 def load_model(model_path, weight_filename):

@@ -14,7 +14,7 @@ from matplotlib import animation, gridspec
 
 def plot_traces_grid(weights, tax=None, color='k', lw=3):
     """Plots the given array of 1D traces on a grid
-    
+
     Parameters
     ----------
     weights : array_like
@@ -65,7 +65,7 @@ def plot_traces_grid(weights, tax=None, color='k', lw=3):
 
 def plot_filters(weights, cmap='seismic', normalize=True):
     """Plots an array of spatiotemporal filters
-    
+
     Parameters
     ----------
     weights : array_like
@@ -132,7 +132,7 @@ def plot_filters(weights, cmap='seismic', normalize=True):
 
 def reshape_affine(weights, num_conv_filters):
     """Reshapes a layer of affine weights (loaded from a keras h5 file)
-    
+
     Takes a weights array (from a keras affine layer) that has dimenions (S*S*C) x (A), and reshape
     it to be C x A x S x S, where C is the number of conv filters (given), A is the number of affine
     filters, and S is the number of spatial dimensions in each filter
@@ -146,7 +146,7 @@ def reshape_affine(weights, num_conv_filters):
 
 def plot_spatial_grid(weights, cmap='seismic', normalize=True):
     """Plots the given array of spatial weights on a grid
-    
+
     Parameters
     ----------
     weights : array_like
@@ -235,6 +235,51 @@ def gridshape(n, tol=2.0):
         if (b / a <= tol):
             return (a, b)
 
+
+def visualize_convnet(h5file, layers, dt=1e-2):
+    """Visualize the weights for a convnet given an hdf5 file handle"""
+
+    # visualize each layer
+    figures = list()
+    for key, layer in zip(h5file.keys(), layers):
+
+        if layer['custom_name'] == 'convolution2d':
+            num_conv_filters = layer['nb_filter']
+            fig = plot_filters(np.array(h5file[key]['param_0']))
+            figures.append(fig)
+
+        elif layer['custom_name'] == 'dense':
+            weights = np.array(h5file[key]['param_0'])
+
+            # affine layer after a convlayer
+            try:
+                W = reshape_affine(weights, num_conv_filters)
+                fig = plot_spatial_grid(W)
+                figures.append(fig)
+
+            # arbitrary affine matrix
+            except AssertionError:
+                maxval = np.max(np.abs(weights.ravel()))
+                fig = plt.figure()
+                ax = fig.add_subplot(111)
+                ax.imshow(weights, cmap='seismic', vmin=-maxval, vmax=maxval)
+                figures.append(fig)
+
+    return figures
+
+
+def visualize_glm(h5file):
+    """Visualize the parameters of a GLM"""
+
+    # plot the filters
+    filters = np.array(h5file['filter'])
+    fig1 = plot_filters(np.rollaxis(filters, 3))
+
+    # plot the history / coupling traces
+    history = np.array(h5file['history'])
+    fig2 = plot_traces_grid(np.rollaxis(history, 0, 3))
+
+    return [fig1, fig2]
 
 def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
         fig_dir=None, fig_size=(8,10), dpi=300, space=True, time=True, display=True,

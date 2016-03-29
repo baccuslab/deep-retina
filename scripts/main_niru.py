@@ -46,13 +46,13 @@ def fit_ln(cells, train_stimuli, exptdate, readme=None):
     monitor = KerasMonitor('ln', model, data, readme, save_every=10)
 
     # train
-    train(model, data, monitor, num_epochs=100)
+    train(model, data, monitor, num_epochs=50)
 
     return model
 
 
 @main_wrapper
-def fit_convnet(cells, train_stimuli, exptdate, readme=None):
+def fit_convnet(cells, train_stimuli, exptdate, nclip=0, readme=None):
     """Main script for fitting a convnet
 
     author: Niru Maheswaranathan
@@ -71,13 +71,13 @@ def fit_convnet(cells, train_stimuli, exptdate, readme=None):
 
     # load experiment data
     test_stimuli = ['whitenoise', 'naturalscene']
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=6000)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip)
 
     # create a monitor to track progress
     monitor = KerasMonitor('convnet', model, data, readme, save_every=10)
 
     # train
-    train(model, data, monitor, num_epochs=100)
+    train(model, data, monitor, num_epochs=50)
 
     return model
 
@@ -120,7 +120,9 @@ if __name__ == '__main__':
     # l2b = 0.0
     # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b), description='Testing full GLM, l2=({}, {}), lr=2e-4'.format(l2a, l2b))
 
-    mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', description='Naturalscene training')
+    # mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', description='Naturalscene training')
+    mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=30000, description='Whitenoise (clipping five  minutes of each repeat)')
+    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=0, description='Whitenoise w/o clipping')
 
     # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['naturalscene'], '15-10-07', description='LN models w/ sta initialization (ns)')
     # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['whitenoise'], '15-10-07', description='LN models w/ sta initialization (wn)')

@@ -4,7 +4,8 @@ Main script for training deep retinal models
 """
 
 from __future__ import absolute_import
-from deepretina.models import sequential, convnet, train, generalizedconvnet, fixedlstm
+from deepretina.models import sequential, convnet, generalizedconvnet, fixedlstm
+from deepretina.core import train
 from deepretina.experiments import Experiment
 from deepretina.io import KerasMonitor, main_wrapper
 from keras.layers.recurrent import SimpleRNN
@@ -52,13 +53,13 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, readme=
 
     stim_shape = (40, 50, 50)
     ncells = len(cells)
-    batchsize = 2
+    batchsize = 8000
 
     # get the convnet layers
     layers = generalizedconvnet(stim_shape, ncells, 
             architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine'),
             num_filters=[8, -1, -1, 16], filter_sizes=[15, -1, -1, 7], weight_init='normal',
-            l2_reg=0.01, dropout=0.25, sigma=0.01)
+            l2_reg=0.02, dropout=0.25, sigma=0.001)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='sub_poisson_loss')
@@ -172,4 +173,4 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-10-07')
     #mdl = fit_convnet(gc_15_10_07, ['whitenoise', 'naturalscene'], ['whitenoise', 'naturalscene'], '15-10-07')
     #mdl = fit_generalizedconvnet(gc_16_01_08, ['whitenoise', 'naturalscene', 'naturalmovie', 'whitenoise', 'naturalmovie', 'naturalmovie'], ['whitenoise', 'naturalscene', 'naturalmovie', 'structured'], '16-01-08')
-    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')
+    mdl = fit_generalizedconvnet(gc_15_10_07, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-10-07')

@@ -14,56 +14,145 @@ __all__ = ['GLM']
 
 
 class GLM:
-    def __init__(self, shape, lr=1e-4):
-        """GLM model class"""
+    def __init__(self, filter_shape, coupling_history, ncells, lr=1e-4, l2=0.0):
+        """GLM model class
 
+        Parameters
+        ----------
+        filter_shape : tuple
+            The dimensions of the stimulus filter, e.g. (nt, nx, ny)
+
+        coupling_history : tuple
+            How many timesteps to include in the coupling filter
+
+        lr : float, optional
+            Learning rate for RMSprop (Default: 1e-4)
+
+        l2 : float, optional
+            l2 regularization penalty on the weights (Default: 0.0)
+        """
         # initialize parameters
         self.theta_init = {
-            'filter': np.random.randn(*shape) * 1e-6,
-            'bias': np.array([0.0]),
+            'filter': np.random.randn(*(filter_shape + (ncells,))) * 1e-6,
+            'bias': np.zeros(ncells),
+            'history': np.random.randn(coupling_history, ncells, ncells) * 1e-6
         }
 
         # initialize optimizer
         self.opt = RMSProp(destruct(self.theta_init).copy(), lr=lr)
 
+        # add regularization
+        if type(l2) is float:
+
+            # same value for all keys
+            self.l2 = {key: l2 for key in self.theta_init.keys()}
+
+        elif type(l2) is dict:
+
+            # default value is zero for every parameter
+            self.l2 = {key: 0.0 for key in self.theta_init.keys()}
+
+            # update with the given values
+            self.l2.update(l2)
+
+        else:
+            raise ValueError("l2 keyword argument must be a float or a dictionary")
+
     @property
     def theta(self):
+        """Gets the dictionary of parameters"""
         return restruct(self.opt.xk, self.theta_init)
 
+    def set_theta(self, theta):
+        """Manually sets the values for the parameters"""
+        self.opt.xk = destruct(theta).copy()
+
+    def generator(self, X):
+        """Gets the generator signal (pre-nonlinearity)"""
+
+        # project the stimulus onto the stimulus filter
+        nax = self.theta['filter'].ndim - 1
+        u = np.tensordot(X, self.theta['filter'], axes=nax) + self.theta['bias']
+        spikes = np.empty(u.shape)
+
+        # store the augmented history matrix
+        h = self.theta['history'].shape[0]
+        H = np.zeros((X.shape[0],) + self.theta['history'].shape[:-1])
+
+        # incrementally apply the spike history and coupling filters
+        for t in range(spikes.shape[1]):
+
+            # pad the spikes
+            if t < h:
+                spikepad = np.pad(spikes[:t], ((h - t, 0), (0, 0)), 'constant')
+            else:
+                spikepad = spikes[(t - h):t]
+            H[t] = spikepad
+
+            # project spike history onto coupling filters
+            u[t] += np.tensordot(H[t], self.theta['history'], axes=2)
+
+            # draw poisson spikes for this time point
+            spikes[t] = np.random.poisson(np.exp(u[t]))
+
+        return u, H
+
     def predict(self, X):
-        """Predicts the firing rate given the stimulus"""
-        return np.exp(self.project(X))
+        """Predicts the firing rate given a stimulus"""
+        return np.exp(self.generator(X)[0])
 
     def train_on_batch(self, X, y):
-        """Updates the parameters on the given batch"""
+        """Updates the parameters on the given batch
 
+        (with the corresponding regularization penalties)
+        """
         # compute the objective and gradient
-        obj, gradient = self.loss(X, y)
+        objective, gradient = self.loss(X, y)
+
+        # update objective and gradient with the l2 penalty
+        for key in gradient.keys():
+            objective += 0.5 * self.l2[key] * np.linalg.norm(self.theta[key].ravel(), 2) ** 2
+            gradient[key] += self.l2[key] * self.theta[key]
 
         # pass the gradient to the optimizer
         self.opt(destruct(gradient))
 
-        return obj, gradient
+        return objective, gradient
 
     def loss(self, X, y):
-        """Gets the objective and gradient for the given batch of data"""
-        u = self.project(X)
-        rhat = np.exp(u)
+        """Gets the objective and gradient for the given batch of data
+
+        (ignores the l2 regularization penalty)
+        """
+        # forward pass
+        u, H = self.generator(X)
+        yhat = np.exp(u)
 
         # compute the objective
-        obj = (rhat - y * u).mean()
+        objective = (yhat - y * u).mean()
 
         # compute gradient
-        factor = rhat - y
-        gradient = {}
-        gradient['bias'] = factor.mean()
-        gradient['filter'] = np.tensordot(factor, X, axes=1) / float(X.shape[0])
+        factor = yhat - y
+        T = float(factor.size)
+        gradient = {
+            'bias': factor.mean(axis=0) / float(self.theta['bias'].size),
+            'filter': np.tensordot(X, factor, axes=(0, 0)) / T,
+            'history': np.tensordot(H, factor, axes=(0, 0)) / T,
+        }
 
-        return obj, gradient
+        return objective, gradient
 
-    def project(self, X):
-        """Projects the given stimulus onto the filter parameters"""
-        return np.tensordot(X, self.theta['filter'], axes=self.theta['filter'].ndim) + self.theta['bias']
+    def get_f_df(self, X, y, regularize=True):
+        """returns an f_df function (for use with check_grad, for example)"""
+        def f_df(theta):
+            self.set_theta(theta)
+            objective, grad = self.loss(X, y)
+            if regularize:
+                for key in grad.keys():
+                    objective += 0.5 * self.l2[key] * np.linalg.norm(self.theta[key].ravel(), 2) ** 2
+                    grad[key] += self.l2[key] * self.theta[key]
+            return objective, grad
+        return f_df
 
     def save_weights(self, filepath, overwrite=False):
         """Saves weights to an HDF5 file"""

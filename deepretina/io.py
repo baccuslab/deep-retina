@@ -1,6 +1,5 @@
 """
 Helper utilities for saving models and model outputs
-
 """
 
 from __future__ import absolute_import, division, print_function
@@ -120,6 +119,10 @@ class Monitor:
     def _update_best(self, epoch, iteration):
         """Called when there is a new best iteration"""
         pass
+
+    def cleanup(self, iteration, elapsed_time):
+        """Called when the model has finished training"""
+        print('Finished training model {} after {} iterations and {} hours.'.format(self.hashkey, iteration, elapsed_time / 3600.))
 
     def save(self, epoch, iteration, X_train, r_train, model_predict):
         """Saves relevant information for this epoch/iteration of training

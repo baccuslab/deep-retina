@@ -52,7 +52,7 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, readme=
 
     stim_shape = (40, 50, 50)
     ncells = len(cells)
-    batchsize = 5000
+    batchsize = 2
 
     # get the convnet layers
     layers = generalizedconvnet(stim_shape, ncells, 
@@ -67,7 +67,7 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, readme=
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor to track progress
-    monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
+    monitor = None #KerasMonitor('convnet', model, data, readme, save_every=20)
 
     # train
     train(model, data, monitor, num_epochs=100)

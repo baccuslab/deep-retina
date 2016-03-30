@@ -588,6 +588,8 @@ def animate_convnet_weights(weights, title='convnet', layer_name='layer_0',
             remove_command = 'rm {}' .format(f)
             os.system(remove_command)
 
+        plt.close()
+
 
     if display:
         plt.show()

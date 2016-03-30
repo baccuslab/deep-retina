@@ -243,12 +243,12 @@ def visualize_convnet(h5file, layers, dt=1e-2):
     figures = list()
     for key, layer in zip(h5file.keys(), layers):
 
-        if layer['custom_name'] == 'convolution2d':
+        if layer['name'] == 'Convolution2D':
             num_conv_filters = layer['nb_filter']
             fig = plot_filters(np.array(h5file[key]['param_0']))
             figures.append(fig)
 
-        elif layer['custom_name'] == 'dense':
+        elif layer['name'] == 'Dense':
             weights = np.array(h5file[key]['param_0'])
 
             # affine layer after a convlayer

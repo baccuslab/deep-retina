@@ -281,6 +281,7 @@ def visualize_glm(h5file):
 
     return [fig1, fig2]
 
+
 def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
         fig_dir=None, fig_size=(8,10), dpi=300, space=True, time=True, display=True,
         save=False, cmap='seismic', normalize=True):

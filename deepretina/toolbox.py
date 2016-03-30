@@ -162,6 +162,17 @@ class Model:
         """Returns the filepath of the given key + arguments, if it exists"""
         return os.path.join(self.basedir, self.key, *args)
 
+    @property
+    def results(self):
+        return load_h5(self.filepath('results.h5'))
+
+    def bestiter(self, on='validation', metric='lli'):
+        if self.results is not None:
+            return np.array(self.results[on][metric]).mean(axis=1).argmax()
+
+    def performance(self, idx, stimulus, on='test', metric='lli'):
+        return np.array(self.results[on][stimulus][metric][idx])
+
     def weights(self, filename='best_weights.h5'):
         """Loads the given weights file from this model's directory"""
 
@@ -169,14 +180,14 @@ class Model:
         if not filename.endswith('.h5'):
             filename += '.h5'
 
-        return h5py.File(self.filepath(filename), 'r')
+        return load_h5(self.filepath(filename))
 
     def plot(self, filename='best_weights.h5'):
         """Plots the parameters of this model"""
         weights = self.weights(filename)
 
         if self.modeltype == 'convnet':
-            figures = visualize_convnet(weights, self['architecture.json']['layers'])
+            figures = visualize_convnet(weights, self.architecture['layers'])
 
         elif self.modeltype.lower() == 'glm':
             figures = visualize_glm(weights)
@@ -202,6 +213,13 @@ def load_csv(filepath):
         return None
 
     return pd.read_csv(filepath)
+
+
+def load_h5(filepath):
+    if not os.path.exists(filepath):
+        return None
+
+    return h5py.File(filepath, 'r')
 
 
 def load_model(model_path, weight_filename):

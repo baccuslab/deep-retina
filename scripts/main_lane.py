@@ -45,27 +45,27 @@ def fit_convnet(cells, train_stimuli, test_stimuli, exptdate, readme=None):
 
 
 @main_wrapper
-def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, readme=None):
+def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0, readme=None):
     """Main script for fitting a convnet
 
     author: Lane McIntosh
     """
 
-    stim_shape = (40, 50, 50)
+    stim_shape = (30, 50, 50)
     ncells = len(cells)
     batchsize = 8000
 
     # get the convnet layers
     layers = generalizedconvnet(stim_shape, ncells, 
-            architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine'),
-            num_filters=[8, -1, -1, 16], filter_sizes=[15, -1, -1, 7], weight_init='normal',
-            l2_reg=0.02, dropout=0.25, sigma=0.001)
+            architecture=('conv', 'noise', 'requ', 'batchnorm', 'flatten', 'dropout', 'affine', 'noise', 'requ', 'batchnorm', 'flatten', 'affine'),
+            num_filters=[8, -1, -1, -1, -1, -1, 16], filter_sizes=[17], weight_init='normal',
+            l2_reg=0.05, dropout=0.25, sigma=0.1)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='sub_poisson_loss')
 
     # load experiment data
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip)
 
     # create a monitor to track progress
     monitor = None #KerasMonitor('convnet', model, data, readme, save_every=20)
@@ -173,4 +173,4 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-10-07')
     #mdl = fit_convnet(gc_15_10_07, ['whitenoise', 'naturalscene'], ['whitenoise', 'naturalscene'], '15-10-07')
     #mdl = fit_generalizedconvnet(gc_16_01_08, ['whitenoise', 'naturalscene', 'naturalmovie', 'whitenoise', 'naturalmovie', 'naturalmovie'], ['whitenoise', 'naturalscene', 'naturalmovie', 'structured'], '16-01-08')
-    mdl = fit_generalizedconvnet(gc_15_10_07, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-10-07')
+    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')

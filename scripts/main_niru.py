@@ -4,11 +4,13 @@ Main script for training deep retinal models
 """
 
 from __future__ import absolute_import
-from deepretina.models import sequential, convnet, ln, train
+from deepretina.models import sequential, convnet, ln
+from deepretina.core import train
 from deepretina.experiments import Experiment, _loadexpt_h5
-from deepretina.io import Monitor, main_wrapper
+from deepretina.io import KerasMonitor, GLMMonitor, main_wrapper
+from deepretina.glms import GLM
 import numpy as np
-from keras.optimizers import Adam, RMSprop
+from keras.optimizers import RMSprop
 
 
 @main_wrapper
@@ -41,16 +43,16 @@ def fit_ln(cells, train_stimuli, exptdate, readme=None):
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor
-    monitor = Monitor('ln', model, data, readme, save_every=10)
+    monitor = KerasMonitor('ln', model, data, readme, save_every=10)
 
     # train
-    train(model, data, monitor, num_epochs=100)
+    train(model, data, monitor, num_epochs=50)
 
     return model
 
 
 @main_wrapper
-def fit_convnet(cells, train_stimuli, exptdate, readme=None):
+def fit_convnet(cells, train_stimuli, exptdate, nclip=0, readme=None):
     """Main script for fitting a convnet
 
     author: Niru Maheswaranathan
@@ -61,26 +63,66 @@ def fit_convnet(cells, train_stimuli, exptdate, readme=None):
     batchsize = 5000
 
     # get the convnet layers
-    layers = convnet(stim_shape, ncells, num_filters=(32, 64),
-                     filter_size=(13, 13), weight_init='normal', l2_reg=0.1, dropout=0.75)
+    layers = convnet(stim_shape, ncells, num_filters=(8, 16),
+                     filter_size=(13, 13), weight_init='normal', l2_reg=0.01, dropout1=0.0, dropout2=0.0)
 
     # compile the keras model
-    model = sequential(layers, 'adam')
+    model = sequential(layers, 'adam', loss='poisson')
 
     # load experiment data
     test_stimuli = ['whitenoise', 'naturalscene']
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip)
+
+    # create a monitor to track progress
+    monitor = KerasMonitor('convnet', model, data, readme, save_every=10)
+
+    # train
+    train(model, data, monitor, num_epochs=50)
+
+    return model
+
+
+@main_wrapper
+def fit_glm(cells, train_stimuli, exptdate, l2, readme=None):
+    """Main script for fitting a GLM
+
+    author: Niru Maheswaranathan
+    """
+
+    stim_shape = (40, 50, 50)
+    coupling_history = 20
+    batchsize = 5000
+
+    # build the GLM
+    model = GLM(stim_shape, coupling_history, len(cells), lr=2e-4, l2={'filter': l2[0], 'history': l2[1]})
+
+    # load experimental data
+    test_stimuli = ['whitenoise']
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor to track progress
-    monitor = Monitor('convnet', model, data, readme, save_every=10)
+    monitor = GLMMonitor('GLM', model, data, readme, save_every=20)
 
     # train
-    train(model, data, monitor, num_epochs=100)
+    train(model, data, monitor, num_epochs=25)
 
     return model
 
 
 if __name__ == '__main__':
+
+    # GLM
+    # for l2a in np.logspace(-2, 1, 4):
+        # for l2b in np.logspace(-3, 0, 4):
+            # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b), description='full GLM, l2=({}, {})'.format(l2a, l2b))
+
+    # l2a = 0.1
+    # l2b = 0.0
+    # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b), description='Testing full GLM, l2=({}, {}), lr=2e-4'.format(l2a, l2b))
+
+    # mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', description='Naturalscene training')
+    mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=30000, description='Whitenoise (clipping five  minutes of each repeat)')
+    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=0, description='Whitenoise w/o clipping')
 
     # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['naturalscene'], '15-10-07', description='LN models w/ sta initialization (ns)')
     # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['whitenoise'], '15-10-07', description='LN models w/ sta initialization (wn)')
@@ -97,4 +139,4 @@ if __name__ == '__main__':
     # mdl = fit_ln(gc_151121b, ['naturalscene'], '15-11-21b', description='LN models w/ sta initialization (ns)')
     # mdl = fit_ln(gc_151121b, ['whitenoise'], '15-11-21b', description='LN models w/ sta initialization (wn)')
 
-    mdl = fit_convnet(list(range(37)), ['whitenoise', 'naturalscene'], 'all-cells')
+    # mdl = fit_convnet(list(range(37)), ['whitenoise', 'naturalscene'], 'all-cells')

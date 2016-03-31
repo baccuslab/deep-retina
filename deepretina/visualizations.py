@@ -1,6 +1,5 @@
 """
 Model visualization tools
-
 """
 
 from __future__ import absolute_import, division, print_function
@@ -10,6 +9,277 @@ import pyret.filtertools as ft
 import theano
 import os
 import h5py
+from matplotlib import animation, gridspec
+
+
+def plot_traces_grid(weights, tax=None, color='k', lw=3):
+    """Plots the given array of 1D traces on a grid
+
+    Parameters
+    ----------
+    weights : array_like
+        Must have shape (num_rows, num_cols, num_dimensions)
+
+    Returns
+    -------
+    fig : a matplotlib figure handle
+    """
+
+    # create the figure
+    fig = plt.figure(figsize=(12, 8))
+
+    # number of convolutional filters and number of affine filters
+    nrows = weights.shape[0]
+    ncols = weights.shape[1]
+    ix = 1
+
+    # keep everything on the same y-scale
+    ylim = (weights.min(), weights.max())
+
+    # time axis
+    if tax is None:
+        tax = np.arange(weights.shape[2])
+
+    for row in range(nrows):
+        for col in range(ncols):
+
+            # add the subplot
+            ax = fig.add_subplot(nrows, ncols, ix)
+            ix += 1
+
+            # plot the filter
+            ax.plot(tax, weights[row, col], color=color, lw=lw)
+            ax.set_ylim(ylim)
+            ax.set_xlim((tax[0], tax[-1]))
+
+            if row == col == 0:
+                ax.set_xlabel('Time (s)')
+            else:
+                plt.grid('off')
+                plt.axis('off')
+
+    plt.show()
+    plt.draw()
+    return fig
+
+
+def plot_filters(weights, cmap='seismic', normalize=True):
+    """Plots an array of spatiotemporal filters
+
+    Parameters
+    ----------
+    weights : array_like
+        Must have shape (num_conv_filters, num_temporal, num_spatial, num_spatial)
+
+    cmap : str, optional
+        A matplotlib colormap (Default: 'seismic')
+
+    normalize : boolean, optional
+        Whether or not to scale the color limit according to the minimum and maximum
+        values in the weights array
+
+    Returns
+    -------
+    fig : a matplotlib figure handle
+    """
+
+    # create the figure
+    fig = plt.figure(figsize=(12, 8))
+
+    # number of convolutional filters
+    num_filters = weights.shape[0]
+
+    # get the number of rows and columns in the grid
+    nrows, ncols = gridshape(num_filters, tol=2.0)
+
+    # build the grid for all of the filters
+    outer_grid = gridspec.GridSpec(nrows, ncols)
+
+    # normalize to the maximum weight in the array
+    if normalize:
+        max_val = np.max(abs(weights.ravel()))
+        vmin, vmax = -max_val, max_val
+    else:
+        vmin = np.min(weights.ravel())
+        vmax = np.max(weights.ravel())
+
+    # loop over each convolutional filter
+    for w, og in zip(weights, outer_grid):
+
+        # get the spatial and temporal frame
+        spatial, temporal = ft.decompose(w)
+
+        # build the gridspec (spatial and temporal subplots) for this filter
+        inner_grid = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=og, height_ratios=(4, 1), hspace=0.0)
+
+        # plot the spatial frame
+        ax = plt.Subplot(fig, inner_grid[0])
+        ax.imshow(spatial, interpolation='nearest', cmap=cmap, vmin=vmin, vmax=vmax)
+        fig.add_subplot(ax)
+        plt.grid('off')
+        plt.axis('off')
+
+        ax = plt.Subplot(fig, inner_grid[1])
+        ax.plot(temporal, 'k', lw=2)
+        fig.add_subplot(ax)
+        plt.grid('off')
+        plt.axis('off')
+
+    plt.show()
+    plt.draw()
+    return fig
+
+
+def reshape_affine(weights, num_conv_filters):
+    """Reshapes a layer of affine weights (loaded from a keras h5 file)
+
+    Takes a weights array (from a keras affine layer) that has dimenions (S*S*C) x (A), and reshape
+    it to be C x A x S x S, where C is the number of conv filters (given), A is the number of affine
+    filters, and S is the number of spatial dimensions in each filter
+    """
+    num_spatial = np.sqrt(weights.shape[0] / num_conv_filters)
+    assert np.mod(num_spatial, 1) == 0, 'Spatial dimensions are not square, check the num_conv_filters'
+
+    newshape = (num_conv_filters, int(num_spatial), int(num_spatial), -1)
+    return np.rollaxis(weights.reshape(*newshape), -1, 1)
+
+
+def plot_spatial_grid(weights, cmap='seismic', normalize=True):
+    """Plots the given array of spatial weights on a grid
+
+    Parameters
+    ----------
+    weights : array_like
+        Must have shape (num_conv_filters, num_affine_filters, num_spatial, num_spatial)
+
+    cmap : str, optional
+        A matplotlib colormap (Default: 'seismic')
+
+    normalize : boolean, optional
+        Whether or not to scale the color limit according to the minimum and maximum
+        values in the weights array
+
+    Returns
+    -------
+    fig : a matplotlib figure handle
+    """
+
+    # create the figure
+    fig = plt.figure(figsize=(12, 8))
+
+    # number of convolutional filters and number of affine filters
+    nrows = weights.shape[0]
+    ncols = weights.shape[1]
+    ix = 1
+
+    # normalize to the maximum weight in the array
+    if normalize:
+        max_val = np.max(abs(weights.ravel()))
+        vmin, vmax = -max_val, max_val
+    else:
+        vmin = np.min(weights.ravel())
+        vmax = np.max(weights.ravel())
+
+    for row in range(nrows):
+        for col in range(ncols):
+
+            # add the subplot
+            ax = fig.add_subplot(nrows, ncols, ix)
+            ix += 1
+
+            # plot the filter
+            ax.imshow(weights[row, col], interpolation='nearest', cmap=cmap, vmin=vmin, vmax=vmax)
+            plt.grid('off')
+            plt.axis('off')
+
+    plt.show()
+    plt.draw()
+    return fig
+
+
+def gridshape(n, tol=2.0):
+    """Generates the dimensions of a grid containing n elements
+
+    Parameters
+    ----------
+    n : int
+        The number of elements that need to fit inside the grid
+
+    tol : float
+        The maximum allowable aspect ratio in the grid (e.g. a tolerance
+        of 2 allows for a grid where one dimension is twice as long as
+        the other). (Default: 2.0)
+
+    Examples
+    --------
+    >>> gridshape(13)
+    (3, 5)
+    >>> gridshape(8, tol=2.0)
+    (2, 4)
+    >>> gridshape(8, tol=1.5)
+    (3, 3)
+    """
+
+    # shortcut if n is small (fits on a single row)
+    if n <= 5:
+        return (1, n)
+
+    def _largest_fact(n):
+        k = np.floor(np.sqrt(n))
+        for j in range(int(k), 0, -1):
+            if np.mod(n, j) == 0:
+                return j, int(n / j)
+
+    for j in np.arange(n, np.ceil(np.sqrt(n)) ** 2 + 1):
+        a, b = _largest_fact(j)
+        if (b / a <= tol):
+            return (a, b)
+
+
+def visualize_convnet(h5file, layers, dt=1e-2):
+    """Visualize the weights for a convnet given an hdf5 file handle"""
+
+    # visualize each layer
+    figures = list()
+    for key, layer in zip(h5file.keys(), layers):
+
+        if layer['name'] == 'Convolution2D':
+            num_conv_filters = layer['nb_filter']
+            fig = plot_filters(np.array(h5file[key]['param_0']))
+            figures.append(fig)
+
+        elif layer['name'] == 'Dense':
+            weights = np.array(h5file[key]['param_0'])
+
+            # affine layer after a convlayer
+            try:
+                W = reshape_affine(weights, num_conv_filters)
+                fig = plot_spatial_grid(W)
+                figures.append(fig)
+
+            # arbitrary affine matrix
+            except AssertionError:
+                maxval = np.max(np.abs(weights.ravel()))
+                fig = plt.figure()
+                ax = fig.add_subplot(111)
+                ax.imshow(weights, cmap='seismic', vmin=-maxval, vmax=maxval)
+                figures.append(fig)
+
+    return figures
+
+
+def visualize_glm(h5file):
+    """Visualize the parameters of a GLM"""
+
+    # plot the filters
+    filters = np.array(h5file['filter'])
+    fig1 = plot_filters(np.rollaxis(filters, 3))
+
+    # plot the history / coupling traces
+    history = np.array(h5file['history'])
+    fig2 = plot_traces_grid(np.rollaxis(history, 0, 3))
+
+    return [fig1, fig2]
 
 
 def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
@@ -218,11 +488,10 @@ def visualize_affine_weights(weights, num_conv_filters, layer_name='layer_4', ti
 # TO-DO:
 # - function that checks if filters are low-rank
 def singular_values(weights):
-    '''Returns singular values of 3D filters.
+    """Returns singular values of 3D filters.
     Filters should be (time, space, space)
-    '''
-    fk, u, s, v = ft.lowranksta(weights)
-    return s
+    """
+    return ft.lowranksta(weights)[2]
 
 
 # - function that plots distribution of linear projections on threshold
@@ -443,11 +712,10 @@ def visualize_sta(sta, fig_size=(8, 10), display=True, save=False, normalize=Tru
 # add some handy style for keeping matplotlib axes
 # on the left and bottom
 def adjust_spines(ax, spines):
-    '''
-        Call this like:
+    """Example usage:
 
-        adjust_spines(plt.gca(), ['left', 'bottom'])
-    '''
+    adjust_spines(plt.gca(), ['left', 'bottom'])
+    """
     for loc, spine in ax.spines.items():
         if loc in spines:
             spine.set_position(('outward', 10))  # outward by 10 points
@@ -467,3 +735,129 @@ def adjust_spines(ax, spines):
     else:
         # no xaxis ticks
         ax.xaxis.set_ticks([])
+
+
+def animate_convnet_weights(weights, title='convnet', layer_name='layer_0',
+        fig_dir=None, fig_size=(6,6), dpi=300, display=True,
+        save=False, cmap='seismic', normalize=True):
+    '''
+    Visualize convolutional spatiotemporal filters in a convolutional neural
+    network.
+
+    Computes the spatial and temporal profiles by SVD.
+
+    INPUTS:
+    weights         weight array of shape (num_filters, history, space, space)
+                        or full path to weight file
+    title           title of plots; also the saved plot file base name
+    fig_dir         where to save figures
+    fig_size        figure size in inches
+    dpi             resolution in dots per inch
+    space           bool; if True plots the spatial profiles of weights
+    time            bool; if True plots the temporal profiles of weights
+                    NOTE: if space and time are both False, function returns
+                    spatial and temporal profiles instead of plotting
+    display         bool; display figure?
+    save            bool; save figure?
+
+    OUTPUT:
+    When space or time are true, ouputs are plots saved to fig_dir.
+    When neither space nor time are true, output is:
+        spatial_profiles        list of spatial profiles of filters
+        temporal_profiles       list of temporal profiles of filters
+    '''
+
+    if fig_dir is None:
+        fig_dir = os.getcwd()
+
+    # if user supplied path instead of array of weights
+    if type(weights) is str:
+        weight_file = h5py.File(weights, 'r')
+        weights = weight_file[layer_name]['param_0']
+
+    num_filters = weights.shape[0]
+
+    if normalize:
+        max_val = np.max(abs(weights[:]))
+        colorlimit = [-max_val, max_val]
+
+    # set up the figure
+    fig = plt.gcf()
+    fig.set_size_inches(fig_size)
+    fig.suptitle(title + ' frame 0', fontsize=20)
+    num_cols = int(np.sqrt(num_filters))
+    num_rows = int(np.ceil(num_filters/num_cols))
+    imgs = []
+    filenames = []
+    for x in range(num_cols):
+        for y in range(num_rows):
+            plt_idx = y * num_cols + x + 1
+            # in case fewer weights than fit neatly in rows and cols
+            if plt_idx <= len(weights):
+                plt.subplot(num_rows, num_cols, plt_idx)
+                img_i = plt.imshow(weights[plt_idx-1][0], interpolation='nearest', cmap=cmap, clim=colorlimit)
+                imgs.append(img_i)
+                plt.grid('off')
+                plt.axis('off')
+
+
+    def animate(i):
+        fig.suptitle(title + ' frame %i' %i, fontsize=20)
+        for x in range(num_cols):
+            for y in range(num_rows):
+                plt_idx = y * num_cols + x + 1
+                # in case fewer weights than fit neatly in rows and cols
+                if plt_idx <= len(weights):
+                    plt.subplot(num_rows, num_cols, plt_idx)
+                    imgs[plt_idx-1].set_data(weights[plt_idx-1][i])
+                    #plt.imshow(weights[plt_idx-1][i], interpolation='nearest', cmap=cmap, clim=colorlimit)
+                    plt.grid('off')
+                    plt.axis('off')
+
+        if save:
+            name = fig_dir + title + ' frame %02i.png' %i
+            name = name.replace(" ", "")
+            plt.savefig(name)
+            filenames.append(name)
+            #plt.close()
+
+        return imgs
+
+    anim = animation.FuncAnimation(fig, animate, np.arange(weights.shape[1]),
+            interval=100, repeat=True)
+
+
+    if save:
+        # Set up formatting for the movie files
+        #Writer = animation.writers['ffmpeg'](fps=10)
+        #anim.save(fig_dir + title + '_spatiotemporal_profiles.mp4', writer=Writer, dpi=dpi)
+        #return anim
+
+        # save each frame of animation as an image;
+        # we're going to convert it to a gif later
+        #filenames = []
+        for i in range(weights.shape[1]):
+            imgs = animate(i)
+            #name = fig_dir + title + ' frame %02i.png' %i
+            #name = name.replace(" ", "")
+            #plt.savefig(name)
+            #filenames.append(name)
+            #plt.close()
+
+        brackets = ' {} '
+        all_brackets = weights.shape[1] * brackets
+        gif_name = fig_dir + title + '.gif'
+        gif_name = gif_name.replace(" ", "")
+        system_command = 'convert' + all_brackets + gif_name
+        system_command = system_command .format(*filenames)
+        os.system(system_command)
+        for f in filenames:
+            remove_command = 'rm {}' .format(f)
+            os.system(remove_command)
+
+        plt.close()
+
+
+    if display:
+        plt.show()
+        plt.draw()

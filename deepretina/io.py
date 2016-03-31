@@ -1,16 +1,17 @@
 """
 Helper utilities for saving models and model outputs
-
 """
 
 from __future__ import absolute_import, division, print_function
 from os import mkdir, uname, getenv, path
 from json import dumps
-from collections import defaultdict
+from collections import namedtuple
 from itertools import product
 from functools import wraps
 from .utils import notify, allmetrics
 from keras.utils import visualize_util
+from warnings import warn
+from cycler import cycler
 import numpy as np
 import inspect
 import subprocess
@@ -27,7 +28,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-__all__ = ['Monitor', 'main_wrapper']
+__all__ = ['Monitor', 'KerasMonitor', 'main_wrapper']
 
 directories = {
     'dropbox': path.expanduser('~/Dropbox/deep-retina/saved/'),
@@ -36,46 +37,30 @@ directories = {
 
 
 class Monitor:
-    def __init__(self, name, model, data, readme, save_every):
-        """Builds a Monitor object to keep track of train/test performance
+    def __init__(self, name, experiment, readme, save_every):
+        """Monitor base class
 
         Parameters
         ----------
-        name : string
-            a name for this model
+        name : str
+            A short string describing this model
 
-        model : Keras model
-            reference to the Keras model object
+        experiment : experiments.Experiment
+            A pointer to an Experiment class used to grab test data
 
-        data : Experiment
-            a collection of experimental data (see experiments.py)
-
-        readme : string
-            a markdown formatted string to save as the README
+        readme : str
+            Saves this string as README.md
 
         save_every : int
-            how often to save (in terms of the number of batches)
+            Parameters are saved only every save_every iterations
         """
-        # pointer to Keras model and experimental data
         self.name = name
-        self.model = model
-        self.data = data
+        self.experiment = experiment
         self.save_every = save_every
-
-        # store results in a dictionary
-        self.results = {
-            'iter': list(),
-            'epoch': list(),
-            'train': defaultdict(list),
-            'validation': defaultdict(list),
-        }
-        self.test_results = {fname: defaultdict(list) for fname in self.data._test_data.keys()}
-
-        # metrics to use (names of functions in the metrics module)
         self.metrics = ('cc', 'lli', 'rmse', 'fev')
 
-        # metadata related to this training instance
-        self.metadata = {
+        # information about the machine this is running on
+        machine = {
             'machine': uname()[1],
             'user': getenv('USER'),
             'timestamp': time.time(),
@@ -86,91 +71,60 @@ class Monitor:
             'theano': theano.__version__,
         }
 
-        # generate a hash key for this model architecture
-        hashstring = '\n'.join((self.metadata['date'],
-                                self.metadata['time'],
-                                self.metadata['machine'],
-                                self.metadata['user'],
-                                self.model.to_yaml()))
-        self.hashkey = md5(hashstring)
+        # generate a hash key for this model
+        self.hashkey = md5('\n'.join(map(str, machine.values())))
+        self.directory = ' '.join((self.hashkey, self.name))
+
+        # keep track of the iteration with the best held out performance
+        self.best = namedtuple('Best', ('iteration', 'lli'))(-1, -np.Inf)
 
         with notify('\nCreating directories and files for model {}'.format(self.hashkey)):
 
-            # make the necessary folders on disk
-            self.dirname = ' '.join((self.hashkey, self.name))
-            for _, directory in directories.items():
-                mkdir(path.join(directory, self.dirname))
-            self.datadir = path.join(directories['database'], self.dirname)
+            # make the necessary folders on disk, for each item in directories
+            for _, d in directories.items():
+                mkdir(path.join(d, self.directory))
 
-            # writes files to disk (and copy them to dropbox)
-            self.write('architecture.json', self.model.to_json())
-            self.write('architecture.yaml', self.model.to_yaml())
-            self.write('experiment.json', dumps(data.info))
-            self.write('metadata.json', dumps(self.metadata))
-            self.write('README.md', readme)
+            # write some generic data to the file
+            self._save_text('metadata.json', dumps(machine))
+            self._save_text('experiment.json', dumps(self.experiment.info))
+            self._save_text('README.md', readme)
 
-            # save model architecture as a figure and copy it to dropbox
-            visualize_util.plot(self.model, to_file=self.savepath('architecture.png'))
-            self.copy_to_dropbox('architecture.png')
+            # start CSV files for train and validation performance
+            headers = ','.join(('Epoch', 'Iteration') + tuple(map(str.upper, self.metrics))) + '\n'
+            self._save_text('train.csv', headers)
+            self._save_text('validation.csv', headers)
 
-            # start CSV files for performance
-            headers = ','.join(('Epoch', 'Iteration') +
-                               tuple(map(str.upper, self.metrics))) + '\n'
-            self.write('train.csv', headers)
-            self.write('validation.csv', headers)
+            # store results in a (new) h5 file
+            with h5py.File(self._dbpath('results.h5'), 'x') as f:
 
-        # keep track of the iteration with the best held out performance
-        self.best = (-1, 0)
+                # store metadata
+                f.attrs.update(machine)
+                f.attrs['md5'] = self.hashkey
 
-        # store results in a (new) h5 file
-        with h5py.File(self.savepath('results.h5'), 'x') as f:
+                # store experiment info
+                f['cells'] = np.array(self.experiment.info['cells'])
+                f['cells'].attrs.update(self.experiment.info)
 
-            # store metadata
-            f.attrs.update(self.metadata)
-            f.attrs['md5'] = self.hashkey
+                # initialize some datasets
+                N = np.array(self.experiment.info['cells']).size
+                f.create_dataset('iter', (0,), maxshape=(None,))
+                f.create_dataset('epoch', (0,), maxshape=(None,))
 
-            # store experiment info
-            f['cells'] = np.array(data.info['cells'])
-            f['cells'].attrs.update(data.info)
+                for k, m in product(('train', 'validation'), self.metrics):
+                    f.create_dataset('/'.join((k, m)), (0, N), maxshape=(None, N))
 
-            # initialize some datasets
-            f['train'] = 0
-            f['validation'] = 0
-            f['iter'] = 0
-            f['epoch'] = 0
+                for fname, m in product(self.experiment._test_data.keys(), self.metrics):
+                    f.create_dataset('/'.join(('test', fname, m)), (0, N), maxshape=(None, N))
 
-            # store the test performance for each filetype
-            for fname in self.test_results.keys():
-                f['test/' + fname] = 0
+    def _update_best(self, epoch, iteration):
+        """Called when there is a new best iteration"""
+        pass
 
-    def savepath(self, filename):
-        """Generates a fullpath to save the given file in the data directory"""
-        return path.join(self.datadir, filename)
+    def cleanup(self, iteration, elapsed_time):
+        """Called when the model has finished training"""
+        print('Finished training model {} after {} iterations and {} hours.'.format(self.hashkey, iteration, elapsed_time / 3600.))
 
-    def update_results(self):
-
-        with h5py.File(self.savepath('results.h5'), 'r+') as f:
-
-            del f['iter']
-            f['iter'] = self.results['iter']
-
-            del f['epoch']
-            f['epoch'] = self.results['epoch']
-
-            for dset in ('train', 'validation'):
-
-                # delete the dataset (TODO: perhaps handle this more elegantly)
-                del f[dset]
-
-                for metric in self.metrics:
-                    f[dset + '/' + metric] = np.array(self.results[dset][metric])
-
-            del f['test']
-            for key, result in self.test_results.items():
-                for metric in self.metrics:
-                    f['/'.join(('test', key, metric))] = np.array(result[metric])
-
-    def save(self, epoch, iteration, r_train, rhat_train):
+    def save(self, epoch, iteration, X_train, r_train, model_predict):
         """Saves relevant information for this epoch/iteration of training
 
         Saves the:
@@ -186,65 +140,62 @@ class Monitor:
 
         iteration : int
             Current iteration of training
-
-        r : array_like
-            The true responses on this training batch
-
-        rhat : array_like
-            The model responses on this training batch
         """
-        self.results['iter'].append(iteration)
-        self.results['epoch'].append(epoch)
+        rhat_train = model_predict(X_train)
 
-        # STORE TRAINING PERFORMANCE
-        avg_train, all_train = allmetrics(r_train, rhat_train, self.metrics)
+        # training performance
+        avg_train, all_train = allmetrics(r_train, model_predict(X_train), self.metrics)
         data_row = [epoch, iteration] + [avg_train[metric] for metric in self.metrics]
-        self.write('train.csv', ','.join(map(str, data_row)) + '\n')
-        [self.results['train'][metric].append(all_train[metric]) for metric in self.metrics]
+        self._append_csv('train.csv', data_row)
 
-        # STORE VALIDATION PERFORMANCE
-        (avg_val, all_val), r_val, rhat_val = self.data.validate(self.model.predict, self.metrics)
+        # validation performance
+        (avg_val, all_val), r_val, rhat_val = self.experiment.validate(model_predict, self.metrics)
         data_row = [epoch, iteration] + [avg_val[metric] for metric in self.metrics]
-        self.write('validation.csv', ','.join(map(str, data_row)) + '\n')
-        [self.results['validation'][metric].append(all_val[metric]) for metric in self.metrics]
+        self._append_csv('validation.csv', data_row)
 
-        # save the weights
-        filename = 'epoch{:03d}_iter{:05d}_weights.h5'.format(epoch, iteration)
-        self.model.save_weights(self.savepath(filename))
+        # update the 'best' iteration we have seen, based on the validation log-likelihood
+        if avg_val['lli'] > self.best.lli:
+            self.best = namedtuple('Best', ('iteration', 'lli'))(iteration, avg_val['lli'])
+            self._update_best(epoch, iteration)
 
-        # EVALUATE TEST PERFORMANCE
-        avg_test, all_test = self.data.test(self.model.predict, self.metrics)
-        [self.test_results[key][metric].append(all_test[key][metric])
-         for metric in self.metrics
-         for key in self.test_results]
+        # evaluate test performance
+        _, all_test = self.experiment.test(model_predict, self.metrics)
 
-        # update the results.h5 file
-        self.update_results()
-
-        # update the 'best' iteration we have seen
-        if avg_val['lli'] > self.best[1]:
-
-            # update the best iteration and held-out CC performance
-            self.best = (iteration, avg_val['cc'])
-
-            # save best weights
-            self.model.save_weights(self.savepath('best_weights.h5'), overwrite=True)
+        # update h5 file
+        self._save_h5(epoch, iteration, all_train, all_val, all_test)
 
         # plot the train / test firing rates
-        for ix, cell in enumerate(self.data.info['cells']):
-            filename = 'cell{}'.format(cell)
-            plot_rates(iteration, self.data.dt,
-                       train=(r_train[:, ix], rhat_train[:, ix]),
-                       validation=(r_val[:, ix], rhat_val[:, ix]))
-            self._save_and_copy(filename, filetype='jpg', dpi=100)
+        cells = self.experiment.info['cells']
+        if np.array(cells).size == 1:
+
+            # for one cell
+            filename = 'cell{}.jpg'.format(cells)
+            plot_rates(iteration, self.experiment.dt,
+                       train=(r_train, rhat_train),
+                       validation=(r_val, rhat_val))
+            self._save_figure(filename)
+
+        else:
+            # for all cells
+            for ix, cell in enumerate(cells):
+                filename = 'cell{}.jpg'.format(cell)
+                plot_rates(iteration, self.experiment.dt,
+                           train=(r_train[:, ix], rhat_train[:, ix]),
+                           validation=(r_val[:, ix], rhat_val[:, ix]))
+                self._save_figure(filename)
 
         # plot the performance curves
         for plottype in ('summary', 'traces'):
-            filename = 'performance_{}'.format(plottype)
-            plot_performance(self.metrics, self.results, self.data.batches_per_epoch, plottype=plottype)
-            self._save_and_copy(filename, filetype='jpg', dpi=100)
+            filename = 'performance_{}.jpg'.format(plottype)
+            with h5py.File(self._dbpath('results.h5'), 'r') as f:
+                plot_performance(self.metrics, f, self.experiment.batches_per_epoch, plottype=plottype)
+            self._save_figure(filename, dpi=100)
 
-    def write(self, filename, text, copy=True):
+    def _dbpath(self, filename):
+        """Generates a full path to save the given file in the database directory"""
+        return path.join(directories['database'], self.directory, filename)
+
+    def _save_text(self, filename, text, dropbox=True):
         """Writes the given text to a file
         Optionally copies the file to Dropbox
 
@@ -256,156 +207,145 @@ class Monitor:
         text : string
             Text to write to the file
 
-        copy : boolean, optional
+        dropbox : boolean, optional
             Whether or not to copy the file to Dropbox (default: True)
         """
         # write the file, appending if it already exists
-        with open(self.savepath(filename), 'a') as f:
+        with open(self._dbpath(filename), 'a') as f:
             f.write(text)
 
         # copy to dropbox
-        if copy:
-            self.copy_to_dropbox(filename)
+        if dropbox:
+            self._copy_to_dropbox(filename)
 
-    def copy_to_dropbox(self, filename):
-        """Copy the given file to Dropbox. Overwrites existing destination files"""
-        try:
-            shutil.copy(self.savepath(filename), path.join(directories['dropbox'], self.dirname))
-        except FileNotFoundError:
-            print('\n*******\nWarning\n*******')
-            print('Could not copy {} to Dropbox.\n'.format(filename))
-
-    def _save_and_copy(self, filename, filetype='jpg', dpi=100):
+    def _save_figure(self, filename, filetype='jpg', dpi=100, dropbox=True):
         """Saves the current figure as a jpg and copies it to Dropbox"""
-        filename = filename + '.' + filetype
-        plt.savefig(self.savepath(filename), dpi=dpi, bbox_inches='tight')
+
+        # save the figure
+        plt.savefig(self._dbpath(filename), format=filetype, dpi=dpi, bbox_inches='tight')
         plt.close('all')
-        self.copy_to_dropbox(filename)
+
+        # copy to dropbox
+        if dropbox:
+            self._copy_to_dropbox(filename)
+
+    def _save_h5(self, epoch, iteration, all_train, all_val, all_test):
+        """Updates the results.h5 file"""
+        with h5py.File(self._dbpath('results.h5'), 'r+') as f:
+
+            # helper function to extend a dataset along the first dimension
+            def extend(key, value):
+                shape = list(f[key].shape)
+                shape[0] += 1
+                f[key].resize(tuple(shape))
+                f[key][-1] = value
+
+            extend('epoch', epoch)
+            extend('iter', iteration)
+
+            for metric in self.metrics:
+                extend('/'.join(('train', metric)), all_train[metric])
+                extend('/'.join(('validation', metric)), all_val[metric])
+
+                for fname, val in all_test.items():
+                    extend('/'.join(('test', fname, metric)), all_test[fname][metric])
+
+    def _append_csv(self, filename, row):
+        """Appends the list of elements in row as a line in the CSV specified by filename"""
+        self._save_text(filename, ','.join(map(str, row)) + '\n')
+
+    def _copy_to_dropbox(self, filename):
+        """Copy the given file to Dropbox. Overwrites existing destination files"""
+        try:
+            shutil.copy(self._dbpath(filename), path.join(directories['dropbox'], self.directory))
+        except FileNotFoundError:
+            warn('Could not copy {} to Dropbox.\n'.format(filename))
 
 
-class MonitorGLM:
-    def __init__(self, model, expt, filename, ci, testdata, r_test, readme, save_every):
-        """Terrible no good hacked together class for keeping track of GLM training"""
-        self.testdata = testdata
-        self.hashkey = md5('Generalized Linear Model (GLM)\n' + str(np.random.randint(1024)) + readme)
-        self.metrics = ('cc', 'lli', 'rmse', 'fev')
-        self.r_test = r_test.copy()
-        self.save_every = save_every
-
-        with notify('\nCreating directories and files for model {}'.format(self.hashkey)):
-
-            self.dirname = ' '.join((self.hashkey, 'GLM'))
-            for _, directory in directories.items():
-                mkdir(path.join(directory, self.dirname))
-            self.datadir = path.join(directories['database'], self.dirname)
-
-            # store the README file
-            self.write('README.md', readme)
-
-            # start CSV files for performance
-            headers = ','.join(('Epoch', 'Iteration') +
-                               tuple(map(str.upper, self.metrics))) + '\n'
-            self.write('train.csv', headers)
-            self.write('test.csv', headers)
-
-            # store results in a dictionary
-            self.results = {
-                'iter': list(),
-                'epoch': list(),
-                'train': defaultdict(list),
-                'test': defaultdict(list),
-            }
-
-        # store results in a (new) h5 file
-        with h5py.File(self.savepath('results.h5'), 'x') as f:
-
-            # store metadata
-            f.attrs.update({
-                'expt': expt,
-                'filename': filename,
-                'cellindex': ci
-            })
-            f.attrs['md5'] = self.hashkey
-            f['cells'] = np.array([ci])
-
-            # initialize some datasets
-            f['train'] = 0
-            f['test'] = 0
-            f['iter'] = 0
-            f['epoch'] = 0
-
-    def write(self, filename, text, copy=True):
-        """Writes the given text to a file
-        Optionally copies the file to Dropbox
+class KerasMonitor(Monitor):
+    def __init__(self, name, model, experiment, readme, save_every):
+        """Builds a Monitor object to keep track of train/test performance
 
         Parameters
         ----------
-        filename : string
-            Name of the file
+        name : string
+            a name for this model
 
-        text : string
-            Text to write to the file
+        model : Keras model
+            reference to the Keras model object
 
-        copy : boolean, optional
-            Whether or not to copy the file to Dropbox (default: True)
+        experiment : Experiment
+            a collection of experimental data (see experiments.py)
+
+        readme : string
+            a markdown formatted string to save as the README
+
+        save_every : int
+            how often to save (in terms of the number of batches)
         """
-        # write the file, appending if it already exists
-        with open(self.savepath(filename), 'a') as f:
-            f.write(text)
+        super().__init__(name, experiment, readme, save_every)
 
-        # copy to dropbox
-        if copy:
-            self.copy_to_dropbox(filename)
+        # pointer to Keras model
+        self.model = model
 
-    def copy_to_dropbox(self, filename):
-        """Copy the given file to Dropbox. Overwrites existing destination files"""
-        try:
-            shutil.copy(self.savepath(filename), path.join(directories['dropbox'], self.dirname))
-        except FileNotFoundError:
-            print('\n*******\nWarning\n*******')
-            print('Could not copy {} to Dropbox.\n'.format(filename))
+        # writes Keras architecture files to disk
+        self._save_text('architecture.json', self.model.to_json())
+        self._save_text('architecture.yaml', self.model.to_yaml())
+        visualize_util.plot(self.model, to_file=self._dbpath('architecture.png'))
+        self._copy_to_dropbox('architecture.png')
 
-    def savepath(self, filename):
-        """Generates a fullpath to save the given file in the data directory"""
-        return path.join(self.datadir, filename)
+    def save(self, epoch, iteration, X_train, r_train, model_predict):
+        """updated iteration"""
+        super().save(epoch, iteration, X_train, r_train, model_predict)
 
-    def update_results(self):
+        # save the weights
+        filename = 'epoch{:03d}_iter{:05d}_weights.h5'.format(epoch, iteration)
+        self.model.save_weights(self._dbpath(filename))
 
-        with h5py.File(self.savepath('results.h5'), 'r+') as f:
+    def _update_best(self, epoch, iteration):
+        """Runs whenever there is a new 'best' iteration"""
+        # save best weights
+        self.model.save_weights(self._dbpath('best_weights.h5'), overwrite=True)
 
-            del f['iter']
-            f['iter'] = self.results['iter']
 
-            del f['epoch']
-            f['epoch'] = self.results['epoch']
+class GLMMonitor(Monitor):
+    def __init__(self, name, model, experiment, readme, save_every):
+        """Builds a Monitor object to keep track of train/test performance
 
-            for dset in ('train', 'test'):
+        Parameters
+        ----------
+        name : string
+            a name for this model
 
-                # delete the dataset (TODO: perhaps handle this more elegantly)
-                del f[dset]
+        model : a GLM object
+            reference to the GLM object
 
-                for metric in self.metrics:
-                    f[dset + '/' + metric] = np.array(self.results[dset][metric])
+        experiment : Experiment
+            a collection of experimental data (see experiments.py)
 
-    def save(self, epoch, iteration, r_train, rhat_train, rhat_test):
+        readme : string
+            a markdown formatted string to save as the README
 
-        self.results['iter'].append(iteration)
-        self.results['epoch'].append(epoch)
+        save_every : int
+            how often to save (in terms of the number of batches)
+        """
+        super().__init__(name, experiment, readme, save_every)
 
-        # STORE TRAINING PERFORMANCE
-        train_scores = allmetrics(r_train, rhat_train, self.metrics)[0]
-        data_row = [epoch, iteration] + [train_scores[metric] for metric in self.metrics]
-        self.write('train.csv', ','.join(map(str, data_row)) + '\n')
-        [self.results['train'][metric].append(train_scores[metric]) for metric in self.metrics]
+        # pointer to the model
+        self.model = model
 
-        # STORE TEST PERFORMANCE
-        test_scores = allmetrics(self.r_test, rhat_test, self.metrics)[0]
-        data_row = [epoch, iteration] + [test_scores[metric] for metric in self.metrics]
-        self.write('test.csv', ','.join(map(str, data_row)) + '\n')
-        [self.results['test'][metric].append(test_scores[metric]) for metric in self.metrics]
+    def save(self, epoch, iteration, X_train, r_train, model_predict):
+        """updated iteration"""
+        super().save(epoch, iteration, X_train, r_train, model_predict)
 
-        # update the results.h5 file
-        self.update_results()
+        # save the weights
+        filename = 'epoch{:03d}_iter{:05d}_weights.h5'.format(epoch, iteration)
+        self.model.save_weights(self._dbpath(filename))
+
+    def _update_best(self, epoch, iteration):
+        """Runs whenever there is a new 'best' iteration"""
+        # save best weights
+        self.model.save_weights(self._dbpath('best_weights.h5'), overwrite=True)
 
 
 def plot_rates(iteration, dt, **rates):
@@ -449,19 +389,24 @@ def plot_performance(metrics, results, batches_per_epoch, plottype='summary'):
         ax = axs[inds[0]][inds[1]]
 
         # the current epoch
-        x = np.array(results['iter']) / float(batches_per_epoch)
+        x = np.array(results['iter']).astype('float') / float(batches_per_epoch)
         for key, color, fmt in [('validation', 'lightcoral', '-'), ('train', 'skyblue', '--')]:
             res = np.array(results[key][metric])
 
             # plot the performance summary (mean + sem across cells)
             if plottype == 'summary':
-                y = np.nanmean(res, axis=1)
-                ye = np.nanstd(res, axis=1) / np.sqrt(res.shape[1])
-                ax.fill_between(x, y - ye, y + ye, interpolate=True, alpha=0.2, color=color)
-                ax.plot(x, y, '-', color=color, label=key)
+
+                # only plot if we have some non-NaN values
+                if not np.all(np.isnan(res)):
+                    y = np.nanmean(res, axis=1)
+                    ye = np.nanstd(res, axis=1) / np.sqrt(res.shape[1])
+                    ax.fill_between(x, y - ye, y + ye, interpolate=True, alpha=0.2, color=color)
+                    ax.plot(x, y, '-', color=color, label=key)
 
             # plot the performance traces (one curve for each cell)
             elif plottype == 'traces':
+                color_cycler = cycler('color', [plt.cm.viridis(i) for i in np.linspace(0, 1, res.shape[1])])
+                ax.set_prop_cycle(color_cycler)
                 ax.plot(x, res, fmt, alpha=0.5)
 
         ax.set_title(str.upper(metric), fontsize=20)
@@ -475,6 +420,10 @@ def plot_performance(metrics, results, batches_per_epoch, plottype='summary'):
 
 
 def main_wrapper(func):
+    """Decorator for wrapping a main script
+
+    Captures the source code in the script and generates a markdown-formatted README
+    """
     @wraps(func)
     def mainscript(*args, **kwargs):
 

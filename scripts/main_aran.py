@@ -69,12 +69,31 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, timesteps, l2_re
     return model
 
 if __name__ == '__main__':
-    reg = 0.01
-    p_arr1 = [0.75, 0.5, 0.25, 0]
-    p_arr2 = [0.10, 0.25, 0.5, 0.75, 0.85]
-    for p1 in p_arr1:
-        for p2 in p_arr2:
-            mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], ['whitenoise'], '15-10-07', reg, p1, p2,  description='WN convnet, l2_reg={}, dropout1={}, dropout2={}'.format(reg, p1, p2))
+	reg = 0.01
+	p1 = 0.0
+	p2 = 0.0
+	mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], ['whitenoise'], '15-10-07', reg, p1, p2,  description='WN convnet, l2_reg={}, dropout1={}, dropout2={}'.format(reg, p1, p2))
+
+#    reg = 0.01
+#    p1 = 0.25
+#    p2 = 0.0
+#    medOFF = [5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 35, 36, 37]
+#    slowOFF = [7, 19, 20, 21, 31, 34]
+#    fastOFF = [1, 2, 3, 4]
+#    medOFF = [x - 1 for x in medOFF]
+#    slowOFF = [x - 1 for x in slowOFF]
+#    fastOFF = [x - 1 for x in fastOFF] 
+#    mdl = fit_convnet(medOFF, ['whitenoise'], ['whitenoise'], 'all-cells', reg, p1, p2,  description='WN convnet for mediumOFF cells, l2_reg={}, dropout1={}, dropout2={}'.format(reg, p1, p2))
+
+#    mdl = fit_convnet(slowOFF, ['whitenoise'], ['whitenoise'], 'all-cells', reg, p1, p2,  description='WN convnet for slowOFF cells, l2_reg={}, dropout1={}, dropout2={}'.format(reg, p1, p2))
+
+#    mdl = fit_convnet(fastOFF, ['whitenoise'], ['whitenoise'], 'all-cells', reg, p1, p2,  description='WN convnet for fastOFF cells, l2_reg={}, dropout1={}, dropout2={}'.format(reg, p1, p2))
+
+#    p_arr1 = [0.75, 0.5, 0.25, 0]
+#    p_arr2 = [0.10, 0.25, 0.5, 0.75, 0.85]
+#    for p1 in p_arr1:
+#        for p2 in p_arr2:
+#            mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], ['whitenoise'], '15-10-07', reg, p1, p2,  description='WN convnet, l2_reg={}, dropout1={}, dropout2={}'.format(reg, p1, p2))
 
 #    mdl = fit_fixedlstm(list(range(37)), ['naturalscenes_affine'], ['whitenoise_affine', 'naturalscenes_affine'], 'all-cells', 1000, 0.01)
 #    reg_arr = [0, 0.0001, 0.001, 0.01, 0.1]

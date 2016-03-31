@@ -22,7 +22,7 @@ class GLM:
         filter_shape : tuple
             The dimensions of the stimulus filter, e.g. (nt, nx, ny)
 
-        coupling_history : tuple
+        coupling_history : int
             How many timesteps to include in the coupling filter
 
         lr : float, optional
@@ -69,24 +69,25 @@ class GLM:
 
     def generator(self, X):
         """Gets the generator signal (pre-nonlinearity)"""
+        nsamples = X.shape[0]
+        nhistory = self.theta['history'].shape[0]
 
         # project the stimulus onto the stimulus filter
         nax = self.theta['filter'].ndim - 1
         u = np.tensordot(X, self.theta['filter'], axes=nax) + self.theta['bias']
-        spikes = np.empty(u.shape)
+        spikes = np.empty_like(u)
 
         # store the augmented history matrix
-        h = self.theta['history'].shape[0]
         H = np.zeros((X.shape[0],) + self.theta['history'].shape[:-1])
 
         # incrementally apply the spike history and coupling filters
-        for t in range(spikes.shape[1]):
+        for t in range(nsamples):
 
             # pad the spikes
-            if t < h:
-                spikepad = np.pad(spikes[:t], ((h - t, 0), (0, 0)), 'constant')
+            if t < nhistory:
+                spikepad = np.pad(spikes[:t], ((nhistory - t, 0), (0, 0)), 'constant')
             else:
-                spikepad = spikes[(t - h):t]
+                spikepad = spikes[(t - nhistory):t]
             H[t] = spikepad
 
             # project spike history onto coupling filters
@@ -164,3 +165,54 @@ class GLM:
             for key, value in self.theta.items():
                 dset = f.create_dataset(key, value.shape, dtype=value.dtype)
                 dset[:] = value
+
+
+def test_glm():
+    from itertools import product
+    from tqdm import trange
+
+    # parameters
+    nt = 1          # time points in the stimulus filter
+    nx = 3          # filter spatial dimension
+    nc = 2          # number of cells
+    nh = 20         # number of time points in the history (coupling) filter
+
+    # generate a 'true' model
+    theta_star = {}
+    theta_star['filter'] = np.random.randn(nt, nx, nx, nc)
+    theta_star['filter'] /= np.linalg.norm(theta_star['filter'].ravel())
+    theta_star['history'] = np.zeros((nh, nc, nc))
+    for i, j in product(range(nc), range(nc)):
+        theta_star['history'][:, i, j] = 0.1 * np.sin(np.linspace(0, 2 * np.pi, nh) + 2 * np.pi * np.random.rand())
+    theta_star['bias'] = np.random.rand(nc) - 2.0
+    true_model = GLM((nt, nx, nx), nh, nc)
+    true_model.set_theta(theta_star)
+
+    # generate data from the true model
+    def datagen(niter=200, nsamples=10000):
+        for _ in trange(int(niter)):
+            X = np.random.randn(nsamples, nt, nx, nx)
+            y = true_model.predict(X)
+            yield (X, y)
+
+    X, rstar = next(datagen())
+    print('Mean firing rates: {}'.format(rstar.mean(axis=0)))
+    print('Max firing rates: {}'.format(rstar.max(axis=0)))
+
+    # fit a model to data from the true model
+    model = GLM((nt, nx, nx), nh, nc, lr=1e-3)
+    objs = list()
+    for X, y in datagen():
+        fobj = model.train_on_batch(X, y)[0]
+        objs.append(fobj)
+
+    return true_model, model, np.array(objs)
+
+if __name__ == "__main__":
+
+    import matplotlib.pyplot as plt
+
+    # fit a GLM to simulated data
+    true_model, model, fobj = test_glm()
+
+    plt.plot(fobj)

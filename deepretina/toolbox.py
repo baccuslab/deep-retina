@@ -7,59 +7,219 @@ import numpy as np
 import theano
 import h5py
 import os
+import re
 import tableprint
 from keras.models import model_from_json
 from .experiments import loadexpt
 from . import metrics
-from .utils import notify
-from functools import partial
+from .visualizations import visualize_convnet, visualize_glm
+import pandas as pd
+import json
+from tqdm import tqdm
+from operator import attrgetter
 
 
-class Models:
+def scandb(directory):
+    """Scans the given directory for any model folders and returns a
+    list of Model objects for each folder in the directory
+    """
+    models = []
 
-    def __init__(self, basedir):
-        """Creates a data structure to hold the list of models"""
+    # scan base directory for models folders, only load those with a README
+    regex = re.compile(r'^([a-z0-9]){6} ')
+    for folder in tqdm(filter(regex.match, os.listdir(directory))):
+        if os.path.isdir(os.path.join(directory, folder)):
+            models.append(Model(directory, folder))
 
-        self.basedir = basedir
-        self.models = {}
+    return sorted(models, key=attrgetter('timestamp'), reverse=True)
 
-        # scan base directory for models folders
-        with notify('Scanning {} for all models'.format(basedir)):
-            for folder in os.listdir(basedir):
 
-                try:
-                    # load the description string
-                    with open(os.path.join(basedir, folder, 'README.md'), 'r') as f:
-                        lines = f.readlines()
-                        desc_index = [line.strip() for line in lines].index('### description')
-                        self.models[folder] = lines[desc_index + 1].strip()
+def matcher(desc, key):
+    """Returns a fucntion that matches a model given the desc and key"""
 
-                except (NotADirectoryError, FileNotFoundError, ValueError):
-                    pass
+    def wrapper(model):
 
-    def search(self, text, disp=True):
-        """Searches model descriptions for the given text"""
+        # return False if the model key is not matched
+        if not (key.lower() in model.key.lower()):
+            return False
 
-        keys = list()
-        for key, value in self.models.items():
-            if text in value:
-                keys.append(key)
-                if disp:
-                    highlighted = value.replace(text, '\033[94m{}\033[0m'.format(text))
-                    print('{}: {}'.format(key, highlighted))
+        if model.description is None:
 
-        if len(keys) == 0:
-            print('Did not find "{}" in any model descriptions!'.format(text))
+            # description is given, so this model cannot be matched
+            if len(desc) > 0:
+                return False
 
-        return keys
+        else:
+
+            # return False if the description is not matched
+            if not(desc.lower() in model.description.lower()):
+                return False
+
+        # everything matches, return True
+        return True
+
+    return wrapper
+
+
+def search(models, desc='', key='', disp=True):
+    """Searches a list of models for the given text
+
+    Parameters
+    ----------
+    models : list
+        A list of Model objects to search through
+
+    desc : str, optional
+        If given, this (case insensitive) text is searched for in the README
+        description of each model (Default: '')
+
+    key : str, optional
+        The model hashkeys (hexadecimal strings) are searched using this text
+        (Default: '')
+
+    Returns
+    -------
+    matches : list
+        A list of matching model objects
+    """
+    matches = list(filter(matcher(desc, key), models))
+
+    if disp:
+
+        if len(matches) == 0:
+            print('Did not find match any models!')
+
+        for model in matches:
+            hltext = '\033[94m{}\033[0m'
+            keystr = model.key.replace(key, hltext.format(key)) if len(key) > 0 else model.key
+            if model.description is None:
+                descstr = ''
+            else:
+                descstr = model.description.replace(desc, hltext.format(desc)) if len(desc) > 0 else model.description
+            print('{}: {}'.format(keystr, descstr))
+
+    return matches
+
+
+class Model:
+
+    def __init__(self, directory, key):
+        """Creates a Model object that interfaces with a folder
+        in the deep-retina/database directory
+
+        Parameters
+        ----------
+        directory : str
+            filepath of the deep-retina/database folder
+
+        key : str
+            the name of the model folder in the database directory
+        """
+        self.basedir = directory
+        self.key = key
+        self.hashkey, self.modeltype = key.split(' ')
+
+        # load files from the model directory
+        self.metadata = load_json(self.filepath('metadata.json'))
+        self.architecture = load_json(self.filepath('architecture.json'))
+        self.experiment = load_json(self.filepath('experiment.json'))
+        self.train = load_csv(self.filepath('train.csv'))
+        self.validation = load_csv(self.filepath('validation.csv'))
+
+        # load the README description
+        try:
+            with open(self.filepath('README.md'), 'r') as f:
+                lines = f.readlines()
+                desc_index = [line.strip() for line in lines].index('### description')
+                self.description = lines[desc_index + 1].strip()
+        except (FileNotFoundError, ValueError):
+            self.description = None
+
+        # force every model to have a timestamp
+        if self.metadata is not None:
+            self.timestamp = self.metadata['timestamp']
+        else:
+            self.timestamp = os.path.getmtime(self.filepath())
+
+    def __str__(self):
+        """Returns a string representation of this model"""
+
+        if self.metadata is not None:
+            datestr = 'Created on: {} {}'.format(self.metadata['date'], self.metadata['time'])
+        else:
+            datestr = ''
+
+        return '\n'.join([self.key, self.description, datestr])
+
+    def __repr__(self):
+        return self.key
+
+    def __iter__(self):
+        """Iterate over the files in this directory"""
+        return iter(os.listdir(self.filepath()))
 
     def filepath(self, *args):
-        """Returns the filepath of the given key + arguments"""
-        return os.path.join(self.basedir, *args)
+        """Returns the filepath of the given key + arguments, if it exists"""
+        return os.path.join(self.basedir, self.key, *args)
 
-    def weights(self, key, filename='best_weights.h5'):
-        """Returns a function that loads weights from the given filename, for the given key"""
-        return partial(get_weights, filepath(key, filename))
+    @property
+    def results(self):
+        return load_h5(self.filepath('results.h5'))
+
+    def bestiter(self, on='validation', metric='lli'):
+        if self.results is not None:
+            return np.array(self.results[on][metric]).mean(axis=1).argmax()
+
+    def performance(self, idx, stimulus, on='test', metric='lli'):
+        return np.array(self.results[on][stimulus][metric][idx])
+
+    def weights(self, filename='best_weights.h5'):
+        """Loads the given weights file from this model's directory"""
+
+        # add file extension if necessary
+        if not filename.endswith('.h5'):
+            filename += '.h5'
+
+        return load_h5(self.filepath(filename))
+
+    def plot(self, filename='best_weights.h5'):
+        """Plots the parameters of this model"""
+        weights = self.weights(filename)
+
+        if self.modeltype == 'convnet':
+            figures = visualize_convnet(weights, self.architecture['layers'])
+
+        elif self.modeltype.lower() == 'glm':
+            figures = visualize_glm(weights)
+
+        else:
+            raise ValueError("I don't know how to plot a model of type '{}'".format(self.modeltype))
+
+        return figures
+
+
+def load_json(filepath):
+    """Loads the given json file, if it exists, otherwise returns None"""
+    if not os.path.exists(filepath):
+        return None
+
+    with open(filepath, 'r') as f:
+        return json.load(f)
+
+
+def load_csv(filepath):
+    """Loads the given csv file as a pandas DataFrame, if it exists, otherwise returns None"""
+    if not os.path.exists(filepath):
+        return None
+
+    return pd.read_csv(filepath)
+
+
+def load_h5(filepath):
+    if not os.path.exists(filepath):
+        return None
+
+    return h5py.File(filepath, 'r')
 
 
 def load_model(model_path, weight_filename):

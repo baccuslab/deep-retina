@@ -33,7 +33,7 @@ gif_name = gif_name.replace(" ", "")
 system_command = 'convert' + all_brackets + gif_name
 system_command = system_command .format(*snapshots)
 os.system(system_command)
-for f in filenames:
+for f in snapshots:
     remove_command = 'rm {}' .format(f)
     os.system(remove_command)
 

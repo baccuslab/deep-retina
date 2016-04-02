@@ -14,7 +14,7 @@ __all__ = ['GLM']
 
 
 class GLM:
-    def __init__(self, filter_shape, coupling_history, ncells, lr=1e-4, l2=0.0):
+    def __init__(self, filter_shape, coupling_history, ncells, lr=1e-4, l2=0.0, dt=1e-2):
         """GLM model class
 
         Parameters
@@ -31,6 +31,8 @@ class GLM:
         l2 : float, optional
             l2 regularization penalty on the weights (Default: 0.0)
         """
+        self.dt = dt
+
         # initialize parameters
         self.theta_init = {
             'filter': np.random.randn(*(filter_shape + (ncells,))) * 1e-6,
@@ -94,7 +96,7 @@ class GLM:
             u[t] += np.tensordot(H[t], self.theta['history'], axes=2)
 
             # draw poisson spikes for this time point
-            spikes[t] = np.random.poisson(np.exp(u[t]))
+            spikes[t] = np.random.poisson(self.dt * np.exp(u[t]))
 
         return u, H
 

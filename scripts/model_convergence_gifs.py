@@ -28,12 +28,19 @@ for w in weights:
 
 brackets = ' {} '
 all_brackets = len(snapshots) * brackets
-gif_name = fig_dir + '/' + 'convergence' + '.gif'
-gif_name = gif_name.replace(" ", "")
+gif_name = '"' + fig_dir + 'convergence' + '.gif' +'"'
+#gif_name = gif_name.replace(" ", "")
+
+# deal with spaces in filenames
+snapshots_quotes = ['"%s"' %f for f in snapshots]
+
+# now convert all these png files to a single gif
 system_command = 'convert' + all_brackets + gif_name
-system_command = system_command .format(*snapshots)
+system_command = system_command .format(*snapshots_quotes)
 os.system(system_command)
-for f in snapshots:
+
+# now remove all the png files
+for f in snapshots_quotes:
     remove_command = 'rm {}' .format(f)
     os.system(remove_command)
 

@@ -74,7 +74,7 @@ def fit_convnet(cells, train_stimuli, exptdate, nclip=0, readme=None):
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip)
 
     # create a monitor to track progress
-    monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
+    monitor = KerasMonitor('convnet', model, data, readme, save_every=10)
 
     # train
     train(model, data, monitor, num_epochs=50)
@@ -98,7 +98,7 @@ def fit_glm(cells, train_stimuli, exptdate, l2, readme=None):
 
     # load experimental data
     test_stimuli = ['whitenoise']
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=6000)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=0)
 
     # create a monitor to track progress
     monitor = GLMMonitor('GLM', model, data, readme, save_every=20)
@@ -116,11 +116,11 @@ if __name__ == '__main__':
         # for l2b in np.logspace(-3, 0, 4):
             # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b), description='full GLM, l2=({}, {})'.format(l2a, l2b))
 
-    l2a = 0.1
-    l2b = 0.0
-    mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b))
+    # l2a = 0.1
+    # l2b = 0.0
+    # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b))
 
-    # mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', description='Naturalscene training')
+    mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], 'all-cells', description='Training a model on the 15-10-07 cells on all-cells')
     # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=5000, description='subpoisson Whitenoise (clipping one minute of each repeat)')
     # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=0, description='subpoisson Whitenoise w/o clipping')
     # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=30000, description='subpoisson Whitenoise (clipping five  minutes of each repeat)')

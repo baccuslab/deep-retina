@@ -259,7 +259,7 @@ def load_model(model_path, weight_filename):
     return model
 
 
-def load_partial_model(model, layer_id):
+def load_partial_model(model, stop_layer, start_layer=0):
     """
     Returns the model up to a specified layer.
 
@@ -272,7 +272,9 @@ def load_partial_model(model, layer_id):
     """
 
     # create theano function to generate activations of desired layer
-    return theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
+    start = model.layers[start_layer].input
+    stop = model.layers[stop_layer].get_output(train=False)
+    return theano.function([start], stop)
 
 
 def list_layers(model_path, weight_filename):

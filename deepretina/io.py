@@ -409,6 +409,12 @@ def plot_performance(metrics, results, batches_per_epoch, plottype='summary'):
                 ax.set_prop_cycle(color_cycler)
                 ax.plot(x, res, fmt, alpha=0.5)
 
+        # hard-coded y-scale for certain metrics
+        if metric == 'lli':
+            ax.set_ylim(-2.5, 2.5)
+        elif metric == 'fev':
+            ax.set_ylim(-0.5, 0.5)
+
         ax.set_title(str.upper(metric), fontsize=20)
         ax.set_xlabel('Epoch', fontsize=16)
         despine(ax)

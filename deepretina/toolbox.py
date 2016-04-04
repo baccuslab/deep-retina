@@ -9,7 +9,7 @@ import h5py
 import os
 import re
 import tableprint
-from keras.models import model_from_json
+from keras.models import model_from_json, model_from_config
 from .experiments import loadexpt
 from . import metrics
 from .visualizations import visualize_convnet, visualize_glm
@@ -181,6 +181,21 @@ class Model:
             filename += '.h5'
 
         return load_h5(self.filepath(filename))
+
+    def keras(self, weights='best_weights.h5'):
+        """Returns a Keras model with the architecture and weights file"""
+
+        if self.architecture is None:
+            raise ValueError('Architecture not found. Is this a Keras model?')
+
+        # Load model architecture
+        mdl = model_from_config(self.architecture)
+
+        # load the weights
+        if weights is not None:
+            mdl.load_weights(self.filepath(weights))
+
+        return mdl
 
     def plot(self, filename='best_weights.h5'):
         """Plots the parameters of this model"""

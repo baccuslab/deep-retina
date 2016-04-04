@@ -1,50 +1,129 @@
 """
 Generate commonly used visual stimuli
 
+Functions in this module either generate a numpy array
+that encodes a particular stimulus (e.g. the `flash` function
+generates a full-field flash, or the `contrast_steps` function
+generates a sequence of contrast step changes), or they are used
+for composing multiple stimulus sequences (concatenating them)
+and converting them into a spatiotemporal stimulus (using rolling_window)
+that can be fed to a Keras model (for example).
 """
 
 from __future__ import absolute_import, division, print_function
 import numpy as np
 from .experiments import rolling_window
-from scipy.signal import convolve2d
+from itertools import repeat
+
+__all__ = ['concat', 'white', 'contrast_steps', 'flash', 'spatialize']
 
 
-def get_contrast_changes(period=5, low_contrast=0.1, high_contrast=1.0, sample_rate=30, roll=True):
-    """Probe contrast adaptation
-        Returns full field flicker stimulus with low-high-low contrast.
+def concat(*stimuli, nx=50, nh=40):
+    """Returns a spatiotemporal stimulus that has been transformed using
+    rolling_window given a list of stimuli to concatenate
 
-        INPUT:
-            period          number of seconds for each period of contrast
-            low_contrast    0-1; how low is the low contrast step?
-            high_contrast   0-1; how high is the high contrast step?
-            sample_rate     int; how many frames per second is this stimulus?
+    Parameters
+    ----------
+    stimuli : iterable
+        A list or iterable of stimuli (numpy arrays). The first dimension
+        is the sample, which can be different, but the rest of the
+        dimensions (spatial dimensions) must be the same
 
-        OUTPUT:
-            full_field_movie    np array of shape (nframes, 40, 50, 50)
+    nh : int, optional
+        Number of time steps in the rolling window history (default: 40)
+
+    nx : int, optional
+        Number of spatial dimensions (default: 50)
     """
+    concatenated = np.vstack(stimuli)
+    spatial_stimulus = spatialize(concatenated, nx)
+    spatiotemporal_stimulus = rolling_window(spatial_stimulus, nh)
+    return spatiotemporal_stimulus
 
-    flicker_sequence = np.hstack([low_contrast*np.random.randn(period*sample_rate),
-                                  high_contrast*np.random.randn(period*sample_rate),
-                                  low_contrast*np.random.randn(period*sample_rate)])
 
-    # Convert flicker sequence into full field movie
-    full_field_flicker = np.outer(flicker_sequence, np.ones((1,50,50)))
-    full_field_flicker = full_field_flicker.reshape((flicker_sequence.shape[0], 50, 50))
+def white(nt, nx=1, contrast=1.0):
+    """Gaussian white noise with the given contrast
 
-    if roll:
-        # Convert movie to 400ms long samples in the correct format for our model
-        full_field_movies = rolling_window(full_field_flicker, 40)
-        full_field_movies = np.rollaxis(full_field_movies, 2)
-        full_field_movies = np.rollaxis(full_field_movies, 3, 1)
-        return full_field_movies
-    else:
-        return full_field_flicker
+    Parameters
+    ----------
+    nt : int
+        number of temporal samples
 
-# Probe flash response
+    nx : int
+        number of spatial dimensions (default: 1)
+
+    contrast : float
+        Scalar multiplied by the whole stimulus (default: 1.0)
+    """
+    return contrast * np.random.randn(nt, nx, nx)
+
+
+def contrast_steps(contrasts, lengths, nx=1):
+    """Returns a random sequence with contrast step changes
+
+    Parameters
+    ----------
+    contrasts : array_like
+        List of the contrasts in the sequence
+
+    lengths : int or array_like
+        If an integer is given, each sequence has the same length.
+        Otherwise, the given list is used as the lengths for each contrast
+
+    nx : int
+        Number of spatial dimensions (default: 1)
+    """
+    if isinstance(lengths, int):
+        lengths = repeat(lengths)
+
+    return np.vstack([white(nt, nx=nx, contrast=sigma)
+                      for sigma, nt in zip(contrasts, lengths)])
+
+
+def spatialize(array, nx):
+    """Returns a spatiotemporal version of a full field stimulus
+
+    Given an input array of shape (t, 1, 1), returns a new array with
+    shape (t, nx, nx) where each temporal value is copied at each
+    spatial location
+
+    Parameters
+    ----------
+    array : array_like
+        The full-field stimulus to spatialize
+
+    nx : int
+        The number of desired spatial dimensions (along one edge)
+    """
+    return np.broadcast_to(array, (array.shape[0], nx, nx))
+
+
+def flash(length, delay, nsamples, intensity=1.):
+    """Generates a 1D flash
+
+    Parameters
+    ----------
+    length : int
+        The length (in samples) of the flash
+
+    delay : int
+        The delay (in samples) before the flash starts
+
+    nsamples : int
+        The total number of samples in the array
+
+    intensity : float, optional
+        The flash intensity (default: 1.0)
+    """
+    assert nsamples > (delay + length), \
+        "The total number samples must be greater than the delay + length"
+    sequence = np.zeros((nsamples,))
+    sequence[delay:(delay+length)] = intensity
+    return sequence.reshape(-1, 1, 1)
+
+
 def get_flash_sequence(initial_flash=45, latency=10, nsamples=100, intensity=1, flash_length=1):
-    '''
-        Returns a 1 dimensional flash sequence.
-    '''
+    """Returns a 1 dimensional flash sequence."""
     flash_sequence = np.zeros((nsamples,))
 
     # Make two flashes
@@ -54,6 +133,7 @@ def get_flash_sequence(initial_flash=45, latency=10, nsamples=100, intensity=1, 
         for i in range(flash_length):
             flash_sequence[initial_flash+latency+i] = intensity
     return flash_sequence
+
 
 def get_full_field_flashes(mask=np.ones((50,50)), initial_flash=60, latency=10, nsamples=100, intensity=1,
                           flash_length=1):
@@ -87,7 +167,7 @@ def get_full_field_flashes(mask=np.ones((50,50)), initial_flash=60, latency=10, 
     full_field_movies = np.rollaxis(full_field_movies, 3, 1)
     return full_field_movies
 
-# Probe nonlinear subunits by reversing gratings
+
 def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask=False, intensity=1, phase=0, roll=True):
     '''
         Returns a reversing gratings stimulus.
@@ -141,7 +221,7 @@ def cmask(center,radius,array):
     return mask
 
 
-def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=0.93, 
+def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=0.93,
         magnitude=5, space=(50,50), center=(25,25), object_radius=5, coherent=False, roll=False):
     '''
         Object motion sensitivity stimulus, where an object moves differentially
@@ -169,7 +249,7 @@ def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=
     transition_frames = int(transition_duration/sample_rate)
     silent_frames = int(silent_duration/sample_rate)
     total_frames = int(duration/sample_rate)
-    
+
     # silence, one direction, silence, opposite direction
     obj_position = np.hstack([np.zeros((silent_frames,)), np.linspace(0, magnitude, transition_frames),
                             magnitude*np.ones((silent_frames,)), np.linspace(magnitude, 0, transition_frames)])
@@ -206,7 +286,7 @@ def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=
             # set center of background frame to object
             object_mask = cmask(center, object_radius, object_frame)
             background_frame[object_mask] = object_frame[object_mask]
-            
+
         # adjust contrast
         background_frame *= contrast
         movie[frame] = background_frame
@@ -218,9 +298,8 @@ def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=
     else:
         return movie
 
-        
 
-def motion_anticipation(duration=4, sample_rate=0.01, bar_speed=8, bar_width=3, 
+def motion_anticipation(duration=4, sample_rate=0.01, bar_speed=8, bar_width=3,
         space=(50,50), flash_pos=25, flash_dur=1, flash_time=1, mode='moving', roll=False):
     '''
         Object motion sensitivity stimulus, where an object moves differentially
@@ -244,7 +323,7 @@ def motion_anticipation(duration=4, sample_rate=0.01, bar_speed=8, bar_width=3,
     # fixed params
     contrast = 1
     total_frames = int(duration/sample_rate)
-    
+
     # determine bar position across time
     if mode == 'flash':
         # force left edge to always be >= 0
@@ -258,7 +337,7 @@ def motion_anticipation(duration=4, sample_rate=0.01, bar_speed=8, bar_width=3,
 
     elif mode == 'moving':
         bar_speed_frames = bar_speed * sample_rate
-        bar_pos = np.linspace(0, bar_speed_frames*total_frames, total_frames) 
+        bar_pos = np.linspace(0, bar_speed_frames*total_frames, total_frames)
 
         # start from leftmost edge
         leftedge = 0
@@ -273,7 +352,7 @@ def motion_anticipation(duration=4, sample_rate=0.01, bar_speed=8, bar_width=3,
         # start of leftedge on this frame
         bar_start = bar_pos[frame] + leftedge
         background[:,bar_start:bar_start+bar_width] = 1
-            
+
         # adjust contrast
         background *= contrast
         if mode == 'flash':

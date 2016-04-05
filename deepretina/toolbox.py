@@ -11,6 +11,7 @@ import re
 import tableprint
 from keras.models import model_from_json, model_from_config
 from .experiments import loadexpt
+from .models import sequential
 from . import metrics
 from .visualizations import visualize_convnet, visualize_glm
 import pandas as pd

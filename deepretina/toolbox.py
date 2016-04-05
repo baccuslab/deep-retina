@@ -511,10 +511,17 @@ def inject_noise(keras_model, noise_strength, stimulus, ntrials=10,
         out                 np array of model responses (response of ganglion cells)
                             with each row a different trial
     '''
-    model_part1 = load_partial_model(keras_model, stop_layer=target_layer)
-    model_part2 = load_partial_model(keras_model, start_layer=target_layer+1)
+    # split model into two parts
+    if target_layer > 0:
+        model_part1 = load_partial_model(keras_model, stop_layer=target_layer)
+        model_part2 = load_partial_model(keras_model, start_layer=target_layer+1)
 
-    stimulus_response = model_part1(stimulus)
+        stimulus_response = model_part1(stimulus)
+    # unless one of the two parts is trivial
+    else:
+        model_part2 = keras_model.predict
+        stimulus_response = stimulus
+
     noisy_responses = []
     for t in range(ntrials):
         noise = noise_strength * np.random.randn(*stimulus_response.shape)

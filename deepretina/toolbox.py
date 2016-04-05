@@ -259,7 +259,7 @@ def load_model(model_path, weight_filename):
     return model
 
 
-def load_partial_model(model, stop_layer, start_layer=0):
+def load_partial_model(model, stop_layer=None, start_layer=0):
     """
     Returns the model up to a specified layer.
 
@@ -271,10 +271,25 @@ def load_partial_model(model, stop_layer, start_layer=0):
         a theano function representing the partial model
     """
 
-    # create theano function to generate activations of desired layer
-    start = model.layers[start_layer].input
-    stop = model.layers[stop_layer].get_output(train=False)
-    return theano.function([start], stop)
+    if start_layer == 0:
+        if not stop_layer:
+            return model.predict
+        else:
+            # create theano function to generate activations of desired layer
+            start = model.layers[start_layer].input
+            stop = model.layers[stop_layer].get_output(train=False)
+            return theano.function([start], stop)
+    else:
+        # to have the partial model start at an arbitrary layer
+        # we need to redefine the model
+        layers = model.layers
+        new_layers = layers[start_layer:stop_layer]
+        new_model = sequential(new_layers, 'adam', loss='poisson')
+        new_model.compile(optimizer='adam', loss='poisson')
+        for idl,l in enumerate(new_model.layers):
+            l.set_weights(new_layers[idl].get_weights())
+
+        return new_model.predict
 
 
 def list_layers(model_path, weight_filename):
@@ -400,3 +415,36 @@ def get_weights(filepath, layer=0, param=0):
         weights = np.array(f[layer][param]).astype('float64')
 
     return weights
+
+
+def inject_noise(keras_model, noise_strength, stimulus, ntrials=10,
+        target_layer=0):
+    '''
+        Inject noise into a keras model at a given layer to
+        measure shared parameters and noise correlations
+        in deep retina.
+
+        INPUTS:
+        keras_model         a keras model
+        noise_strength      std of noise injection
+        stimulus            visual stimulus signal to model; (time, 40, 50, 50)
+        ntrials             number of trials to inject different noise instances
+        target_layer        layer to inject noise into; default is pixels
+
+        OUTPUT:
+        out                 np array of model responses (response of ganglion cells)
+                            with each row a different trial
+    '''
+    model_part1 = load_partial_model(keras_model, stop_layer=target_layer)
+    model_part2 = load_partial_model(keras_model, start_layer=target_layer+1)
+
+    stimulus_response = model_part1(stimulus)
+    noisy_responses = []
+    for t in range(ntrials):
+        noise = noise_strength * np.random.randn(*stimulus_response.shape)
+        noisy_responses.append(model_part2(stimulus_response + noise))
+
+    return np.stack(noisy_responses)
+
+
+

@@ -11,6 +11,7 @@ import re
 import tableprint
 from keras.models import model_from_json, model_from_config
 from .experiments import loadexpt
+from .models import sequential
 from . import metrics
 from .visualizations import visualize_convnet, visualize_glm
 import pandas as pd
@@ -444,7 +445,8 @@ def inject_noise(keras_model, noise_strength, stimulus, ntrials=10,
         noise = noise_strength * np.random.randn(*stimulus_response.shape)
         noisy_responses.append(model_part2(stimulus_response + noise))
 
-    return np.stack(noisy_responses)
+    # return noise repeats as (ncells, nrepeats, ntimesteps)
+    return np.rollaxis(np.stack(noisy_responses), 2, 0)
 
 
 

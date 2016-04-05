@@ -7,6 +7,9 @@ from __future__ import absolute_import, division, print_function
 import sys
 from contextlib import contextmanager
 from . import metrics
+import numpy as np
+from scipy.stats import zscore
+from itertools import combinations
 
 __all__ = ['notify', 'allmetrics']
 
@@ -59,3 +62,60 @@ def notify(title):
         yield
     finally:
         print('Done.')
+
+
+def xcorr(x, y, maxlag, normalize=True):
+    """Computes the cross correlation between two signals
+
+    Parameters
+    ----------
+    x : array_like
+        The first signal to correlate, must be 1-D
+
+    y : array_like
+        The second signal to correlate, must have the same shape as x
+
+    maxlag : int
+        The maximum lag length (in samples), must be a positive integer
+
+    normalize : boolean, optional
+        Whether or not to zscore the arrays before computing the lags,
+        this forces the correlation to be between -1 and 1. (default: True)
+
+    Returns
+    -------
+    lags : array_like
+        An array of lag indices, ranging from -maxlag to maxlag
+
+    corr : array_like
+        The correlations of the two signals at each of the lags
+    """
+    assert type(maxlag) is int and maxlag > 0, \
+        "maxlag must be a positive integer"
+
+    assert x.shape == y.shape, \
+        "The two arrays must have the same shape"
+
+    if normalize:
+        x = zscore(x.copy())
+        y = zscore(y.copy())
+
+    lags = np.arange(-maxlag, maxlag + 1)
+    corr = np.zeros(len(lags))
+    length = x.size
+
+    for idx, lag in enumerate(lags):
+        total = float(length - np.abs(lag))
+        if lag < 0:
+            corr[idx] = np.dot(x[:lag], y[-lag:]) / total
+        elif lag > 0:
+            corr[idx] = np.dot(x[lag:], y[:-lag]) / total
+        else:
+            corr[idx] = np.dot(x, y) / total
+
+    return lags, corr
+
+
+def pairs(n):
+    """Return an iterator over n choose 2 possible pairs"""
+    return combinations(range(n), 2)

@@ -18,6 +18,8 @@ import pandas as pd
 import json
 from tqdm import tqdm
 from operator import attrgetter
+from .utils import xcorr, pairs
+from scipy.stats import sem
 
 
 def scandb(directory):
@@ -265,13 +267,13 @@ def load_partial_model(model, stop_layer=None, start_layer=0):
     Returns the model up to a specified layer.
 
     INPUT:
-        model       a keras model
-        layer_id    an integer designating which layer is the new final layer
+        model           a keras model
+        stop_layer      index of the final layer
+        start_layer     index of the start layer
 
     OUTPUT:
         a theano function representing the partial model
     """
-
     if start_layer == 0:
         if not stop_layer:
             return model.predict
@@ -328,6 +330,79 @@ def list_layers(model_path, weight_filename):
             print(tableprint.row([l.encode('ascii', 'ignore'), '', '']))
 
     print(tableprint.hr(3))
+
+
+def collapse(filename):
+    with h5py.File(filename, 'r') as f:
+        ncells = len(f['test/repeats'])
+        nrepeats, ntimesteps = f['test/repeats/cell01'].shape
+        arr = np.zeros((ncells, nrepeats, ntimesteps))
+        for ci, key in enumerate(f['test/repeats']):
+            arr[ci] = np.array(f['test/repeats'][key])
+
+    return arr
+
+
+def computecorr(data, maxlag, dt=1e-2):
+    """Computes pairwise correlation
+
+    Parameters
+    ----------
+    data : array_like
+        data must have shape (ncells, nrepeats, ntimesteps)
+
+    Returns
+    -------
+    lags : array_like
+        array of time lags (in seconds)
+
+    both : dict
+        dictionary mapping from a tuple (pair) of indices, to
+        an array containing the stimulus+noise correlations across
+        N repeats for each of the M time lags
+
+    stim : dict
+        dictionary mapping from a tuple (pair) of indices, to
+        an array containing the stimulus only correlations across
+        (N)(N-1)/2 pairs of repeats for each of the M time lags
+    """
+    ncells, nrepeats, ntimesteps = data.shape
+
+    # store results in a dictionary from pairs -> arrays
+    both = {}
+    stim = {}
+
+    # compute lags array
+    lags = np.arange(-maxlag, maxlag + 1).astype('float') * dt
+
+    for pair in pairs(ncells):
+        i, j = pair
+
+        # compute stimulus+noise correlations
+        both[pair] = np.stack([xcorr(data[i, r], data[j, r],
+                                     maxlag, normalize=True)[1]
+                               for r in range(nrepeats)])
+
+        # compute stimulus only correlations for each unique pair of repeats
+        stim[pair] = np.stack([xcorr(data[i, a], data[j, b],
+                                     maxlag, normalize=True)[1]
+                               for a, b in pairs(nrepeats)])
+
+    return lags, both, stim
+
+
+def noise_correlations(both, stim):
+    """Computes noise correlations given stimulus+noise and
+    just stimulus correlations
+    """
+    mu = dict()
+    sigma = dict()
+
+    for pair in both.keys():
+        mu[pair] = np.mean(both[pair], axis=0) - np.mean(stim[pair], axis=0)
+        sigma[pair] = sem(both[pair], axis=0) - sem(stim[pair], axis=0)
+
+    return mu, sigma
 
 
 def get_test_responses(model, stim_type='whitenoise', cells=[0], exptdate='15-10-07'):

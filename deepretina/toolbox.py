@@ -522,6 +522,3 @@ def inject_noise(keras_model, noise_strength, stimulus, ntrials=10,
 
     # return noise repeats as (ncells, nrepeats, ntimesteps)
     return np.rollaxis(np.stack(noisy_responses), 2, 0)
-
-
-

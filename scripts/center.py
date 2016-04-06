@@ -1,4 +1,6 @@
 # script to center weights
+import matplotlib
+matplotlib.use('Agg')
 import numpy as np
 from os.path import expanduser
 import os
@@ -7,7 +9,8 @@ from keras.models import model_from_json
 from deepretina.toolbox import load_model
 import h5py
 
-mdl_dir = os.path.expanduser('~/deep-retina-results/database/3520cd convnet/')
+f = input("Please enter the model hash + name, e.g. 3520cd convnet. ")
+mdl_dir = os.path.expanduser('~/deep-retina-results/database/%s/' %f)
 weight_name = 'best_weights.h5'
 model = load_model(mdl_dir, weight_name)
 weights = model.get_weights()

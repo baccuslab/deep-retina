@@ -64,17 +64,17 @@ def fit_convnet(cells, train_stimuli, exptdate, nclip=0, readme=None):
 
     # get the convnet layers
     layers = convnet(stim_shape, ncells, num_filters=(8, 16),
-                     filter_size=(13, 13), weight_init='normal', l2_reg=0.01, dropout1=0.0, dropout2=0.0)
+                     filter_size=(17, 17), weight_init='normal', l2_reg=0.01, dropout1=0.25, dropout2=0.25)
 
     # compile the keras model
-    model = sequential(layers, 'adam', loss='sub_poisson_loss')
+    model = sequential(layers, 'adam', loss='poisson')
 
     # load experiment data
     test_stimuli = ['whitenoise', 'naturalscene']
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip)
 
     # create a monitor to track progress
-    monitor = KerasMonitor('convnet', model, data, readme, save_every=10)
+    monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
 
     # train
     train(model, data, monitor, num_epochs=50)
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     # l2b = 0.0
     # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b))
 
-    mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], 'all-cells', description='Training a model on the 15-10-07 cells on all-cells')
+    mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', nclip=6000)
     # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=5000, description='subpoisson Whitenoise (clipping one minute of each repeat)')
     # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=0, description='subpoisson Whitenoise w/o clipping')
     # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=30000, description='subpoisson Whitenoise (clipping five  minutes of each repeat)')

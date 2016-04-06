@@ -272,7 +272,7 @@ def load_model(model_path, weight_filename, changed_params=None):
                     for i in idxs:
                         arch['layers'][i]['p'] = changed_params['dropout']
                 else:
-                    assert False 'Key %s not recognized by load_model at this time.' %key
+                    assert False, 'Key %s not recognized by load_model at this time.' %key
  
             # saved revised architecture.json file
             with open(os.path.join(model_path, architecture_filename), 'w') as outfile:

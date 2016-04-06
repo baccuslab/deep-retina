@@ -17,7 +17,7 @@ import os
 
 
 @main_wrapper
-def retrain(model_hash, weight_name='best_weights.h5', cells, train_stimuli, test_stimuli, exptdate, readme=None, changed_params=None):
+def retrain(model_hash, cells, train_stimuli, test_stimuli, exptdate, readme=None, changed_params=None, weight_name='best_weights.h5', nclip=0):
     """Main script for fitting a convnet
 
     author: Lane McIntosh
@@ -32,7 +32,7 @@ def retrain(model_hash, weight_name='best_weights.h5', cells, train_stimuli, tes
     model = load_model(model_path, weight_name, changed_params=changed_params)
 
     # load experiment data
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip)
 
     # create a monitor to track progress
     monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
@@ -51,4 +51,4 @@ if __name__ == '__main__':
     gc_16_01_08 = [0,3,7,9,11]
     gc_all_cells = list(range(37))
     #mdl = retrain('3dd884 convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=5000)
-    mdl = retrain('3520cd convnet', weight_name='centered_weights.h5', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=5000)
+    mdl = retrain('3520cd convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', changed_params=None, weight_name='centered_weights.h5', nclip=5000)

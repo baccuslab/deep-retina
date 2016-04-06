@@ -7,16 +7,20 @@ import numpy as np
 import theano
 import h5py
 import os
+import sys
 import re
 import tableprint
-from keras.models import model_from_json
+from keras.models import model_from_json, model_from_config
 from .experiments import loadexpt
+from .models import sequential
 from . import metrics
 from .visualizations import visualize_convnet, visualize_glm
 import pandas as pd
 import json
 from tqdm import tqdm
 from operator import attrgetter
+from .utils import xcorr, pairs
+from scipy.stats import sem
 
 
 def scandb(directory):
@@ -182,6 +186,21 @@ class Model:
 
         return load_h5(self.filepath(filename))
 
+    def keras(self, weights='best_weights.h5'):
+        """Returns a Keras model with the architecture and weights file"""
+
+        if self.architecture is None:
+            raise ValueError('Architecture not found. Is this a Keras model?')
+
+        # Load model architecture
+        mdl = model_from_config(self.architecture)
+
+        # load the weights
+        if weights is not None:
+            mdl.load_weights(self.filepath(weights))
+
+        return mdl
+
     def plot(self, filename='best_weights.h5'):
         """Plots the parameters of this model"""
         weights = self.weights(filename)
@@ -222,7 +241,7 @@ def load_h5(filepath):
     return h5py.File(filepath, 'r')
 
 
-def load_model(model_path, weight_filename):
+def load_model(model_path, weight_filename, changed_params=None):
     """
     Loads a Keras model using:
     - an architecture.json file
@@ -231,11 +250,40 @@ def load_model(model_path, weight_filename):
     INPUT:
         model_path		the full path to the saved weight and architecture files, ending in '/'
         weight_filename	an h5 file with the weights
+        changed_params  dictionary of new parameters. e.g. {'loss': 'poisson', 'lr': 0.1, 'dropout', 0.25}
         OUTPUT:
         returns keras model
     """
 
-    architecture_filename = 'architecture.json'
+    # if params have changed, load old json file, make changes, save revised json file
+    if changed_params:
+        architecture_filename = 'retrain_architecture.json'
+        with open(os.path.join(model_path, 'architecture.json'), 'r') as architecture_data:
+            arch = json.load(architecture_data)
+            for key in changed_params:
+                # keys that are flat and at the highest hierarchy
+                if key in ['loss', 'name', 'class_mode', 'sample_weight_mode']:
+                    arch[key] = changed_params[key]
+                # keys that are in optimizer
+                elif key in ['beta_1', 'beta_2', 'epsilon', 'lr', 'name']:
+                    arch['optimizer'][key] = changed_params[key]
+                # keys in other named layers
+                elif key in ['dropout']:
+                    idxs = [i for i in range(len(arch['layers'])) if arch['layers'][i]['name'] == 'Dropout']
+                    for i in idxs:
+                        arch['layers'][i]['p'] = changed_params['dropout']
+                else:
+                    print('Key %s not recognized by load_model at this time.' %key)
+                    #raise ValueError('Key %s not recognized by load_model at this time.' %key)
+                    sys.stdout.flush()
+ 
+            # saved revised architecture.json file
+            with open(os.path.join(model_path, architecture_filename), 'w') as outfile:
+                json.dump(arch, outfile)
+
+    # else params have not changed, and just open the original architecture
+    else:
+        architecture_filename = 'architecture.json'
     with open(os.path.join(model_path, architecture_filename), 'r') as architecture_data:
         architecture_string = architecture_data.read()
         model = model_from_json(architecture_string)
@@ -244,20 +292,37 @@ def load_model(model_path, weight_filename):
     return model
 
 
-def load_partial_model(model, layer_id):
+def load_partial_model(model, stop_layer=None, start_layer=0):
     """
     Returns the model up to a specified layer.
 
     INPUT:
-        model       a keras model
-        layer_id    an integer designating which layer is the new final layer
+        model           a keras model
+        stop_layer      index of the final layer
+        start_layer     index of the start layer
 
     OUTPUT:
         a theano function representing the partial model
     """
+    if start_layer == 0:
+        if not stop_layer:
+            return model.predict
+        else:
+            # create theano function to generate activations of desired layer
+            start = model.layers[start_layer].input
+            stop = model.layers[stop_layer].get_output(train=False)
+            return theano.function([start], stop)
+    else:
+        # to have the partial model start at an arbitrary layer
+        # we need to redefine the model
+        layers = model.layers
+        new_layers = layers[start_layer:stop_layer]
+        new_model = sequential(new_layers, 'adam', loss='poisson')
+        new_model.compile(optimizer='adam', loss='poisson')
+        for idl,l in enumerate(new_model.layers):
+            l.set_weights(new_layers[idl].get_weights())
 
-    # create theano function to generate activations of desired layer
-    return theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
+        return new_model.predict
 
 
 def list_layers(model_path, weight_filename):
@@ -295,6 +360,79 @@ def list_layers(model_path, weight_filename):
             print(tableprint.row([l.encode('ascii', 'ignore'), '', '']))
 
     print(tableprint.hr(3))
+
+
+def collapse(filename):
+    with h5py.File(filename, 'r') as f:
+        ncells = len(f['test/repeats'])
+        nrepeats, ntimesteps = f['test/repeats/cell01'].shape
+        arr = np.zeros((ncells, nrepeats, ntimesteps))
+        for ci, key in enumerate(f['test/repeats']):
+            arr[ci] = np.array(f['test/repeats'][key])
+
+    return arr
+
+
+def computecorr(data, maxlag, dt=1e-2):
+    """Computes pairwise correlation
+
+    Parameters
+    ----------
+    data : array_like
+        data must have shape (ncells, nrepeats, ntimesteps)
+
+    Returns
+    -------
+    lags : array_like
+        array of time lags (in seconds)
+
+    both : dict
+        dictionary mapping from a tuple (pair) of indices, to
+        an array containing the stimulus+noise correlations across
+        N repeats for each of the M time lags
+
+    stim : dict
+        dictionary mapping from a tuple (pair) of indices, to
+        an array containing the stimulus only correlations across
+        (N)(N-1)/2 pairs of repeats for each of the M time lags
+    """
+    ncells, nrepeats, ntimesteps = data.shape
+
+    # store results in a dictionary from pairs -> arrays
+    both = {}
+    stim = {}
+
+    # compute lags array
+    lags = np.arange(-maxlag, maxlag + 1).astype('float') * dt
+
+    for pair in pairs(ncells):
+        i, j = pair
+
+        # compute stimulus+noise correlations
+        both[pair] = np.stack([xcorr(data[i, r], data[j, r],
+                                     maxlag, normalize=True)[1]
+                               for r in range(nrepeats)])
+
+        # compute stimulus only correlations for each unique pair of repeats
+        stim[pair] = np.stack([xcorr(data[i, a], data[j, b],
+                                     maxlag, normalize=True)[1]
+                               for a, b in pairs(nrepeats)])
+
+    return lags, both, stim
+
+
+def noise_correlations(both, stim):
+    """Computes noise correlations given stimulus+noise and
+    just stimulus correlations
+    """
+    mu = dict()
+    sigma = dict()
+
+    for pair in both.keys():
+        mu[pair] = np.mean(both[pair], axis=0) - np.mean(stim[pair], axis=0)
+        sigma[pair] = sem(both[pair], axis=0) - sem(stim[pair], axis=0)
+
+    return mu, sigma
 
 
 def get_test_responses(model, stim_type='whitenoise', cells=[0], exptdate='15-10-07'):
@@ -383,3 +521,44 @@ def get_weights(filepath, layer=0, param=0):
         weights = np.array(f[layer][param]).astype('float64')
 
     return weights
+
+
+def inject_noise(keras_model, noise_strength, stimulus, ntrials=10,
+        target_layer=0):
+    '''
+        Inject noise into a keras model at a given layer to
+        measure shared parameters and noise correlations
+        in deep retina.
+
+        INPUTS:
+        keras_model         a keras model
+        noise_strength      std of noise injection
+        stimulus            visual stimulus signal to model; (time, 40, 50, 50)
+        ntrials             number of trials to inject different noise instances
+        target_layer        layer to inject noise into; default is pixels
+
+        OUTPUT:
+        out                 np array of model responses (response of ganglion cells)
+                            with each row a different trial
+    '''
+    # split model into two parts
+    if target_layer > 0:
+        model_part1 = load_partial_model(keras_model, stop_layer=target_layer)
+        model_part2 = load_partial_model(keras_model, start_layer=target_layer+1)
+
+        stimulus_response = model_part1(stimulus)
+    # unless one of the two parts is trivial
+    else:
+        model_part2 = keras_model.predict
+        stimulus_response = stimulus
+
+    noisy_responses = []
+    for t in range(ntrials):
+        noise = noise_strength * np.random.randn(*stimulus_response.shape)
+        noisy_responses.append(model_part2(stimulus_response + noise))
+
+    # return noise repeats as (ncells, nrepeats, ntimesteps)
+    return np.rollaxis(np.stack(noisy_responses), 2, 0)
+
+
+

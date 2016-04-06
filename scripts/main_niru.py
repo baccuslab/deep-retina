@@ -67,7 +67,7 @@ def fit_convnet(cells, train_stimuli, exptdate, nclip=0, readme=None):
                      filter_size=(13, 13), weight_init='normal', l2_reg=0.01, dropout1=0.0, dropout2=0.0)
 
     # compile the keras model
-    model = sequential(layers, 'adam', loss='poisson')
+    model = sequential(layers, 'adam', loss='sub_poisson_loss')
 
     # load experiment data
     test_stimuli = ['whitenoise', 'naturalscene']
@@ -98,7 +98,7 @@ def fit_glm(cells, train_stimuli, exptdate, l2, readme=None):
 
     # load experimental data
     test_stimuli = ['whitenoise']
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=0)
 
     # create a monitor to track progress
     monitor = GLMMonitor('GLM', model, data, readme, save_every=20)
@@ -118,11 +118,12 @@ if __name__ == '__main__':
 
     # l2a = 0.1
     # l2b = 0.0
-    # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b), description='Testing full GLM, l2=({}, {}), lr=2e-4'.format(l2a, l2b))
+    # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b))
 
-    # mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', description='Naturalscene training')
-    mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=30000, description='Whitenoise (clipping five  minutes of each repeat)')
-    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=0, description='Whitenoise w/o clipping')
+    mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], 'all-cells', description='Training a model on the 15-10-07 cells on all-cells')
+    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=5000, description='subpoisson Whitenoise (clipping one minute of each repeat)')
+    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=0, description='subpoisson Whitenoise w/o clipping')
+    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=30000, description='subpoisson Whitenoise (clipping five  minutes of each repeat)')
 
     # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['naturalscene'], '15-10-07', description='LN models w/ sta initialization (ns)')
     # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['whitenoise'], '15-10-07', description='LN models w/ sta initialization (wn)')

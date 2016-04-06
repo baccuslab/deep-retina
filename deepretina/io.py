@@ -411,7 +411,8 @@ def plot_performance(metrics, results, batches_per_epoch, plottype='summary'):
 
         # hard-coded y-scale for certain metrics
         if metric == 'lli':
-            ax.set_ylim(-2.5, 2.5)
+            # ax.set_ylim(-2.5, 2.5)
+            pass
         elif metric == 'fev':
             ax.set_ylim(-0.5, 0.5)
 

@@ -7,6 +7,7 @@ import numpy as np
 import theano
 import h5py
 import os
+import sys
 import re
 import tableprint
 from keras.models import model_from_json, model_from_config
@@ -240,7 +241,7 @@ def load_h5(filepath):
     return h5py.File(filepath, 'r')
 
 
-def load_model(model_path, weight_filename):
+def load_model(model_path, weight_filename, changed_params=None):
     """
     Loads a Keras model using:
     - an architecture.json file
@@ -249,11 +250,40 @@ def load_model(model_path, weight_filename):
     INPUT:
         model_path		the full path to the saved weight and architecture files, ending in '/'
         weight_filename	an h5 file with the weights
+        changed_params  dictionary of new parameters. e.g. {'loss': 'poisson', 'lr': 0.1, 'dropout', 0.25}
         OUTPUT:
         returns keras model
     """
 
-    architecture_filename = 'architecture.json'
+    # if params have changed, load old json file, make changes, save revised json file
+    if changed_params:
+        architecture_filename = 'retrain_architecture.json'
+        with open(os.path.join(model_path, 'architecture.json'), 'r') as architecture_data:
+            arch = json.load(architecture_data)
+            for key in changed_params:
+                # keys that are flat and at the highest hierarchy
+                if key in ['loss', 'name', 'class_mode', 'sample_weight_mode']:
+                    arch[key] = changed_params[key]
+                # keys that are in optimizer
+                elif key in ['beta_1', 'beta_2', 'epsilon', 'lr', 'name']:
+                    arch['optimizer'][key] = changed_params[key]
+                # keys in other named layers
+                elif key in ['dropout']:
+                    idxs = [i for i in range(len(arch['layers'])) if arch['layers'][i]['name'] == 'Dropout']
+                    for i in idxs:
+                        arch['layers'][i]['p'] = changed_params['dropout']
+                else:
+                    print('Key %s not recognized by load_model at this time.' %key)
+                    #raise ValueError('Key %s not recognized by load_model at this time.' %key)
+                    sys.stdout.flush()
+ 
+            # saved revised architecture.json file
+            with open(os.path.join(model_path, architecture_filename), 'w') as outfile:
+                json.dump(arch, outfile)
+
+    # else params have not changed, and just open the original architecture
+    else:
+        architecture_filename = 'architecture.json'
     with open(os.path.join(model_path, architecture_filename), 'r') as architecture_data:
         architecture_string = architecture_data.read()
         model = model_from_json(architecture_string)
@@ -511,10 +541,17 @@ def inject_noise(keras_model, noise_strength, stimulus, ntrials=10,
         out                 np array of model responses (response of ganglion cells)
                             with each row a different trial
     '''
-    model_part1 = load_partial_model(keras_model, stop_layer=target_layer)
-    model_part2 = load_partial_model(keras_model, start_layer=target_layer+1)
+    # split model into two parts
+    if target_layer > 0:
+        model_part1 = load_partial_model(keras_model, stop_layer=target_layer)
+        model_part2 = load_partial_model(keras_model, start_layer=target_layer+1)
 
-    stimulus_response = model_part1(stimulus)
+        stimulus_response = model_part1(stimulus)
+    # unless one of the two parts is trivial
+    else:
+        model_part2 = keras_model.predict
+        stimulus_response = stimulus
+
     noisy_responses = []
     for t in range(ntrials):
         noise = noise_strength * np.random.randn(*stimulus_response.shape)

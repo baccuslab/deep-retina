@@ -410,10 +410,7 @@ def plot_performance(metrics, results, batches_per_epoch, plottype='summary'):
                 ax.plot(x, res, fmt, alpha=0.5)
 
         # hard-coded y-scale for certain metrics
-        if metric == 'lli':
-            # ax.set_ylim(-2.5, 2.5)
-            pass
-        elif metric == 'fev':
+        if metric == 'fev':
             ax.set_ylim(-0.5, 0.5)
 
         ax.set_title(str.upper(metric), fontsize=20)

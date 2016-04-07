@@ -37,7 +37,6 @@ copy_command = 'cp "%s" "%s"' %(mdl_dir + weight_name, mdl_dir + new_weight_name
 os.system(copy_command)
 
 
-h = h5py.File(mdl_dir + new_weight_name, 'r+')
-data = h['layer_0/param_0']
-data[...] = new_weights
-h.close()
+with h5py.File(mdl_dir + new_weight_name, 'r+') as h:
+    data = h['layer_0/param_0']
+    data[...] = new_weights

@@ -5,7 +5,6 @@ from scipy.stats import zscore
 def generate_sine_wave(num_samples, num_steps, snr=10, dt=1e-2):
     """
     Generates noisy sequence prediction data for a sine wave
-
     """
 
     for t in range(num_samples):

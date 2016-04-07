@@ -250,7 +250,9 @@ def modify_model(model_path, weight_filename, changed_params):
     INPUT:
         model_path		the full path to the saved weight and architecture files, ending in '/'
         weight_filename	an h5 file with the weights
-        changed_params  dictionary of new parameters. e.g. {'loss': 'poisson', 'lr': 0.1, 'dropout', 0.25}
+        changed_params  dictionary of new parameters. 
+                        e.g. {'loss': 'poisson', 'lr': 0.1, 'dropout': 0.25, 'name': 'Adam',
+                        'layers': [{'layer_id': 0, 'trainable': false}]}
         OUTPUT:
         returns keras model
     """
@@ -265,11 +267,19 @@ def modify_model(model_path, weight_filename, changed_params):
             # keys that are in optimizer
             elif key in ['beta_1', 'beta_2', 'epsilon', 'lr', 'name']:
                 arch['optimizer'][key] = changed_params[key]
-            # keys in other named layers
+            # key is dropout
             elif key in ['dropout']:
                 idxs = [i for i in range(len(arch['layers'])) if arch['layers'][i]['name'] == 'Dropout']
                 for i in idxs:
                     arch['layers'][i]['p'] = changed_params['dropout']
+            # change parameters of individual layers
+            elif key in ['layers']:
+                # changed_params['layers'] should be a list of dicts
+                for l in changed_params['layers']:
+                    layer_id = l['layer_id']
+                    for subkey in l.keys():
+                        if subkey not in ['layer_id']:
+                            arch['layers'][layer_id][subkey] = l[subkey]
             else:
                 print('Key %s not recognized by load_model at this time.' %key)
                 #raise ValueError('Key %s not recognized by load_model at this time.' %key)
@@ -437,6 +447,9 @@ def computecorr(data, maxlag, dt=1e-2):
 def noise_correlations(both, stim):
     """Computes noise correlations given stimulus+noise and
     just stimulus correlations
+
+    Returns the difference in the means and the difference in
+    the standard error of each pair in both
     """
     mu = dict()
     sigma = dict()
@@ -572,6 +585,3 @@ def inject_noise(keras_model, noise_strength, stimulus, ntrials=10,
 
     # return noise repeats as (ncells, nrepeats, ntimesteps)
     return np.rollaxis(np.stack(noisy_responses), 2, 0)
-
-
-

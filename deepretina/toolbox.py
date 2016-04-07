@@ -241,7 +241,7 @@ def load_h5(filepath):
     return h5py.File(filepath, 'r')
 
 
-def load_model(model_path, weight_filename, changed_params=None):
+def modify_model(model_path, weight_filename, changed_params):
     """
     Loads a Keras model using:
     - an architecture.json file
@@ -250,40 +250,63 @@ def load_model(model_path, weight_filename, changed_params=None):
     INPUT:
         model_path		the full path to the saved weight and architecture files, ending in '/'
         weight_filename	an h5 file with the weights
-        changed_params  dictionary of new parameters. e.g. {'loss': 'poisson', 'lr': 0.1, 'dropout', 0.25}
+        changed_params  dictionary of new parameters. 
+                        e.g. {'loss': 'poisson', 'lr': 0.1, 'dropout': 0.25, 'name': 'Adam',
+                        'layers': [{'layer_id': 0, 'trainable': false}]}
         OUTPUT:
         returns keras model
     """
 
     # if params have changed, load old json file, make changes, save revised json file
-    if changed_params:
-        architecture_filename = 'retrain_architecture.json'
-        with open(os.path.join(model_path, 'architecture.json'), 'r') as architecture_data:
-            arch = json.load(architecture_data)
-            for key in changed_params:
-                # keys that are flat and at the highest hierarchy
-                if key in ['loss', 'name', 'class_mode', 'sample_weight_mode']:
-                    arch[key] = changed_params[key]
-                # keys that are in optimizer
-                elif key in ['beta_1', 'beta_2', 'epsilon', 'lr', 'name']:
-                    arch['optimizer'][key] = changed_params[key]
-                # keys in other named layers
-                elif key in ['dropout']:
-                    idxs = [i for i in range(len(arch['layers'])) if arch['layers'][i]['name'] == 'Dropout']
-                    for i in idxs:
-                        arch['layers'][i]['p'] = changed_params['dropout']
-                else:
-                    print('Key %s not recognized by load_model at this time.' %key)
-                    #raise ValueError('Key %s not recognized by load_model at this time.' %key)
-                    sys.stdout.flush()
- 
-            # saved revised architecture.json file
-            with open(os.path.join(model_path, architecture_filename), 'w') as outfile:
-                json.dump(arch, outfile)
+    with open(os.path.join(model_path, 'architecture.json'), 'r') as architecture_data:
+        arch = json.load(architecture_data)
+        for key in changed_params:
+            # keys that are flat and at the highest hierarchy
+            if key in ['loss', 'name', 'class_mode', 'sample_weight_mode']:
+                arch[key] = changed_params[key]
+            # keys that are in optimizer
+            elif key in ['beta_1', 'beta_2', 'epsilon', 'lr', 'name']:
+                arch['optimizer'][key] = changed_params[key]
+            # key is dropout
+            elif key in ['dropout']:
+                idxs = [i for i in range(len(arch['layers'])) if arch['layers'][i]['name'] == 'Dropout']
+                for i in idxs:
+                    arch['layers'][i]['p'] = changed_params['dropout']
+            # change parameters of individual layers
+            elif key in ['layers']:
+                # changed_params['layers'] should be a list of dicts
+                for l in changed_params['layers']:
+                    layer_id = l['layer_id']
+                    for subkey in l.keys():
+                        if subkey not in ['layer_id']:
+                            arch['layers'][layer_id][subkey] = l[subkey]
+            else:
+                print('Key %s not recognized by load_model at this time.' %key)
+                #raise ValueError('Key %s not recognized by load_model at this time.' %key)
+                sys.stdout.flush()
 
-    # else params have not changed, and just open the original architecture
-    else:
-        architecture_filename = 'architecture.json'
+        # write modified architecture to string
+        architecture_string = json.dumps(arch)
+
+    model = model_from_json(architecture_string)
+    model.load_weights(os.path.join(model_path, weight_filename))
+
+    return model
+
+def load_model(model_path, weight_filename):
+    """
+    Loads a Keras model using:
+    - an architecture.json file
+    - an h5 weight file, for instance 'epoch018_iter01300_weights.h5'
+
+    INPUT:
+        model_path		the full path to the saved weight and architecture files, ending in '/'
+        weight_filename	an h5 file with the weights
+        OUTPUT:
+        returns keras model
+    """
+
+    architecture_filename = 'architecture.json'
     with open(os.path.join(model_path, architecture_filename), 'r') as architecture_data:
         architecture_string = architecture_data.read()
         model = model_from_json(architecture_string)
@@ -559,6 +582,3 @@ def inject_noise(keras_model, noise_strength, stimulus, ntrials=10,
 
     # return noise repeats as (ncells, nrepeats, ntimesteps)
     return np.rollaxis(np.stack(noisy_responses), 2, 0)
-
-
-

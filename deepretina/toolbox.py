@@ -447,6 +447,9 @@ def computecorr(data, maxlag, dt=1e-2):
 def noise_correlations(both, stim):
     """Computes noise correlations given stimulus+noise and
     just stimulus correlations
+
+    Returns the difference in the means and the difference in
+    the standard error of each pair in both
     """
     mu = dict()
     sigma = dict()

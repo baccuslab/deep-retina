@@ -1,6 +1,5 @@
 """
 Construct Keras models
-
 """
 
 from __future__ import absolute_import, division, print_function
@@ -11,7 +10,7 @@ from keras.layers.recurrent import LSTM
 from keras.layers.advanced_activations import ParametricSoftplus
 from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise, GaussianDropout
-from keras.regularizers import l2
+from keras.regularizers import l2, activity_l2
 from .utils import notify
 
 __all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet']
@@ -68,8 +67,12 @@ def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
     return layers
 
 
-def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
-            weight_init='normal', l2_reg=0.0, dropout1=0.0, dropout2=0.0):
+def convnet(input_shape, nout,
+            num_filters=(8, 16), filter_size=(13, 13),
+            weight_init='normal',
+            l2_reg_weights=(0.0, 0.0, 0.0),
+            l2_reg_activity=(0.0, 0.0, 0.0),
+            dropout=(0.0, 0.0)):
     """Convolutional neural network
 
     Parameters
@@ -89,20 +92,29 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
     weight_init : string, optional
         Keras weight initialization (default: 'normal')
 
-    l2_reg : float, optional
-        l2 regularization on the weights (default: 0.0)
+    l2_weights: tuple of floats, optional
+        l2 regularization on the weights for each layer (default: 0.0)
 
-    dropout : float, optional
+    l2_activity: tuple of floats, optional
+        l2 regularization on the activations for each layer (default: 0.0)
+
+    dropout : tuple of floats, optional
         Fraction of units to 'dropout' for regularization (default: 0.0)
-
     """
     layers = list()
+
+    def _regularize(layer_idx):
+        """Small helper function to define per layer regularization"""
+        return {
+            'W_regularizer': l2(l2_reg_weights[layer_idx]),
+            'activity_regularizer': activity_l2(l2_reg_activity[layer_idx]),
+        }
 
     # first convolutional layer
     layers.append(Convolution2D(num_filters[0], filter_size[0], filter_size[1],
                                 input_shape=input_shape, init=weight_init,
                                 border_mode='same', subsample=(1, 1),
-                                W_regularizer=l2(l2_reg)))
+                                **_regularize(0)))
 
     # Add relu activation
     layers.append(Activation('relu'))
@@ -113,20 +125,20 @@ def convnet(input_shape, nout, num_filters=(8, 16), filter_size=(13, 13),
     # flatten
     layers.append(Flatten())
 
-    # Dropout
-    layers.append(Dropout(dropout1))
+    # Dropout (first stage)
+    layers.append(Dropout(dropout[0]))
 
     # Add dense (affine) layer
-    layers.append(Dense(num_filters[1], init=weight_init, W_regularizer=l2(l2_reg)))
+    layers.append(Dense(num_filters[1], init=weight_init, **_regularize(1)))
 
     # Add relu activation
     layers.append(Activation('relu'))
 
-    # Dropout
-    layers.append(Dropout(dropout2))
+    # Dropout (second stage)
+    layers.append(Dropout(dropout[1]))
 
     # Add a final dense (affine) layer
-    layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg)))
+    layers.append(Dense(nout, init=weight_init, **_regularize(2)))
 
     # Finish it off with a parameterized softplus
     layers.append(ParametricSoftplus())

@@ -8,7 +8,7 @@ from deepretina.models import sequential, convnet, generalizedconvnet, fixedlstm
 from deepretina.core import train
 from deepretina.experiments import Experiment
 from deepretina.io import KerasMonitor, main_wrapper
-from deepretina.toolbox import load_model
+from deepretina.toolbox import load_model, modify_model
 from keras.layers.recurrent import SimpleRNN
 from keras.layers.core import Dense
 from keras.regularizers import l2
@@ -29,7 +29,10 @@ def retrain(model_hash, cells, train_stimuli, test_stimuli, exptdate, readme=Non
 
     # load the keras model
     model_path = os.path.expanduser('~/deep-retina-results/database/%s/' %model_hash)
-    model = load_model(model_path, weight_name, changed_params=changed_params)
+    if changed_params is not None:
+        model = modify_model(model_path, weight_name, changed_params)
+    else:
+        model = load_model(model_path, weight_name)
 
     # load experiment data
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip)
@@ -51,4 +54,4 @@ if __name__ == '__main__':
     gc_16_01_08 = [0,3,7,9,11]
     gc_all_cells = list(range(37))
     #mdl = retrain('3dd884 convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=5000)
-    mdl = retrain('3520cd convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', changed_params=None, weight_name='centered_weights.h5', nclip=5000)
+    mdl = retrain('3520cd convnet', gc_15_10_07, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=5000)

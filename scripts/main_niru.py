@@ -1,6 +1,5 @@
 """
-Main script for training deep retinal models
-
+Niru main script
 """
 
 from __future__ import absolute_import
@@ -64,7 +63,10 @@ def fit_convnet(cells, train_stimuli, exptdate, nclip=0, readme=None):
 
     # get the convnet layers
     layers = convnet(stim_shape, ncells, num_filters=(8, 16),
-                     filter_size=(17, 17), weight_init='normal', l2_reg=0.01, dropout1=0.25, dropout2=0.25)
+                     filter_size=(13, 13), weight_init='normal',
+                     l2_reg_weights=(0.01, 0.01, 0.01),
+                     l1_reg_activity=(0.001, 0.001, 0.001),
+                     dropout=(0.05, 0.05))
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='poisson')

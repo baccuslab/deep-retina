@@ -15,7 +15,7 @@ import numpy as np
 from .experiments import rolling_window
 from itertools import repeat
 
-__all__ = ['concat', 'white', 'contrast_steps', 'flash', 'spatialize']
+__all__ = ['concat', 'white', 'contrast_steps', 'flash', 'spatialize', 'osr']
 
 
 def concat(*stimuli, nx=50, nh=40):
@@ -35,10 +35,8 @@ def concat(*stimuli, nx=50, nh=40):
     nx : int, optional
         Number of spatial dimensions (default: 50)
     """
-    concatenated = np.vstack(stimuli)
-    spatial_stimulus = spatialize(concatenated, nx)
-    spatiotemporal_stimulus = rolling_window(spatial_stimulus, nh)
-    return spatiotemporal_stimulus
+    concatenated = np.vstack(map(lambda s: spatialize(s, nx), stimuli))
+    return rolling_window(concatenated, nh)
 
 
 def white(nt, nx=1, contrast=1.0):
@@ -98,13 +96,13 @@ def spatialize(array, nx):
     return np.broadcast_to(array, (array.shape[0], nx, nx))
 
 
-def flash(length, delay, nsamples, intensity=1.):
+def flash(duration, delay, nsamples, intensity=-1.):
     """Generates a 1D flash
 
     Parameters
     ----------
-    length : int
-        The length (in samples) of the flash
+    duration : int
+        The duration (in samples) of the flash
 
     delay : int
         The delay (in samples) before the flash starts
@@ -115,11 +113,70 @@ def flash(length, delay, nsamples, intensity=1.):
     intensity : float, optional
         The flash intensity (default: 1.0)
     """
-    assert nsamples > (delay + length), \
-        "The total number samples must be greater than the delay + length"
+    assert nsamples > (delay + duration), \
+        "The total number samples must be greater than the delay + duration"
     sequence = np.zeros((nsamples,))
-    sequence[delay:(delay+length)] = intensity
+    sequence[delay:(delay + duration)] = intensity
     return sequence.reshape(-1, 1, 1)
+
+
+def osr(duration, interval, nflashes, intensity=-1.):
+    """Omitted stimulus response
+
+    Usage
+    -----
+    >>> stim = osr(2, 20, 5)
+
+    Parameters
+    ----------
+    duration : float
+        The duration of a flash, in samples
+
+    frequency : int
+        The inter-flash interval, in samples
+
+    nflashes : int
+        The number of flashes to repeat before the omitted flash
+    """
+
+    single_flash = flash(duration, interval, interval * 2, intensity=intensity)
+    omitted_flash = flash(duration, interval, interval * 2, intensity=0.0)
+    flash_group = list(repeat(single_flash, nflashes))
+    zero_pad = np.zeros((interval, 1, 1))
+    return concat(zero_pad, *flash_group, omitted_flash, *flash_group, nx=50, nh=40)
+
+
+def bar(center, width, height, nx=50, intensity=-1.):
+    """Generates a single frame of a bar"""
+    frame = np.zeros((nx, nx))
+
+    # get the bar indices
+    cx, cy = center[0] + 25, center[1] + 25
+    bx = slice(max(0, cx - width // 2), max(0, min(nx, cx + width // 2)))
+    by = slice(max(0, cy - height // 2), max(0, min(nx, cy + height // 2)))
+
+    # set the bar intensity values
+    frame[by, bx] = intensity
+    return frame
+
+
+def driftingbar(speed, width, intensity=-1.):
+    """Drifting bar
+    
+    Usage
+    -----
+    >>> stim = driftingbar(0.1, 5)
+
+    Parameters
+    ----------
+    speed : float
+        bar speed in pixels / frame
+
+    width : int
+        bar width in pixels
+    """
+    xs = np.linspace(-50, 50, int(100 / speed)).astype('int')
+    return xs, concat(np.stack(map(lambda x: bar((x, 0), width, 50), xs)))
 
 
 def get_flash_sequence(initial_flash=45, latency=10, nsamples=100, intensity=1, flash_length=1):
@@ -135,8 +192,8 @@ def get_flash_sequence(initial_flash=45, latency=10, nsamples=100, intensity=1, 
     return flash_sequence
 
 
-def get_full_field_flashes(mask=np.ones((50,50)), initial_flash=60, latency=10, nsamples=100, intensity=1,
-                          flash_length=1):
+def get_full_field_flashes(mask=np.ones((50, 50)), initial_flash=60, latency=10,
+                           nsamples=100, intensity=1, flash_length=1):
     '''
         Returns full field flash stimulus.
 
@@ -154,8 +211,9 @@ def get_full_field_flashes(mask=np.ones((50,50)), initial_flash=60, latency=10, 
             full_field_movies   a np.array of shape (nsamples, 40, 50, 50)
     '''
 
-    flash_sequence = get_flash_sequence(initial_flash=initial_flash, latency=latency, nsamples=nsamples,
-                                       intensity=intensity, flash_length=flash_length)
+    flash_sequence = get_flash_sequence(initial_flash=initial_flash, latency=latency,
+                                        nsamples=nsamples, intensity=intensity,
+                                        flash_length=flash_length)
 
     # Convert flash sequence into full field movie
     full_field_flash = np.outer(flash_sequence, mask)
@@ -168,7 +226,8 @@ def get_full_field_flashes(mask=np.ones((50,50)), initial_flash=60, latency=10, 
     return full_field_movies
 
 
-def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask=False, intensity=1, phase=0, roll=True):
+def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask=False,
+                      intensity=1, phase=0, roll=True):
     '''
         Returns a reversing gratings stimulus.
 
@@ -213,7 +272,7 @@ def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask
         return grating_movie
 
 
-def cmask(center,radius,array):
+def cmask(center, radius, array):
     a,b = center
     nx,ny = array.shape
     y,x = np.ogrid[-a:nx-a,-b:ny-b]

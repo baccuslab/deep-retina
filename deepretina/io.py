@@ -233,7 +233,7 @@ class Monitor:
 
         # copy to dropbox
         if dropbox:
-            self._copy_to_dropbox('.'.join(fname, filetype))
+            self._copy_to_dropbox('.'.join((fname, filetype)))
 
     def _save_h5(self, epoch, iteration, all_train, all_val, all_test):
         """Updates the results.h5 file"""

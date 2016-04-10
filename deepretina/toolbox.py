@@ -281,8 +281,7 @@ def modify_model(model_path, weight_filename, changed_params):
                         if subkey not in ['layer_id']:
                             arch['layers'][layer_id][subkey] = l[subkey]
             else:
-                print('Key %s not recognized by load_model at this time.' %key)
-                #raise ValueError('Key %s not recognized by load_model at this time.' %key)
+                print('Key %s not recognized by load_model at this time.' % key)
                 sys.stdout.flush()
 
         # write modified architecture to string

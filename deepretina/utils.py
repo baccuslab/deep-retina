@@ -1,6 +1,5 @@
 """
-Generic utilities for use in deepretina
-
+Generic utilities
 """
 
 from __future__ import absolute_import, division, print_function

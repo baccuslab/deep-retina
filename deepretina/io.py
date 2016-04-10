@@ -122,7 +122,8 @@ class Monitor:
 
     def cleanup(self, iteration, elapsed_time):
         """Called when the model has finished training"""
-        print('Finished training model {} after {} iterations and {} hours.'.format(self.hashkey, iteration, elapsed_time / 3600.))
+        print('Finished training model {} after {} iterations and {} hours.'
+              .format(self.hashkey, iteration, elapsed_time / 3600.))
 
     def save(self, epoch, iteration, X_train, r_train, model_predict):
         """Saves relevant information for this epoch/iteration of training
@@ -169,7 +170,7 @@ class Monitor:
         if np.array(cells).size == 1:
 
             # for one cell
-            filename = 'cell{}.jpg'.format(cells)
+            filename = 'cell{}'.format(cells)
             plot_rates(iteration, self.experiment.dt,
                        train=(r_train, rhat_train),
                        validation=(r_val, rhat_val))
@@ -178,7 +179,7 @@ class Monitor:
         else:
             # for all cells
             for ix, cell in enumerate(cells):
-                filename = 'cell{}.jpg'.format(cell)
+                filename = 'cell{}'.format(cell)
                 plot_rates(iteration, self.experiment.dt,
                            train=(r_train[:, ix], rhat_train[:, ix]),
                            validation=(r_val[:, ix], rhat_val[:, ix]))
@@ -186,7 +187,7 @@ class Monitor:
 
         # plot the performance curves
         for plottype in ('summary', 'traces'):
-            filename = 'performance_{}.jpg'.format(plottype)
+            filename = 'performance_{}'.format(plottype)
             with h5py.File(self._dbpath('results.h5'), 'r') as f:
                 plot_performance(self.metrics, f, self.experiment.batches_per_epoch, plottype=plottype)
             self._save_figure(filename, dpi=100)
@@ -218,16 +219,21 @@ class Monitor:
         if dropbox:
             self._copy_to_dropbox(filename)
 
-    def _save_figure(self, filename, filetype='jpg', dpi=100, dropbox=True):
-        """Saves the current figure as a jpg and copies it to Dropbox"""
+    def _save_figure(self, filename, filetype='svg', dpi=100, dropbox=True):
+        """Saves the current figure and copies it to Dropbox"""
+        fname, ext = path.splitext(filename)
 
-        # save the figure
-        plt.savefig(self._dbpath(filename), format=filetype, dpi=dpi, bbox_inches='tight')
+        # save the figure and close all
+        plt.savefig(self._dbpath(fname),
+                    format=filetype,
+                    dpi=dpi,
+                    bbox_inches='tight',
+                    transparent=True)
         plt.close('all')
 
         # copy to dropbox
         if dropbox:
-            self._copy_to_dropbox(filename)
+            self._copy_to_dropbox('.'.join(fname, filetype))
 
     def _save_h5(self, epoch, iteration, all_train, all_val, all_test):
         """Updates the results.h5 file"""
@@ -291,8 +297,8 @@ class KerasMonitor(Monitor):
         # writes Keras architecture files to disk
         self._save_text('architecture.json', self.model.to_json())
         self._save_text('architecture.yaml', self.model.to_yaml())
-        visualize_util.plot(self.model, to_file=self._dbpath('architecture.png'))
-        self._copy_to_dropbox('architecture.png')
+        visualize_util.plot(self.model, to_file=self._dbpath('architecture.svg'))
+        self._copy_to_dropbox('architecture.svg')
 
     def save(self, epoch, iteration, X_train, r_train, model_predict):
         """updated iteration"""
@@ -444,12 +450,12 @@ def main_wrapper(func):
             description = input('Please enter a brief description of this model/experiment/script:\n')
 
         # build a markdown string containing this information
-        kwargs['readme'] = '\n'.join(['# deep-retina model training script',
-                                      '### description', description,
-                                      '### git commit', '[{}](https://github.com/baccuslab/deep-retina/commit/{})'.format(commit, commit),
-                                      '### function call', '```python\n{}(*{}, **{})\n```'.format(func.__name__, args, kwargs),
-                                      '### source', '```python', source, '```',
-                                      ])
+        readme = ['# deep-retina model training script',
+                  '### description', description,
+                  '### git commit', '[{}](https://github.com/baccuslab/deep-retina/commit/{})'.format(commit, commit),
+                  '### function call', '```python\n{}(*{}, **{})\n```'.format(func.__name__, args, kwargs),
+                  '### source', '```python', source, '```']
+        kwargs['readme'] = '\n'.join(readme)
 
         func(*args, **kwargs)
 

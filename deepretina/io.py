@@ -221,10 +221,13 @@ class Monitor:
 
     def _save_figure(self, filename, filetype='svg', dpi=100, dropbox=True):
         """Saves the current figure and copies it to Dropbox"""
+
+        # set the file extension
         fname, ext = path.splitext(filename)
+        filename = '.'.join((fname, filetype))
 
         # save the figure and close all
-        plt.savefig(self._dbpath(fname),
+        plt.savefig(self._dbpath(filename),
                     format=filetype,
                     dpi=dpi,
                     bbox_inches='tight',
@@ -233,7 +236,7 @@ class Monitor:
 
         # copy to dropbox
         if dropbox:
-            self._copy_to_dropbox('.'.join(fname, filetype))
+            self._copy_to_dropbox(filename)
 
     def _save_h5(self, epoch, iteration, all_train, all_val, all_test):
         """Updates the results.h5 file"""
@@ -297,8 +300,8 @@ class KerasMonitor(Monitor):
         # writes Keras architecture files to disk
         self._save_text('architecture.json', self.model.to_json())
         self._save_text('architecture.yaml', self.model.to_yaml())
-        visualize_util.plot(self.model, to_file=self._dbpath('architecture.svg'))
-        self._copy_to_dropbox('architecture.svg')
+        visualize_util.plot(self.model, to_file=self._dbpath('architecture.png'))
+        self._copy_to_dropbox('architecture.png')
 
     def save(self, epoch, iteration, X_train, r_train, model_predict):
         """updated iteration"""

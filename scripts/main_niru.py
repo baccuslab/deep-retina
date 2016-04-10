@@ -65,8 +65,8 @@ def fit_convnet(cells, train_stimuli, exptdate, nclip=0, readme=None):
     layers = convnet(stim_shape, ncells, num_filters=(8, 16),
                      filter_size=(13, 13), weight_init='normal',
                      l2_reg_weights=(0.01, 0.01, 0.01),
-                     l1_reg_activity=(0.001, 0.001, 0.001),
-                     dropout=(0.05, 0.05))
+                     l1_reg_activity=(0.0, 0.0, 0.001),
+                     dropout=(0.0, 0.0))
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='poisson')

@@ -68,7 +68,8 @@ class Experiment(object):
             'test_datasets': ' + '.join(test_filenames),
             'history': history,
             'batchsize': batchsize,
-            'load_fraction': load_fraction
+            'load_fraction': load_fraction,
+            'clipped': nskip * dt,
         }
 
         assert holdout >= 0 and holdout < 1, "holdout must be between 0 and 1"

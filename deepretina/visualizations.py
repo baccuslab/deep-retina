@@ -538,12 +538,20 @@ def response_before_threshold(weights, model, layer_id, stimulus):
 
 
 # function that plots the receptive field of the interneurons (i.e. conv or affine layer activations)
-def get_sta(model, layer_id, samples=50000, batch_size=50, print_every=None):
+def get_sta(model, layer_id, samples=50000, batch_size=50, print_every=None, subunit_id=None):
     '''
     White noise STA of an intermedate unit.
+    If subunit_id is specified, it's a tuple of (x,y) locations for picking out one subunit in a conv layer
     '''
     # Get function for generating responses of intermediate unit.
-    get_activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
+    if subunit_id is not None:
+        activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
+        def get_activations(stim):
+            activity = activations(stim)
+            # first dimension is batch size
+            return activity[:, :, subunit_id[0], subunit_id[1]]
+    else:
+        get_activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
 
     impulse = np.random.randn(2, 40, 50, 50).astype('uint8')
     impulse_response = get_activations(impulse)

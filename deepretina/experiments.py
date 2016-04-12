@@ -19,7 +19,7 @@ __all__ = ['Experiment', 'loadexpt']
 class Experiment(object):
     """Lightweight class to keep track of loaded experiment data"""
 
-    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, nskip=0, dt=1e-2, load_fraction=1.0):
+    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, nskip=0, dt=1e-2, load_fraction=1.0, zscore_flag=True):
         """Keeps track of experimental data
 
         Parameters
@@ -58,6 +58,9 @@ class Experiment(object):
         load_fraction : float
             What fraction of the training stimulus to load (default: 1.0)
 
+        zscore_flag : bool
+            Whether stimulus should be zscored (default: True)
+
         """
 
         # store experiment variables (for saving later)
@@ -77,7 +80,7 @@ class Experiment(object):
         self.dt = dt
 
         # partially apply function arguments to the loadexpt function
-        load_data = partial(loadexpt, expt, cells, history=history, load_fraction=load_fraction)
+        load_data = partial(loadexpt, expt, cells, history=history, load_fraction=load_fraction, zscore_flag=zscore_flag)
 
         # load training data, and generate the train/validation split, for each filename
         self._train_data = {}
@@ -169,7 +172,7 @@ class Experiment(object):
         return self._train_data['whitenoise'].X.shape[1:]
 
 
-def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0, nskip=0):
+def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0, nskip=0, zscore_flag=True):
     """Loads an experiment from an h5 file on disk
 
     Parameters
@@ -195,6 +198,9 @@ def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0, n
     nskip : float, optional
         Number of samples to skip at the beginning of each repeat (Default: 0)
 
+    zscore_flag : bool
+        Whether to zscore the stimulus (Default: True)
+
     """
 
     assert load_fraction > 0 and load_fraction <= 1, "Fraction of data to load must be between 0 and 1"
@@ -217,15 +223,22 @@ def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0, n
             else:
                 num_repeats = 1
 
-            # clip the front of each repeat by nskip samples (d
-            clipped_indices = np.arange(expt_length).reshape(num_repeats, -1)[:, nskip:].ravel()
+            if nskip > 0:
+                # clip the front of each repeat by nskip samples (d
+                clipped_indices = np.arange(expt_length).reshape(num_repeats, -1)[:, nskip:].ravel()
 
-            # sub select the indices based on the given load_fraction
-            num_samples = int(np.floor(clipped_indices.size * load_fraction))
-            indices = clipped_indices[:num_samples]
+                # sub select the indices based on the given load_fraction
+                num_samples = int(np.floor(clipped_indices.size * load_fraction))
+                indices = clipped_indices[:num_samples]
+            else:
+                num_samples = int(np.floor(expt_length * load_fraction))
+                indices = np.arange(expt_length)[:num_samples]
 
-            # load the stimulus as a float32 array, and z-score it
-            stim = zscore(np.array(f[train_or_test]['stimulus']).astype('float32'))[indices]
+            if zscore_flag:
+                # load the stimulus as a float32 array, and z-score it
+                stim = zscore(np.array(f[train_or_test]['stimulus']).astype('float32'))[indices]
+            else:
+                stim = np.array(f[train_or_test]['stimulus']).astype('float32')[indices]
 
             # reshape into the Toeplitz matrix (nsamples, history, *stim_dims)
             stim_reshaped = rolling_window(stim, history, time_axis=0)

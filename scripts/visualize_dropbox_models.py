@@ -1,5 +1,4 @@
 import os
-from tqdm import tqdm
 from deepretina.toolbox import scandb
 import matplotlib.pyplot as plt
 
@@ -11,7 +10,7 @@ def main(database_directory):
     models = scandb(database_directory)
 
     # loop over all models
-    for mdl in tqdm(models):
+    for mdl in models:
 
         # first check to make sure this model exists in Dropbox
         if mdl.key in dropbox_files:
@@ -19,6 +18,7 @@ def main(database_directory):
             # check to see if the parameters directory already exists
             paramdir = os.path.join(dropbox, mdl.key, 'parameters')
             if not os.path.exists(paramdir):
+                print('Generating plots for {}'.format(mdl.key))
 
                 # try making the plot
                 try:

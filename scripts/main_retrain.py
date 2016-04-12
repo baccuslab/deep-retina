@@ -55,4 +55,5 @@ if __name__ == '__main__':
     gc_all_cells = list(range(37))
     #mdl = retrain('3dd884 convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=5000)
     #mdl = retrain('3520cd convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', weight_name='centered_weights.h5', changed_params={'layers':[{'layer_id':0, 'trainable':False}]}, nclip=5000)
-    mdl = retrain('8cbadb convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=5000)
+    #mdl = retrain('8cbadb convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=5000)
+    mdl = retrain('f6e22a convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=5000)

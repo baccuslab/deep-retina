@@ -10,7 +10,7 @@ from keras.layers.recurrent import LSTM
 from keras.layers.advanced_activations import ParametricSoftplus
 from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise, GaussianDropout
-from keras.regularizers import l2, activity_l2
+from keras.regularizers import l1l2, activity_l1l2, l2
 from .utils import notify
 
 __all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet']
@@ -71,7 +71,9 @@ def convnet(input_shape, nout,
             num_filters=(8, 16), filter_size=(13, 13),
             weight_init='normal',
             l2_reg_weights=(0.0, 0.0, 0.0),
+            l1_reg_weights=(0.0, 0.0, 0.0),
             l2_reg_activity=(0.0, 0.0, 0.0),
+            l1_reg_activity=(0.0, 0.0, 0.0),
             dropout=(0.0, 0.0)):
     """Convolutional neural network
 
@@ -106,8 +108,8 @@ def convnet(input_shape, nout,
     def _regularize(layer_idx):
         """Small helper function to define per layer regularization"""
         return {
-            'W_regularizer': l2(l2_reg_weights[layer_idx]),
-            'activity_regularizer': activity_l2(l2_reg_activity[layer_idx]),
+            'W_regularizer': l1l2(l1_reg_weights[layer_idx], l2_reg_weights[layer_idx]),
+            'activity_regularizer': activity_l1l2(l1_reg_activity[layer_idx], l2_reg_activity[layer_idx]),
         }
 
     # first convolutional layer

@@ -25,6 +25,8 @@ var/
 # hide images
 *.png
 *.pdf
+*.jpg
+*.svg
 
 # ctags
 tags

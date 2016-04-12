@@ -94,7 +94,7 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     model = sequential(layers, 'adam', loss='sub_poisson_loss')
 
     # load experiment data
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, input_shape[0], batchsize)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, input_shape[0], batchsize, zscore_flag=False)
 
     # create a monitor to track progress
     #monitor = KerasMonitor('fixedlstm', model, data, readme, save_every=10)
@@ -175,6 +175,6 @@ if __name__ == '__main__':
     #mdl = fit_convnet(gc_15_10_07, ['whitenoise', 'naturalscene'], ['whitenoise', 'naturalscene'], '15-10-07')
     #mdl = fit_generalizedconvnet(gc_16_01_08, ['whitenoise', 'naturalscene', 'naturalmovie', 'whitenoise', 'naturalmovie', 'naturalmovie'], ['whitenoise', 'naturalscene', 'naturalmovie', 'structured'], '16-01-08')
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_3_31_2016'], ['whitenoise_3_31_2016', 'naturalscene_3_31_2016'], '15-10-07', nclip=5000)
-    mdl = fit_fixedrnn(gc_15_10_07, ['naturalscenes_affine_c82720'], ['whitenoise_affine_3dd884', 'naturalscenes_affine_c82720'], '15-10-07')
-    #mdl = fit_fixedlstm(gc_15_10_07, ['naturalscenes_affine_c82720'], ['whitenoise_affine_3dd884', 'naturalscenes_affine_c82720'], '15-10-07')
+    #mdl = fit_fixedrnn(gc_15_10_07, ['naturalscenes_affine_c82720'], ['whitenoise_affine_3dd884', 'naturalscenes_affine_c82720'], '15-10-07')
+    mdl = fit_fixedlstm(gc_15_10_07, ['naturalscenes_affine_c82720'], ['whitenoise_affine_3dd884', 'naturalscenes_affine_c82720'], '15-10-07')
     #mdl = fit_fixedrnn(gc_15_10_07, ['naturalscene_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-10-07')

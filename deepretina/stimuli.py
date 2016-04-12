@@ -160,22 +160,22 @@ def bar(center, width, height, nx=50, intensity=-1.):
     return frame
 
 
-def driftingbar(speed, width, intensity=-1.):
+def driftingbar(velocity, width, intensity=-1.):
     """Drifting bar
-    
+
     Usage
     -----
-    >>> stim = driftingbar(0.1, 5)
+    >>> stim = driftingbar(8.0, 2)
 
     Parameters
     ----------
-    speed : float
-        bar speed in pixels / frame
+    velocity : float
+        bar velocity in pixels / frame (if negative, the bar reverses direction)
 
     width : int
         bar width in pixels
     """
-    xs = np.linspace(-50, 50, int(100 / speed)).astype('int')
+    xs = (np.sign(velocity) * np.linspace(-50, 50, 1+int(100 / np.abs(velocity)))).astype('int')
     return xs, concat(np.stack(map(lambda x: bar((x, 0), width, 50), xs)))
 
 

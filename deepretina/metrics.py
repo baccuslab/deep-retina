@@ -53,27 +53,9 @@ def cc(r, rhat):
 
 @multicell
 def lli(r, rhat):
-    """Log-likelihood improvement over a mean rate model (in bits per spike)
-
-    Parameters
-    ----------
-
-    r : array_like
-        True firing rate
-
-    rhat : array_like
-        Model firing rate
-
-    """
-    # mean firing rate
-    mu = np.mean(r)
-
-    # poisson log-likelihood
-    def loglikelihood(q):
-        return r * np.log(q) - q
-
-    # difference in log-likelihoods (in bits per spike)
-    return np.mean(loglikelihood(rhat) - loglikelihood(mu)) / (mu * np.log(2))
+    """Log-likelihood (arbitrary units)"""
+    epsilon = 1e-9
+    return np.mean(r * np.log(rhat + epsilon) - rhat)
 
 
 @multicell

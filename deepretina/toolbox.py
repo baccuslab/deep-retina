@@ -9,6 +9,7 @@ import h5py
 import os
 import sys
 import re
+import time
 import tableprint
 from keras.models import model_from_json, model_from_config
 from .experiments import loadexpt
@@ -19,6 +20,7 @@ import pandas as pd
 import json
 from tqdm import tqdm
 from operator import attrgetter
+from itertools import takewhile
 from .utils import xcorr, pairs
 from scipy.stats import sem
 
@@ -105,8 +107,44 @@ def search(models, desc='', key='', disp=True):
     return matches
 
 
-class Model:
+def zoo(models, filename='modelzoo-{}.csv'):
+    """Generates a performance CSV file"""
+    headers = 'key,type,exptdate,date,train_datasets,bestiter,train,validation,wn_test,ns_test'
 
+    def row(mdl):
+        data = ["'{}'".format(mdl.hashkey),
+                mdl.modeltype,
+                mdl.experiment['date'],
+                mdl.metadata['date'],
+                mdl.experiment['train_datasets'],
+                ]
+
+        ix = mdl.bestiter(metric='cc')
+        train = mdl.train['CC'][ix]
+        val = mdl.validation['CC'][ix]
+
+        wn_test = mdl.performance(ix, 'whitenoise', on='test', metric='cc').mean() \
+            if 'whitenoise' in mdl.results['test'] else None
+
+        ns_test = mdl.performance(ix, 'naturalscene', on='test', metric='cc').mean() \
+            if 'naturalscene' in mdl.results['test'] else None
+
+        data.extend(map(str, (ix, train, val, wn_test, ns_test)))
+        return ','.join(data)
+
+    skiplist = ('11795a', '65a38b', 'e4790c')       # these are the 3_31_2016 datasets
+    stop_at = '2fcc94'
+
+    subselected = takewhile(lambda m: m.hashkey != stop_at, models)
+    filtered = filter(lambda m: m.hashkey not in skiplist, subselected)
+    rows = map(row, filtered)
+
+    with open(filename.format(time.strftime('%Y-%m-%d')), 'x') as f:
+        f.write(headers + '\n')
+        f.write('\n'.join(tqdm(rows)))
+
+
+class Model:
     def __init__(self, directory, key):
         """Creates a Model object that interfaces with a folder
         in the deep-retina/database directory
@@ -291,6 +329,7 @@ def modify_model(model_path, weight_filename, changed_params):
     model.load_weights(os.path.join(model_path, weight_filename))
 
     return model
+
 
 def load_model(model_path, weight_filename):
     """

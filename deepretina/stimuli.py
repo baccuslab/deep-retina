@@ -14,8 +14,11 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from .experiments import rolling_window
 from itertools import repeat
+from .utils import tuplify
+from numbers import Number
 
-__all__ = ['concat', 'white', 'contrast_steps', 'flash', 'spatialize', 'osr']
+__all__ = ['concat', 'white', 'contrast_steps', 'flash', 'spatialize', 'bar',
+           'driftingbar', 'cmask', 'paired_flashes']
 
 
 def concat(*stimuli, nx=50, nh=40):
@@ -110,40 +113,21 @@ def flash(duration, delay, nsamples, intensity=-1.):
     nsamples : int
         The total number of samples in the array
 
-    intensity : float, optional
-        The flash intensity (default: 1.0)
+    intensity : float or array_like, optional
+        The flash intensity. If a number is given, the flash is a full-field
+        flash. Otherwise, if it is a 2D array, then that image is flashed. (default: 1.0)
     """
+    # generate the image to flash
+    if isinstance(intensity, Number):
+        img = intensity * np.ones((1, 1, 1))
+    else:
+        img = intensity.reshape(1, *intensity.shape)
+
     assert nsamples > (delay + duration), \
         "The total number samples must be greater than the delay + duration"
     sequence = np.zeros((nsamples,))
-    sequence[delay:(delay + duration)] = intensity
-    return sequence.reshape(-1, 1, 1)
-
-
-def osr(duration, interval, nflashes, intensity=-1.):
-    """Omitted stimulus response
-
-    Usage
-    -----
-    >>> stim = osr(2, 20, 5)
-
-    Parameters
-    ----------
-    duration : float
-        The duration of a flash, in samples
-
-    frequency : int
-        The inter-flash interval, in samples
-
-    nflashes : int
-        The number of flashes to repeat before the omitted flash
-    """
-
-    single_flash = flash(duration, interval, interval * 2, intensity=intensity)
-    omitted_flash = flash(duration, interval, interval * 2, intensity=0.0)
-    flash_group = list(repeat(single_flash, nflashes))
-    zero_pad = np.zeros((interval, 1, 1))
-    return concat(zero_pad, *flash_group, omitted_flash, *flash_group, nx=50, nh=40)
+    sequence[delay:(delay + duration)] = 1.0
+    return sequence.reshape(-1, 1, 1) * img
 
 
 def bar(center, width, height, nx=50, intensity=-1.):
@@ -151,7 +135,7 @@ def bar(center, width, height, nx=50, intensity=-1.):
     frame = np.zeros((nx, nx))
 
     # get the bar indices
-    cx, cy = center[0] + 25, center[1] + 25
+    cx, cy = int(center[0] + 25), int(center[1] + 25)
     bx = slice(max(0, cx - width // 2), max(0, min(nx, cx + width // 2)))
     by = slice(max(0, cy - height // 2), max(0, min(nx, cy + height // 2)))
 
@@ -160,12 +144,12 @@ def bar(center, width, height, nx=50, intensity=-1.):
     return frame
 
 
-def driftingbar(velocity, width, intensity=-1.):
+def driftingbar(velocity, width, intensity=-1., x=(-30, 30)):
     """Drifting bar
 
     Usage
     -----
-    >>> stim = driftingbar(8.0, 2)
+    >>> centers, stim = driftingbar(0.08, 2)
 
     Parameters
     ----------
@@ -174,56 +158,61 @@ def driftingbar(velocity, width, intensity=-1.):
 
     width : int
         bar width in pixels
+
+    Returns
+    -------
+    centers : array_like
+        The center positions of the bar at each frame in the stimulus
+
+    stim : array_like
+        The spatiotemporal drifting bar movie
     """
-    xs = (np.sign(velocity) * np.linspace(-50, 50, 1+int(100 / np.abs(velocity)))).astype('int')
-    return xs, concat(np.stack(map(lambda x: bar((x, 0), width, 50), xs)))
+    npts = 1 + int(x[1] - x[0] / np.abs(velocity))
+    centers = np.sign(velocity) * np.linspace(x[0], x[1], npts)
+    return centers, concat(np.stack(map(lambda x: bar((x, 0), width, np.Inf), centers)))
 
 
-def get_flash_sequence(initial_flash=45, latency=10, nsamples=100, intensity=1, flash_length=1):
-    """Returns a 1 dimensional flash sequence."""
-    flash_sequence = np.zeros((nsamples,))
-
-    # Make two flashes
-    for i in range(flash_length):
-        flash_sequence[initial_flash+i] = intensity
-    if latency < (nsamples - (initial_flash+flash_length)):
-        for i in range(flash_length):
-            flash_sequence[initial_flash+latency+i] = intensity
-    return flash_sequence
+def cmask(center, radius, array):
+    """Generates a mask covering a central circular region"""
+    a, b = center
+    nx, ny = array.shape
+    y, x = np.ogrid[-a:nx-a, -b:ny-b]
+    return x ** 2 + y ** 2 <= radius ** 2
 
 
-def get_full_field_flashes(mask=np.ones((50, 50)), initial_flash=60, latency=10,
-                           nsamples=100, intensity=1, flash_length=1):
-    '''
-        Returns full field flash stimulus.
+def paired_flashes(ifi=20, duration=5, intensity=-1., padding=50):
+    """Example of a paired flash stimulus
 
-        INPUT:
-            mask            np.array of shape (50,50) that masks the flashes. Default is no mask.
-            initial_flash   how many frames after stimulus start does the first flash occur?
-            latency         how many frames after the initial flash does the second flash occur?
-                            if greater than the length of stimulus, stimulus will have just the one
-                            initial flash.
-            nsamples        number of frames in the stimulus.
-            intensity       how bright is the flash?
-            flash_length    what is the duration, in samples, of the flash(es)?
+    Parameters
+    ----------
+    ifi : int
+        Inter-flash interval, in samples (number of samples between the end of the first
+        flash and the beginning of the second)
 
-        OUTPUT:
-            full_field_movies   a np.array of shape (nsamples, 40, 50, 50)
-    '''
+    duration : int or tuple
+        The duration (in samples) of each flash. If an int is given, then each flash has
+        the same duration, otherwise, you can specify two different durations in a tuple
 
-    flash_sequence = get_flash_sequence(initial_flash=initial_flash, latency=latency,
-                                        nsamples=nsamples, intensity=intensity,
-                                        flash_length=flash_length)
+    intensity : float or tuple
+        The intensity (luminance) of each flash. If a number is given, then each flash has
+        the same intensity, otherwise, you can specify two different values in a tuple
 
-    # Convert flash sequence into full field movie
-    full_field_flash = np.outer(flash_sequence, mask)
-    full_field_flash = full_field_flash.reshape((flash_sequence.shape[0], 50, 50))
+    padding : int or tuple
+        Padding (in samples) before the first and last flashes. If an int is given,
+        then both the first and last pads have the same number of samples, otherwise,
+        you can specify two different padding lengths in a tuple
+    """
+    # Convert numbers to tuples
+    duration = tuplify(duration, 2)
+    intensity = tuplify(intensity, 2)
+    padding = tuplify(padding, 2)
 
-    # Convert movie to 400ms long samples in the correct format for our model
-    full_field_movies = rolling_window(full_field_flash, 40)
-    full_field_movies = np.rollaxis(full_field_movies, 2)
-    full_field_movies = np.rollaxis(full_field_movies, 3, 1)
-    return full_field_movies
+    # generate the flashes
+    f0 = flash(duration[0], padding[0], padding[0] + duration[0] + ifi, intensity[0])
+    f1 = flash(duration[1], 0, duration[1] + padding[1], intensity[1])
+
+    # return the concatenated pair
+    return concat(f0, f1)
 
 
 def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask=False,
@@ -244,9 +233,9 @@ def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask
     '''
 
     # make grating
-    grating_frame = -1*np.ones((50,50))
+    grating_frame = -1 * np.ones((50, 50))
     for i in range(grating_width):
-        grating_frame[:,(i+phase)::2*grating_width] = 1
+        grating_frame[:, (i + phase)::2 * grating_width] = 1
     if mask:
         grating_frame = grating_frame * mask * intensity
     else:
@@ -270,159 +259,3 @@ def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask
         return full_movies
     else:
         return grating_movie
-
-
-def cmask(center, radius, array):
-    a,b = center
-    nx,ny = array.shape
-    y,x = np.ogrid[-a:nx-a,-b:ny-b]
-    mask = x*x + y*y <= radius*radius
-    return mask
-
-
-def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=0.93,
-        magnitude=5, space=(50,50), center=(25,25), object_radius=5, coherent=False, roll=False):
-    '''
-        Object motion sensitivity stimulus, where an object moves differentially
-        from the background.
-
-        INPUT:
-        duration        movie duration in seconds
-        sample_rate     sample rate of movie in Hz
-        coherent        are object and background moving coherently?
-        space           spatial dimensions
-        center          location of object center
-        object_width    width in pixels of object
-        speed           speed of random drift
-        motion_type     'periodic' or 'drift'
-        roll            whether to roll_axis for model prediction
-
-        OUTPUT:
-        movie           a numpy array of the stimulus
-    '''
-    # fixed params
-    contrast = 1
-    grating_width = 3
-
-
-    transition_frames = int(transition_duration/sample_rate)
-    silent_frames = int(silent_duration/sample_rate)
-    total_frames = int(duration/sample_rate)
-
-    # silence, one direction, silence, opposite direction
-    obj_position = np.hstack([np.zeros((silent_frames,)), np.linspace(0, magnitude, transition_frames),
-                            magnitude*np.ones((silent_frames,)), np.linspace(magnitude, 0, transition_frames)])
-
-    half_silent = silent_frames/2
-    back_position = np.hstack([obj_position[half_silent:], obj_position[:-half_silent]])
-
-    # make position sequence last total_frames
-    if len(back_position) > total_frames:
-        print("Warning: movie won't be {} shorter than a full period.".format(np.float(2*transition_frames + 2*silent_frames)/total_frames))
-        back_position[:total_frames]
-        obj_position[:total_frames]
-    else:
-        reps = np.ceil(np.float(total_frames)/len(back_position))
-        back_position = np.tile(back_position, reps)[:total_frames]
-        obj_position = np.tile(obj_position, reps)[:total_frames]
-
-    # create a larger fixed world of bars that we'll just crop from later
-    padding = 2*grating_width + magnitude
-    fixed_world = -1*np.ones((space[0], space[1]+padding))
-    for i in range(grating_width):
-        fixed_world[:,i::2*grating_width] = 1
-
-    # make movie
-    movie = np.zeros((total_frames, space[0], space[1]))
-    for frame in range(total_frames):
-        # make background grating
-        background_frame = np.copy(fixed_world[:,back_position[frame]:back_position[frame]+space[0]])
-
-        if not coherent:
-            # make object frame
-            object_frame = np.copy(fixed_world[:,obj_position[frame]:obj_position[frame]+space[0]])
-
-            # set center of background frame to object
-            object_mask = cmask(center, object_radius, object_frame)
-            background_frame[object_mask] = object_frame[object_mask]
-
-        # adjust contrast
-        background_frame *= contrast
-        movie[frame] = background_frame
-
-    if roll:
-        # roll movie axes to get the right shape
-        roll_movies = rolling_window(movie, 40)
-        return roll_movies
-    else:
-        return movie
-
-
-def motion_anticipation(duration=4, sample_rate=0.01, bar_speed=8, bar_width=3,
-        space=(50,50), flash_pos=25, flash_dur=1, flash_time=1, mode='moving', roll=False):
-    '''
-        Object motion sensitivity stimulus, where an object moves differentially
-        from the background.
-
-        INPUT:
-        duration        movie duration in seconds
-        sample_rate     sample rate of movie in Hz
-        mode            'moving' or 'flash'
-        space           spatial dimensions
-        bar_speed       speed of bar in pixels/sec; paper has 0.44mm/s -> 440microns/s -> 8.8pixels/s with 50microns pixels
-        bar_width       width in pixels of bar
-        flash_pos       spatial position of bar center when flashed
-        flash_dur       duration in seconds of flash; will be centered in movie
-        flash_time      time of flash start in seconds
-        roll            whether to roll_axis for model prediction
-
-        OUTPUT:
-        movie           a numpy array of the stimulus
-    '''
-    # fixed params
-    contrast = 1
-    total_frames = int(duration/sample_rate)
-
-    # determine bar position across time
-    if mode == 'flash':
-        # force left edge to always be >= 0
-        leftedge = np.max(flash_pos - bar_width/2, 0)
-        bar_pos = np.zeros((total_frames,)) #flash_pos * np.ones((total_frames,))
-
-        flash_start = int(flash_time/sample_rate)
-        flash_dur = int(flash_start/sample_rate)
-        if flash_start > total_frames:
-            print('Flash time later than duration!!!')
-
-    elif mode == 'moving':
-        bar_speed_frames = bar_speed * sample_rate
-        bar_pos = np.linspace(0, bar_speed_frames*total_frames, total_frames)
-
-        # start from leftmost edge
-        leftedge = 0
-
-
-    # make movie
-    movie = np.zeros((total_frames, space[0], space[1]))
-    for frame in range(total_frames):
-        ## Draw Frame
-        # draw background
-        background = -1 * np.ones((space[0], space[1]))
-        # start of leftedge on this frame
-        bar_start = bar_pos[frame] + leftedge
-        background[:,bar_start:bar_start+bar_width] = 1
-
-        # adjust contrast
-        background *= contrast
-        if mode == 'flash':
-            if frame > flash_start and frame < flash_start + flash_dur:
-                movie[frame] = background
-        else:
-            movie[frame] = background
-
-    if roll:
-        # roll movie axes to get the right shape
-        roll_movies = rolling_window(movie, 40)
-        return roll_movies
-    else:
-        return movie

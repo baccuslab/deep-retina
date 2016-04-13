@@ -1,3 +1,6 @@
+"""
+Core tools for training models
+"""
 from keras.models import Model
 from .glms import GLM
 from time import time

@@ -423,17 +423,6 @@ def list_layers(model_path, weight_filename):
     print(tableprint.hr(3))
 
 
-def collapse(filename):
-    with h5py.File(filename, 'r') as f:
-        ncells = len(f['test/repeats'])
-        nrepeats, ntimesteps = f['test/repeats/cell01'].shape
-        arr = np.zeros((ncells, nrepeats, ntimesteps))
-        for ci, key in enumerate(f['test/repeats']):
-            arr[ci] = np.array(f['test/repeats'][key])
-
-    return arr
-
-
 def computecorr(data, maxlag, dt=1e-2):
     """Computes pairwise correlation
 

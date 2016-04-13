@@ -8,7 +8,8 @@ from contextlib import contextmanager
 from . import metrics
 import numpy as np
 from scipy.stats import zscore
-from itertools import combinations
+from itertools import combinations, repeat
+from numbers import Number
 
 __all__ = ['notify', 'allmetrics']
 
@@ -116,5 +117,26 @@ def xcorr(x, y, maxlag, normalize=True):
 
 
 def pairs(n):
-    """Return an iterator over n choose 2 possible pairs"""
+    """Return an iterator over n choose 2 possible unique pairs
+
+    Usage
+    -----
+    >>> list(pairs(3))
+    [(0, 1), (0, 2), (1, 2)]
+    """
     return combinations(range(n), 2)
+
+
+def tuplify(x, n):
+    """Converts a number into a tuple with that number repeating
+
+    Usage
+    -----
+    >>> tuplify(3, 5)
+    (3, 3, 3, 3, 3)
+    >>> tuplify((1,2), 5)
+    (1, 2)
+    """
+    if isinstance(x, Number):
+        x = tuple(repeat(x, n))
+    return x

@@ -136,7 +136,8 @@ def osr(duration, interval, nflashes, intensity=-1.):
     omitted_flash = flash(duration, interval, interval * 2, intensity=0.0)
     flash_group = list(repeat(single_flash, nflashes))
     zero_pad = np.zeros((interval, 1, 1))
-    return concat(zero_pad, *flash_group, omitted_flash, *flash_group, nx=50, nh=40)
+    # return concat(zero_pad, *flash_group, omitted_flash, *flash_group, nx=50, nh=40)
+    pass
 
 
 def motion_anticipation(km):
@@ -155,6 +156,7 @@ def motion_anticipation(km):
     motion : array_like
     flashes : array_like
     """
+    scale_factor = 55       # microns per bar
     velocity = 0.08         # 0.08 bars/frame == 0.44mm/s, same as Berry et. al.
     width = 2               # 2 bars == 110 microns, Berry et. al. used 133 microns
     flash_duration = 2      # 2 frames == 20 ms, Berry et. al. used 15ms
@@ -182,8 +184,12 @@ def motion_anticipation(km):
     # generate the figure
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111)
-    ax.plot(c_left[40:], resp_left.mean(axis=1) / max_drift, 'g-', 'Left motion')
-    ax.plot(c_right[40:], resp_right.mean(axis=1) / max_drift, 'b-', 'Right motion')
-    ax.plot(flash_centers, resp_flash / max_flash, 'r-', label='Flash')
+    ax.plot(scale_factor * c_left[40:], resp_left.mean(axis=1) / max_drift, 'g-', label='Left motion')
+    ax.plot(scale_factor * c_right[40:], resp_right.mean(axis=1) / max_drift, 'b-', label='Right motion')
+    ax.plot(scale_factor * flash_centers, resp_flash / max_flash, 'r-', label='Flash')
+    ax.legend(frameon=True, fancybox=True, fontsize=18)
+    ax.set_xlabel('Position ($\mu m$)')
+    ax.set_ylabel('Scaled firing rate')
+    ax.set_xlim(-735, 135)
 
     return (fig, ax), (c_right, stim_right, resp_right), (c_left, stim_left, resp_left), (flash_centers, flash_responses)

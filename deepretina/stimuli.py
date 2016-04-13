@@ -254,8 +254,6 @@ def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask
     if roll:
         # roll movie axes to get the right shape
         full_movies = rolling_window(grating_movie, 40)
-        full_movies = np.rollaxis(full_movies, 2)
-        full_movies = np.rollaxis(full_movies, 3, 1)
         return full_movies
     else:
         return grating_movie

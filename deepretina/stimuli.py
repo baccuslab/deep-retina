@@ -18,8 +18,7 @@ from .utils import tuplify
 from numbers import Number
 
 __all__ = ['concat', 'white', 'contrast_steps', 'flash', 'spatialize', 'bar',
-           'driftingbar', 'cmask', 'paired_flashes',
-           'oms', 'osr', 'motion_anticipation']
+           'driftingbar', 'cmask', 'paired_flashes']
 
 
 def concat(*stimuli, nx=50, nh=40):
@@ -169,8 +168,8 @@ def driftingbar(velocity, width, intensity=-1., x=(-30, 30)):
         The spatiotemporal drifting bar movie
     """
     npts = 1 + int(x[1] - x[0] / np.abs(velocity))
-    xs = (np.sign(velocity) * np.linspace(x[0], x[1], npts)).astype('int')
-    return xs, concat(np.stack(map(lambda x: bar((x, 0), width, np.Inf), xs)))
+    centers = np.sign(velocity) * np.linspace(x[0], x[1], npts)
+    return centers, concat(np.stack(map(lambda x: bar((x, 0), width, np.Inf), centers)))
 
 
 def cmask(center, radius, array):
@@ -260,127 +259,3 @@ def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask
         return full_movies
     else:
         return grating_movie
-
-
-def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=0.93,
-        magnitude=5, space=(50, 50), center=(25, 25), object_radius=5, coherent=False, roll=False):
-    """
-    Object motion sensitivity stimulus, where an object moves differentially
-    from the background.
-
-    INPUT:
-    duration        movie duration in seconds
-    sample_rate     sample rate of movie in Hz
-    coherent        are object and background moving coherently?
-    space           spatial dimensions
-    center          location of object center
-    object_width    width in pixels of object
-    speed           speed of random drift
-    motion_type     'periodic' or 'drift'
-    roll            whether to roll_axis for model prediction
-
-    OUTPUT:
-    movie           a numpy array of the stimulus
-    """
-    # fixed params
-    contrast = 1
-    grating_width = 3
-
-    transition_frames = int(transition_duration/sample_rate)
-    silent_frames = int(silent_duration/sample_rate)
-    total_frames = int(duration/sample_rate)
-
-    # silence, one direction, silence, opposite direction
-    obj_position = np.hstack([np.zeros((silent_frames,)), np.linspace(0, magnitude, transition_frames),
-                            magnitude*np.ones((silent_frames,)), np.linspace(magnitude, 0, transition_frames)])
-
-    half_silent = silent_frames/2
-    back_position = np.hstack([obj_position[half_silent:], obj_position[:-half_silent]])
-
-    # make position sequence last total_frames
-    if len(back_position) > total_frames:
-        print("Warning: movie won't be {} shorter than a full period.".format(np.float(2*transition_frames + 2*silent_frames)/total_frames))
-        back_position[:total_frames]
-        obj_position[:total_frames]
-    else:
-        reps = np.ceil(np.float(total_frames)/len(back_position))
-        back_position = np.tile(back_position, reps)[:total_frames]
-        obj_position = np.tile(obj_position, reps)[:total_frames]
-
-    # create a larger fixed world of bars that we'll just crop from later
-    padding = 2*grating_width + magnitude
-    fixed_world = -1*np.ones((space[0], space[1]+padding))
-    for i in range(grating_width):
-        fixed_world[:, i::2 * grating_width] = 1
-
-    # make movie
-    movie = np.zeros((total_frames, space[0], space[1]))
-    for frame in range(total_frames):
-        # make background grating
-        background_frame = np.copy(fixed_world[:,back_position[frame]:back_position[frame]+space[0]])
-
-        if not coherent:
-            # make object frame
-            object_frame = np.copy(fixed_world[:,obj_position[frame]:obj_position[frame]+space[0]])
-
-            # set center of background frame to object
-            object_mask = cmask(center, object_radius, object_frame)
-            background_frame[object_mask] = object_frame[object_mask]
-
-        # adjust contrast
-        background_frame *= contrast
-        movie[frame] = background_frame
-
-    if roll:
-        # roll movie axes to get the right shape
-        roll_movies = rolling_window(movie, 40)
-        return roll_movies
-    else:
-        return movie
-
-
-def osr(duration, interval, nflashes, intensity=-1.):
-    """Omitted stimulus response
-
-    Usage
-    -----
-    >>> stim = osr(2, 20, 5)
-
-    Parameters
-    ----------
-    duration : float
-        The duration of a flash, in samples
-
-    frequency : int
-        The inter-flash interval, in samples
-
-    nflashes : int
-        The number of flashes to repeat before the omitted flash
-    """
-    single_flash = flash(duration, interval, interval * 2, intensity=intensity)
-    omitted_flash = flash(duration, interval, interval * 2, intensity=0.0)
-    flash_group = list(repeat(single_flash, nflashes))
-    zero_pad = np.zeros((interval, 1, 1))
-    return concat(zero_pad, *flash_group, omitted_flash, *flash_group, nx=50, nh=40)
-
-
-def motion_anticipation():
-    """Generates the Berry motion anticipation stimulus
-
-    Stimulus from the paper:
-    Anticipation of moving stimuli by the retina,
-    M. Berry, I. Brivanlou, T. Jordan and M. Meister, Nature 1999
-
-    Returns
-    -------
-    motion : array_like
-    flashes : array_like
-    """
-    # moving bar stimulus
-    centers, stim = driftingbar(0.08, 2)
-
-    # flashed bar stimulus
-    images = (bar((x, 0), 2, 50) for x in np.unique(centers))
-    flashes = [flash(2, 48, 100, intensity=im) for im in images]
-
-    return centers[40:], stim, flashes

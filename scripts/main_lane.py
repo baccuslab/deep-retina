@@ -83,12 +83,12 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     author: Lane McIntosh
     """
 
-    input_shape = (1000,64)
+    input_shape = (1000,16)
     ncells = len(cells)
-    batchsize = 1000
+    batchsize = 600
 
     # get the convnet layers
-    layers = fixedlstm(input_shape, len(cells), num_hidden=1600, weight_init='normal', l2_reg=0.01)
+    layers = fixedlstm(input_shape, len(cells), num_hidden=200, weight_init='normal', l2_reg=0.01)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='sub_poisson_loss')
@@ -97,8 +97,7 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, input_shape[0], batchsize, zscore_flag=False)
 
     # create a monitor to track progress
-    #monitor = KerasMonitor('fixedlstm', model, data, readme, save_every=10)
-    monitor = None
+    monitor = KerasMonitor('fixedlstm', model, data, readme, save_every=10)
 
     # train
     train(model, data, monitor, num_epochs=100)

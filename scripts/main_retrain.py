@@ -54,4 +54,4 @@ if __name__ == '__main__':
     gc_16_01_08 = [0,3,7,9,11]
     gc_all_cells = list(range(37))
     #mdl = retrain('3dd884 convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=5000)
-    mdl = retrain('3520cd convnet', gc_15_10_07, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=5000)
+    mdl = retrain('f6e22a convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=5000)

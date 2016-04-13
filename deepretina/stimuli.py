@@ -21,7 +21,7 @@ __all__ = ['concat', 'white', 'contrast_steps', 'flash', 'spatialize', 'bar',
            'driftingbar', 'cmask', 'paired_flashes']
 
 
-def concat(*stimuli, nx=50, nh=40):
+def concat(args, nx=50, nh=40):
     """Returns a spatiotemporal stimulus that has been transformed using
     rolling_window given a list of stimuli to concatenate
 
@@ -38,7 +38,7 @@ def concat(*stimuli, nx=50, nh=40):
     nx : int, optional
         Number of spatial dimensions (default: 50)
     """
-    concatenated = np.vstack(map(lambda s: spatialize(s, nx), stimuli))
+    concatenated = np.vstack(map(lambda s: spatialize(s, nx), *args))
     return rolling_window(concatenated, nh)
 
 

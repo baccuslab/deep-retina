@@ -11,17 +11,19 @@ that can be fed to a Keras model (for example).
 """
 
 from __future__ import absolute_import, division, print_function
+from itertools import repeat
 import numpy as np
 from .experiments import rolling_window
-from itertools import repeat
 from .utils import tuplify
 from numbers import Number
+from skimage.transform import downscale_local_mean
+from skimage.filters import gaussian
 
 __all__ = ['concat', 'white', 'contrast_steps', 'flash', 'spatialize', 'bar',
            'driftingbar', 'cmask', 'paired_flashes']
 
 
-def concat(*stimuli, nx=50, nh=40):
+def concat(*args, nx=50, nh=40):
     """Returns a spatiotemporal stimulus that has been transformed using
     rolling_window given a list of stimuli to concatenate
 
@@ -38,7 +40,7 @@ def concat(*stimuli, nx=50, nh=40):
     nx : int, optional
         Number of spatial dimensions (default: 50)
     """
-    concatenated = np.vstack(map(lambda s: spatialize(s, nx), stimuli))
+    concatenated = np.vstack(map(lambda s: spatialize(s, nx), args)).astype('float32')
     return rolling_window(concatenated, nh)
 
 
@@ -130,18 +132,34 @@ def flash(duration, delay, nsamples, intensity=-1.):
     return sequence.reshape(-1, 1, 1) * img
 
 
-def bar(center, width, height, nx=50, intensity=-1.):
+def bar(center, width, height, nx=50, intensity=-1., us_factor=1, blur=0.):
     """Generates a single frame of a bar"""
-    frame = np.zeros((nx, nx))
 
-    # get the bar indices
-    cx, cy = int(center[0] + 25), int(center[1] + 25)
+    # upscale factor (for interpolation between discrete bar locations)
+    c0 = center[0] * us_factor
+    c1 = center[1] * us_factor
+    width *= us_factor
+    height *= us_factor
+    nx *= us_factor
+
+    # center of the bar
+    cx, cy = int(c0 + nx // 2), int(c1 + nx // 2)
+
+    # x- and y- indices of the bar
     bx = slice(max(0, cx - width // 2), max(0, min(nx, cx + width // 2)))
     by = slice(max(0, cy - height // 2), max(0, min(nx, cy + height // 2)))
 
     # set the bar intensity values
+    frame = np.zeros((nx, nx))
     frame[by, bx] = intensity
-    return frame
+
+    # downsample the blurred image back to the original size
+    return downsample(frame, us_factor, blur)
+
+
+def downsample(img, factor, blur):
+    """Smooth and downsample the image by the given factor"""
+    return downscale_local_mean(gaussian(img, blur), (factor, factor))
 
 
 def driftingbar(velocity, width, intensity=-1., x=(-30, 30)):
@@ -169,7 +187,7 @@ def driftingbar(velocity, width, intensity=-1., x=(-30, 30)):
     """
     npts = 1 + int(x[1] - x[0] / np.abs(velocity))
     centers = np.sign(velocity) * np.linspace(x[0], x[1], npts)
-    return centers, concat(np.stack(map(lambda x: bar((x, 0), width, np.Inf), centers)))
+    return centers, concat(np.stack(map(lambda x: bar((x, 0), width, np.Inf, us_factor=5, blur=2.), centers)))
 
 
 def cmask(center, radius, array):
@@ -215,6 +233,106 @@ def paired_flashes(ifi=20, duration=5, intensity=-1., padding=50):
     return concat(f0, f1)
 
 
+def square(halfperiod, nsamples, phase=0., intensity=1.0):
+    """Generates a simple 1-D square wave"""
+    assert 0 <= phase <= 1, "Phase must be a fraction between 0 and 1"
+
+    # if halfperiod is zero, return all ones
+    if halfperiod == 0:
+        return np.ones(nsamples)
+
+    # discretize the offset in terms of the period
+    offset = int(2 * phase * halfperiod)
+
+    # generate one period of the waveform
+    waveform = np.stack(repeat(np.array([intensity, -intensity]), halfperiod)).T.ravel()
+
+    # generate the repeated sequence
+    repeats = int(np.ceil(nsamples / (2 * halfperiod)) + 1)
+    sequence = np.hstack(repeat(waveform, repeats))
+
+    # use the offset to specify the phase
+    return sequence[offset:(nsamples + offset)]
+
+
+def grating(barsize=(5, 0), phase=(0., 0.), nx=50, intensity=(1., 1.), us_factor=1, blur=0.):
+    """Returns a grating as a spatial frame
+
+    Parameters
+    ----------
+    barsize : (int, int), optional
+        Size of the bar in the x- and y- dimensions. A size of 0 indicates no spatial
+        variation along that dimension. Default: (5, 0)
+
+    phase : (float, float), optional
+        The phase of the grating in the x- and y- dimensions (as a fraction of the period).
+        Must be between 0 and 1. Default: (0., 0.)
+
+    intensity=(1., 1.)
+        The contrast of the grating for the x- and y- dimensions
+
+    nx : int, optional
+        The number of pixels along each dimension of the stimulus (default: 50)
+
+    us_factor : int
+        Amount to upsample the image by (before downsampling back to 50x50), (default: 1)
+
+    blur : float
+        Amount of blur to applied to the upsampled image (before downsampling), (default: 0.)
+    """
+
+    # generate a square wave along each axis
+    x = square(barsize[0], nx * us_factor, phase[0], intensity[0])
+    y = square(barsize[1], nx * us_factor, phase[1], intensity[1])
+
+    # generate the grating frame and downsample
+    return downsample(np.outer(y, x), us_factor, blur)
+
+
+def drifting_grating(nsamples, dt, barsize, us_factor=1, blur=0.):
+    """Generates a drifting vertical grating
+
+    Parameters
+    ----------
+    nsamples : int
+        The total number of temporal samples
+
+    dt : float
+        The timestep of each sample. A smaller value of dt will generate a slower drift
+
+    barsize : int
+        The width of the bar in samples
+
+    us_factor : int, optional
+        Amount to upsample the image by (before downsampling back to 50x50), (default: 1)
+
+    blur : float, optional
+        Amount of blur to applied to the upsampled image (before downsampling), (default: 0.)
+    """
+    phases = np.mod(np.arange(nsamples) * dt, 1)
+    return np.stack([grating(barsize=(barsize, 0),
+                             phase=(phi, 0.),
+                             us_factor=us_factor,
+                             blur=blur) for phi in phases])
+
+
+def reverse(img, halfperiod, nsamples):
+    """Generates a temporally reversing stimulus using the given image
+
+    Parameters
+    ----------
+    img : array_like
+        A spatial image to reverse (e.g. a grating)
+
+    halfperiod : int
+        The number of frames each half period of the reversing image is shown for
+
+    nsamples : int
+        The total length of the stimulus in samples
+    """
+    return np.stack([t * img for t in square(halfperiod, nsamples)])
+
+
 def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask=False,
                       intensity=1, phase=0, roll=True):
     '''
@@ -254,8 +372,6 @@ def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask
     if roll:
         # roll movie axes to get the right shape
         full_movies = rolling_window(grating_movie, 40)
-        full_movies = np.rollaxis(full_movies, 2)
-        full_movies = np.rollaxis(full_movies, 3, 1)
         return full_movies
     else:
         return grating_movie

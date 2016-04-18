@@ -3,6 +3,7 @@ Testing model responses to structured stimuli
 """
 import matplotlib.pyplot as plt
 import numpy as np
+from itertools import repeat
 from . import stimuli as stim
 from tqdm import tqdm
 
@@ -10,13 +11,13 @@ from tqdm import tqdm
 def two_flashes(model):
     """Generates responses to a pair of neighboring flashes"""
     # get the paired flash stimulus
-    stim = paired_flashes(ifi=2, duration=1, intensity=-1., padding=45)
+    X = stim.paired_flashes(ifi=2, duration=1, intensity=-1., padding=45)
 
     # pass it through the model
-    resp = model.predict(stim)
+    resp = model.predict(X)
 
     # get a 1-D trace of the stimulus
-    stim_trace = stim[:, -1, 0, 0].copy()
+    stim_trace = X[:, -1, 0, 0].copy()
     time = np.arange(stim_trace.size) * 0.01
 
     # plot the stimulus and responses
@@ -114,29 +115,31 @@ def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=
         return movie
 
 
-def osr(duration, interval, nflashes, intensity=-1.):
-    """Omitted stimulus response
+def osr(km):
+    """Omitted stimulus response"""
+    duration = 2
+    interval = 10
+    nflashes = 5
+    intensity = -1.0
 
-    Usage
-    -----
-    >>> stim = osr(2, 20, 5)
-
-    Parameters
-    ----------
-    duration : float
-        The duration of a flash, in samples
-
-    frequency : int
-        The inter-flash interval, in samples
-
-    nflashes : int
-        The number of flashes to repeat before the omitted flash
-    """
-    single_flash = flash(duration, interval, interval * 2, intensity=intensity)
-    omitted_flash = flash(duration, interval, interval * 2, intensity=0.0)
+    # generate the OSR stimulus
+    single_flash = stim.flash(duration, interval, interval * 2, intensity=intensity)
+    omitted_flash = stim.flash(duration, interval, interval * 2, intensity=0.0)
     flash_group = list(repeat(single_flash, nflashes))
     zero_pad = np.zeros((interval, 1, 1))
-    return concat(zero_pad, *flash_group, omitted_flash, *flash_group, nx=50, nh=40)
+    X = stim.concat(zero_pad, *flash_group, omitted_flash, *flash_group, nx=50, nh=40)
+
+    # feed it to the model
+    resp = km.predict(X)
+
+    # generate the figure
+    fig = plt.figure(figsize=(4, 8))
+    ax0 = plt.subplot(211)
+    ax0.plot(X[:, -1, 0, 0])
+    ax1 = plt.subplot(212)
+    ax1.plot(resp)
+
+    return (fig, ax0, ax1), X, resp
 
 
 def motion_anticipation(km):
@@ -155,6 +158,7 @@ def motion_anticipation(km):
     motion : array_like
     flashes : array_like
     """
+    scale_factor = 55       # microns per bar
     velocity = 0.08         # 0.08 bars/frame == 0.44mm/s, same as Berry et. al.
     width = 2               # 2 bars == 110 microns, Berry et. al. used 133 microns
     flash_duration = 2      # 2 frames == 20 ms, Berry et. al. used 15ms
@@ -169,21 +173,25 @@ def motion_anticipation(km):
 
     # flashed bar stimulus
     flash_centers = np.arange(-25, 26)
-    flashes = (stim.flash(flash_duration, 48, 100, intensity=stim.bar((x, 0), width, 50))
+    flashes = (stim.flash(flash_duration, 43, 70, intensity=stim.bar((x, 0), width, 50))
                for x in flash_centers)
 
     # flash responses are a 3-D array with dimensions (centers, stimulus time, cell)
     flash_responses = np.stack([km.predict(stim.concat(f)) for f in tqdm(flashes)])
 
     # pick off the flash responses at a particular time point
-    resp_flash = flash_responses.mean(axis=2)[:, 14]
+    resp_flash = flash_responses.mean(axis=2)[:, 8]
     max_flash = flash_responses.max()
 
     # generate the figure
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111)
-    ax.plot(c_left[40:], resp_left.mean(axis=1) / max_drift, 'g-', 'Left motion')
-    ax.plot(c_right[40:], resp_right.mean(axis=1) / max_drift, 'b-', 'Right motion')
-    ax.plot(flash_centers, resp_flash / max_flash, 'r-', label='Flash')
+    ax.plot(scale_factor * c_left[40:], resp_left.mean(axis=1) / max_drift, 'g-', label='Left motion')
+    ax.plot(scale_factor * c_right[40:], resp_right.mean(axis=1) / max_drift, 'b-', label='Right motion')
+    ax.plot(scale_factor * flash_centers, resp_flash / max_flash, 'r-', label='Flash')
+    ax.legend(frameon=True, fancybox=True, fontsize=18)
+    ax.set_xlabel('Position ($\mu m$)')
+    ax.set_ylabel('Scaled firing rate')
+    ax.set_xlim(-735, 135)
 
     return (fig, ax), (c_right, stim_right, resp_right), (c_left, stim_left, resp_left), (flash_centers, flash_responses)

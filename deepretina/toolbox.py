@@ -366,7 +366,7 @@ def load_partial_model(model, stop_layer=None, start_layer=0):
         a theano function representing the partial model
     """
     if start_layer == 0:
-        if not stop_layer:
+        if stop_layer is None:
             return model.predict
         else:
             # create theano function to generate activations of desired layer

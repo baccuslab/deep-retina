@@ -51,18 +51,18 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
     author: Lane McIntosh
     """
 
-    stim_shape = (30, 50, 50)
+    stim_shape = (40, 50, 50)
     ncells = len(cells)
     batchsize = 8000
 
     # get the convnet layers
     layers = generalizedconvnet(stim_shape, ncells, 
-            architecture=('conv', 'noise', 'relu', 'pool', 'conv', 'noise', 'relu', 'flatten', 'affine'),
-            num_filters=[8, -1, -1, -1, 8], filter_sizes=[15, -1, -1, -1, 13], weight_init='normal',
-            l2_reg=0.02, dropout=0.25, sigma=0.1)
+            architecture=('conv', 'flatten', 'affine'),
+            num_filters=[8], filter_sizes=[15], weight_init='normal',
+            l2_reg=0.02) # dropout=0.25, noise=0.1
 
     # compile the keras model
-    model = sequential(layers, 'adam', loss='sub_poisson_loss')
+    model = sequential(layers, 'adam', loss='poisson_loss')
 
     # load experiment data
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip)
@@ -83,12 +83,12 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     author: Lane McIntosh
     """
 
-    input_shape = (1000,64)
+    input_shape = (1000,16)
     ncells = len(cells)
-    batchsize = 1000
+    batchsize = 600
 
     # get the convnet layers
-    layers = fixedlstm(input_shape, len(cells), num_hidden=1600, weight_init='normal', l2_reg=0.01)
+    layers = fixedlstm(input_shape, len(cells), num_hidden=200, weight_init='normal', l2_reg=0.01)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='sub_poisson_loss')
@@ -97,8 +97,7 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, input_shape[0], batchsize, zscore_flag=False)
 
     # create a monitor to track progress
-    #monitor = KerasMonitor('fixedlstm', model, data, readme, save_every=10)
-    monitor = None
+    monitor = KerasMonitor('fixedlstm', model, data, readme, save_every=10)
 
     # train
     train(model, data, monitor, num_epochs=100)
@@ -176,5 +175,6 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_16_01_08, ['whitenoise', 'naturalscene', 'naturalmovie', 'whitenoise', 'naturalmovie', 'naturalmovie'], ['whitenoise', 'naturalscene', 'naturalmovie', 'structured'], '16-01-08')
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_3_31_2016'], ['whitenoise_3_31_2016', 'naturalscene_3_31_2016'], '15-10-07', nclip=5000)
     #mdl = fit_fixedrnn(gc_15_10_07, ['naturalscenes_affine_c82720'], ['whitenoise_affine_3dd884', 'naturalscenes_affine_c82720'], '15-10-07')
-    mdl = fit_fixedlstm(gc_15_10_07, ['naturalscenes_affine_c82720'], ['whitenoise_affine_3dd884', 'naturalscenes_affine_c82720'], '15-10-07')
+    #mdl = fit_fixedlstm(gc_15_10_07, ['naturalscenes_affine_c82720'], ['whitenoise_affine_3dd884', 'naturalscenes_affine_c82720'], '15-10-07')
     #mdl = fit_fixedrnn(gc_15_10_07, ['naturalscene_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-10-07')
+    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000)

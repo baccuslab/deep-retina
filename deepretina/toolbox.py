@@ -12,7 +12,7 @@ import re
 import time
 import tableprint
 from keras.models import model_from_json, model_from_config
-from .experiments import loadexpt
+from .experiments import loadexpt, rolling_window
 from .models import sequential
 from . import metrics
 from .visualizations import visualize_convnet, visualize_glm
@@ -366,7 +366,7 @@ def load_partial_model(model, stop_layer=None, start_layer=0):
         a theano function representing the partial model
     """
     if start_layer == 0:
-        if not stop_layer:
+        if stop_layer is None:
             return model.predict
         else:
             # create theano function to generate activations of desired layer
@@ -384,6 +384,48 @@ def load_partial_model(model, stop_layer=None, start_layer=0):
             l.set_weights(new_layers[idl].get_weights())
 
         return new_model.predict
+
+def model_composition(model1, model2, history=1000):
+    '''
+        Take the composition of two keras models.
+        Designed with predicting fixed recurrent neural
+        networks in mind.
+
+        Usage is model2(model1)
+
+        INPUT:
+            model1      a keras model or theano function
+                        (e.g. for a partial model)
+            model2      a keras model
+            history     number of frames to call
+                        rolling_window on; e.g. for RNN.
+                        Set to None if rolling is undesired.
+
+        OUTPUT:
+            fun         a model.predict function for the
+                        new model composition
+    '''
+
+    def fun(x):
+        # if model1 is a keras model
+        if hasattr(model1, 'predict'):
+            if history:
+                y1_unrolled = model1.predict(x)
+                y1 = rolling_window(y1_unrolled, history)
+            else:
+                y1 = model1.predict(x)
+            return model2.predict(y1)
+
+        # else model1 is a theano function
+        else:
+            if history:
+                y1_unrolled = model1(x)
+                y1 = rolling_window(y1_unrolled, history)
+            else:
+                y1 = model1(x)
+            return model2.predict(y1)
+
+    return fun
 
 
 def list_layers(model_path, weight_filename):
@@ -421,17 +463,6 @@ def list_layers(model_path, weight_filename):
             print(tableprint.row([l.encode('ascii', 'ignore'), '', '']))
 
     print(tableprint.hr(3))
-
-
-def collapse(filename):
-    with h5py.File(filename, 'r') as f:
-        ncells = len(f['test/repeats'])
-        nrepeats, ntimesteps = f['test/repeats/cell01'].shape
-        arr = np.zeros((ncells, nrepeats, ntimesteps))
-        for ci, key in enumerate(f['test/repeats']):
-            arr[ci] = np.array(f['test/repeats'][key])
-
-    return arr
 
 
 def computecorr(data, maxlag, dt=1e-2):

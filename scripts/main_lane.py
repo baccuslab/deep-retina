@@ -51,18 +51,18 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
     author: Lane McIntosh
     """
 
-    stim_shape = (30, 50, 50)
+    stim_shape = (40, 50, 50)
     ncells = len(cells)
     batchsize = 8000
 
     # get the convnet layers
     layers = generalizedconvnet(stim_shape, ncells, 
-            architecture=('conv', 'noise', 'relu', 'pool', 'conv', 'noise', 'relu', 'flatten', 'affine'),
-            num_filters=[8, -1, -1, -1, 8], filter_sizes=[15, -1, -1, -1, 13], weight_init='normal',
-            l2_reg=0.02, dropout=0.25, sigma=0.1)
+            architecture=('conv', 'flatten', 'affine'),
+            num_filters=[8], filter_sizes=[15], weight_init='normal',
+            l2_reg=0.02) # dropout=0.25, noise=0.1
 
     # compile the keras model
-    model = sequential(layers, 'adam', loss='sub_poisson_loss')
+    model = sequential(layers, 'adam', loss='poisson_loss')
 
     # load experiment data
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip)
@@ -175,5 +175,6 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_16_01_08, ['whitenoise', 'naturalscene', 'naturalmovie', 'whitenoise', 'naturalmovie', 'naturalmovie'], ['whitenoise', 'naturalscene', 'naturalmovie', 'structured'], '16-01-08')
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_3_31_2016'], ['whitenoise_3_31_2016', 'naturalscene_3_31_2016'], '15-10-07', nclip=5000)
     #mdl = fit_fixedrnn(gc_15_10_07, ['naturalscenes_affine_c82720'], ['whitenoise_affine_3dd884', 'naturalscenes_affine_c82720'], '15-10-07')
-    mdl = fit_fixedlstm(gc_15_10_07, ['naturalscenes_affine_c82720'], ['whitenoise_affine_3dd884', 'naturalscenes_affine_c82720'], '15-10-07')
+    #mdl = fit_fixedlstm(gc_15_10_07, ['naturalscenes_affine_c82720'], ['whitenoise_affine_3dd884', 'naturalscenes_affine_c82720'], '15-10-07')
     #mdl = fit_fixedrnn(gc_15_10_07, ['naturalscene_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-10-07')
+    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000)

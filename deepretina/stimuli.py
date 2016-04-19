@@ -198,7 +198,7 @@ def cmask(center, radius, array):
     return x ** 2 + y ** 2 <= radius ** 2
 
 
-def paired_flashes(ifi=20, duration=5, intensity=-1., padding=50):
+def paired_flashes(ifi, duration, intensity, padding):
     """Example of a paired flash stimulus
 
     Parameters

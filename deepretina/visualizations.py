@@ -10,9 +10,10 @@ import theano
 import os
 import h5py
 from matplotlib import animation, gridspec
+from scipy.interpolate import interp1d
 
 
-def response1D(x, r, dt=0.01):
+def response1D(x, r, dt=0.01, us_factor=50):
     """Plots a response given a 1D (temporal) representation of the stimulus"""
     assert x.size == r.shape[0], "Dimensions do not agree"
     time = np.arange(x.size) * dt
@@ -23,11 +24,15 @@ def response1D(x, r, dt=0.01):
     ax0 = plt.subplot2grid((nrows, 1), (0, 0))
     ax1 = plt.subplot2grid((nrows, 1), (nrows - nspan, 0), rowspan=nspan)
 
+    # upsample the stimulus
+    time_us = np.linspace(0, time[-1], us_factor * time.size)
+    x = interp1d(time, x, kind='nearest')(time_us)
+
     # 1D stimulus trace
     maxval = abs(x).max()
-    ax0.fill_between(time, np.zeros_like(x), x, color='lightgrey', interpolate=True)
-    ax0.plot(time, x, '-', color='gray')
-    ax0.set_xlim(0, time[-1] + dt)
+    ax0.fill_between(time_us, np.zeros_like(x), x, color='lightgrey', interpolate=True)
+    ax0.plot(time_us, x, '-', color='gray')
+    ax0.set_xlim(0, time_us[-1] + dt)
     ax0.set_yticks([-maxval, maxval])
     ax0.set_yticklabels([-maxval, maxval], fontsize=22)
     adjust_spines(ax0, spines=('left'))

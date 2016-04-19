@@ -385,47 +385,30 @@ def load_partial_model(model, stop_layer=None, start_layer=0):
 
         return new_model.predict
 
-def model_composition(model1, model2, history=1000):
-    '''
-        Take the composition of two keras models.
-        Designed with predicting fixed recurrent neural
-        networks in mind.
 
-        Usage is model2(model1)
+class CompositeModel(object):
+    def __init__(self, model1, model2, history=None):
+        """Initializes a model that is the composition of two existing models"""
 
-        INPUT:
-            model1      a keras model or theano function
-                        (e.g. for a partial model)
-            model2      a keras model
-            history     number of frames to call
-                        rolling_window on; e.g. for RNN.
-                        Set to None if rolling is undesired.
+        # get the function for each model
+        self.func1 = model1.predict if hasattr(model1, 'predict') else model1
+        self.func2 = model2.predict if hasattr(model2, 'predict') else model2
 
-        OUTPUT:
-            fun         a model.predict function for the
-                        new model composition
-    '''
+        # store the inner rolling window history
+        self.history = history
 
-    def fun(x):
-        # if model1 is a keras model
-        if hasattr(model1, 'predict'):
-            if history:
-                y1_unrolled = model1.predict(x)
-                y1 = rolling_window(y1_unrolled, history)
-            else:
-                y1 = model1.predict(x)
-            return model2.predict(y1)
+    def predict(self, X):
+        """Returns the prediction of the composition model2(model1(X))"""
 
-        # else model1 is a theano function
-        else:
-            if history:
-                y1_unrolled = model1(x)
-                y1 = rolling_window(y1_unrolled, history)
-            else:
-                y1 = model1(x)
-            return model2.predict(y1)
+        # pass through the first function
+        intermediate = self.func1(X)
 
-    return fun
+        # apply rolling window if necessary
+        if self.history is not None:
+            intermediate = rolling_window(intermediate, self.history)
+
+        # return the output of the second function
+        return self.func2(intermediate)
 
 
 def list_layers(model_path, weight_filename):

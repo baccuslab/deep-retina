@@ -5,37 +5,47 @@ import matplotlib.pyplot as plt
 import numpy as np
 from itertools import repeat
 from . import stimuli as stim
+from . import visualizations as viz
 from tqdm import tqdm
 
 
-def two_flashes(model):
-    """Generates responses to a pair of neighboring flashes"""
+def step_response(model, duration=100, delay=50, nsamples=200, intensity=-1.):
+    """Step response"""
+    X = stim.concat(stim.flash(duration, delay, nsamples, intensity=intensity))
+    resp = model.predict(X)
+    fig, _ = viz.response1D(X[:, -1, 0, 0].copy(), resp)
+    return fig, X, resp
+
+
+def paired_flash(model, **kwargs):
+    """Generates responses to a pair of neighboring flashes
+
+    Parameters
+    ----------
+    ifi : int
+        inter-flash interval, in samples (default: 20)
+
+    duration : int
+        the duration of each flash in frames (default: 5)
+
+    intensity : float
+        the flash intensity (default: -1.0)
+
+    padding : int
+        how much padding in frames to put on either side of the flash (default: 50)
+    """
     # get the paired flash stimulus
-    X = stim.paired_flashes(ifi=2, duration=1, intensity=-1., padding=45)
+    X = stim.paired_flashes(**kwargs)
 
     # pass it through the model
     resp = model.predict(X)
 
-    # get a 1-D trace of the stimulus
-    stim_trace = X[:, -1, 0, 0].copy()
-    time = np.arange(stim_trace.size) * 0.01
-
-    # plot the stimulus and responses
-    fig = plt.figure(figsize=(8, 6))
-    ax0 = plt.subplot2grid((5, 1), (0, 0))
-    ax1 = plt.subplot2grid((5, 1), (1, 0), rowspan=4)
-    ax0.plot(time, stim_trace, 'k-')
-    ax0.set_ylabel('Stimulus')
-    ax0.set_xlim(0, 0.5)
-    ax0.set_xticks([])
-    ax1.plot(time, resp, '-')
-    ax1.set_ylabel('Firing rate (Hz)')
-    ax1.set_xlabel('Time (s)')
-    ax1.set_xlim(0, 0.5)
+    # visualize
+    fig, _ = viz.response1D(X[:, -1, 0, 0].copy(), resp)
     plt.show()
     plt.draw()
 
-    return fig, ax0, ax1
+    return fig, X, resp
 
 
 def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=0.93,

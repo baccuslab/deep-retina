@@ -12,6 +12,36 @@ import h5py
 from matplotlib import animation, gridspec
 
 
+def response1D(x, r, dt=0.01):
+    """Plots a response given a 1D (temporal) representation of the stimulus"""
+    assert x.size == r.shape[0], "Dimensions do not agree"
+    time = np.arange(x.size) * dt
+    fig = plt.figure(figsize=(16, 10))
+
+    nrows = 8
+    nspan = 6
+    ax0 = plt.subplot2grid((nrows, 1), (0, 0))
+    ax1 = plt.subplot2grid((nrows, 1), (nrows - nspan, 0), rowspan=nspan)
+
+    # 1D stimulus trace
+    maxval = abs(x).max()
+    ax0.fill_between(time, np.zeros_like(x), x, color='lightgrey', interpolate=True)
+    ax0.plot(time, x, '-', color='gray')
+    ax0.set_xlim(0, time[-1] + dt)
+    ax0.set_yticks([-maxval, maxval])
+    ax0.set_yticklabels([-maxval, maxval], fontsize=22)
+    adjust_spines(ax0, spines=('left'))
+
+    # neural responses
+    ax1.plot(time, r.mean(axis=1), '-', color='firebrick')
+    ax1.set_xlim(0, time[-1] + dt)
+    ax1.set_ylabel('Firing rate (Hz)')
+    ax1.set_xlabel('Time (s)')
+    adjust_spines(ax1)
+
+    return fig, (ax0, ax1)
+
+
 def plot_traces_grid(weights, tax=None, color='k', lw=3):
     """Plots the given array of 1D traces on a grid
 
@@ -719,7 +749,7 @@ def visualize_sta(sta, fig_size=(8, 10), display=True, save=False, normalize=Tru
 
 # add some handy style for keeping matplotlib axes
 # on the left and bottom
-def adjust_spines(ax, spines):
+def adjust_spines(ax, spines=('left', 'bottom')):
     """Example usage:
 
     adjust_spines(plt.gca(), ['left', 'bottom'])

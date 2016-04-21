@@ -13,6 +13,48 @@ from matplotlib import animation, gridspec
 from scipy.interpolate import interp1d
 
 
+def gif(filename, array, fps=10, scale=1.0):
+    """Creates a gif given a stack of images using moviepy
+
+    Notes
+    -----
+    works with the bleeding edge version of moviepy (not the pip version)
+
+    Usage
+    -----
+    >>> X = randn(100, 64, 64)
+    >>> gif('test.gif', X)
+
+    Parameters
+    ----------
+    filename : string
+        The filename of the gif to write to
+
+    array : array_like
+        A numpy array that contains a sequence of images
+
+    fps : int
+        frames per second (default: 10)
+
+    scale : float
+        how much to rescale each image by (default: 1.0)
+    """
+    from moviepy.editor import ImageSequenceClip
+
+    # ensure that the file has the .gif extension
+    fname, _ = os.path.splitext(filename)
+    filename = fname + '.gif'
+
+    # copy into the color dimension if the images are black and white
+    if array.ndim == 3:
+        array = array.reshape(*array.shape, 1) * np.ones((1, 1, 1, 3))
+
+    # make the moviepy clip
+    clip = ImageSequenceClip(list(array), fps=fps).resize(scale)
+    clip.write_gif(filename, fps=fps)
+    return clip
+
+
 def response1D(x, r, dt=0.01, us_factor=50, figsize=(16, 10)):
     """Plots a response given a 1D (temporal) representation of the stimulus
 

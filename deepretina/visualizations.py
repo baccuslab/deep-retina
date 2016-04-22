@@ -381,6 +381,7 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
                         ax.imshow(spatial, interpolation='nearest', cmap=cmap, clim=colorlimit)
                     else:
                         ax.imshow(spatial, interpolation='nearest', cmap=cmap)
+                    plt.title('Subunit %i' %plt_idx)
                     plt.grid('off')
                     plt.axis('off')
 

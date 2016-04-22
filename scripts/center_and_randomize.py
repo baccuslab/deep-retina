@@ -43,7 +43,7 @@ with h5py.File(mdl_dir + new_weight_name, 'r+') as h:
     data[...] = new_weights
 
     # now randomize all higher weights
-    for idl, l in enumerate(model.layers):
+    for i, l in enumerate(model.layers):
         if 'param_0' in h['layer_%i' %i].keys():
             data = h['layer_%i/param_0' %i]
             random_weights = weight_scale * np.random.randn(*h['layer_%i/param_0' %i].shape)

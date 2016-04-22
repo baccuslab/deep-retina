@@ -13,6 +13,34 @@ from matplotlib import animation, gridspec
 from scipy.interpolate import interp1d
 
 
+def roc_curve(fpr, tpr, auc=None, fmt='-', color='navy', ax=None):
+    """Plots an ROC curve"""
+    labelstr = 'AUC={:0.3f}'.format(auc) if auc is not None else ''
+
+    if ax is None:
+        fig = plt.figure(figsize=(8, 8))
+        ax = fig.add_subplot(111)
+        ax.plot([0., 1.], [0., 1.], '--', color='lightgrey', lw=4)
+
+    if fmt == '-':
+        x = np.linspace(0, 1, 1e3)
+        f = interp1d(fpr, tpr, kind='nearest', fill_value='extrapolate')
+        ax.plot(x, f(x), '-', color=color, label=labelstr)
+
+    elif fmt == '.':
+        ax.plot(fpr, tpr, '.', color=color, label=labelstr)
+
+    plt.legend(loc=4, fancybox=True, frameon=True)
+    ax.set_xlabel('False positive rate', fontsize=20)
+    ax.set_xlim(0, 1.05)
+    ax.set_ylabel('True positive rate', fontsize=20)
+    ax.set_ylim(0, 1.05)
+    ax.set_aspect('equal')
+    adjust_spines(ax)
+
+    return ax
+
+
 def gif(filename, array, fps=10, scale=1.0):
     """Creates a gif given a stack of images using moviepy
 

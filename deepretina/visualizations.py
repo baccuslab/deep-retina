@@ -45,9 +45,9 @@ def gif(filename, array, fps=10, scale=1.0):
     fname, _ = os.path.splitext(filename)
     filename = fname + '.gif'
 
-    # copy into the color dimension if the images are black and white
+    # broadcast along the color dimension if the images are black and white
     if array.ndim == 3:
-        array = np.tile(array, (1, 1, 1, 3))
+        array = array[..., np.newaxis] * np.ones(3)
 
     # make the moviepy clip
     clip = ImageSequenceClip(list(array), fps=fps).resize(scale)

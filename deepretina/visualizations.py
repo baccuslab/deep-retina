@@ -13,11 +13,71 @@ from matplotlib import animation, gridspec
 from scipy.interpolate import interp1d
 
 
-def response1D(x, r, dt=0.01, us_factor=50):
-    """Plots a response given a 1D (temporal) representation of the stimulus"""
+def gif(filename, array, fps=10, scale=1.0):
+    """Creates a gif given a stack of images using moviepy
+
+    Notes
+    -----
+    works with the bleeding edge version of moviepy (not the pip version)
+
+    Usage
+    -----
+    >>> X = randn(100, 64, 64)
+    >>> gif('test.gif', X)
+
+    Parameters
+    ----------
+    filename : string
+        The filename of the gif to write to
+
+    array : array_like
+        A numpy array that contains a sequence of images
+
+    fps : int
+        frames per second (default: 10)
+
+    scale : float
+        how much to rescale each image by (default: 1.0)
+    """
+    from moviepy.editor import ImageSequenceClip
+
+    # ensure that the file has the .gif extension
+    fname, _ = os.path.splitext(filename)
+    filename = fname + '.gif'
+
+    # copy into the color dimension if the images are black and white
+    if array.ndim == 3:
+        array = array.reshape(*array.shape, 1) * np.ones((1, 1, 1, 3))
+
+    # make the moviepy clip
+    clip = ImageSequenceClip(list(array), fps=fps).resize(scale)
+    clip.write_gif(filename, fps=fps)
+    return clip
+
+
+def response1D(x, r, dt=0.01, us_factor=50, figsize=(16, 10)):
+    """Plots a response given a 1D (temporal) representation of the stimulus
+
+    Parameters
+    ----------
+    x : array_like
+        A 1-D representation of the stimulus
+
+    x : array_like
+        A (t, n) array of the response of n cells to the t time points in the stimulus
+
+    dt : float
+        The temporal sampling period, in seconds (default: 0.01)
+
+    us_factor : int
+        How much to upsample the stimulus by before plotting it (used to get a cleaner picture)
+
+    figsize : tuple
+        The figure dimensions. (default: (16, 10))
+    """
     assert x.size == r.shape[0], "Dimensions do not agree"
     time = np.arange(x.size) * dt
-    fig = plt.figure(figsize=(16, 10))
+    fig = plt.figure(figsize=figsize)
 
     nrows = 8
     nspan = 6
@@ -753,12 +813,12 @@ def visualize_sta(sta, fig_size=(8, 10), display=True, save=False, normalize=Tru
         plt.show()
 
 
-# add some handy style for keeping matplotlib axes
-# on the left and bottom
 def adjust_spines(ax, spines=('left', 'bottom')):
-    """Example usage:
+    """Modify the spines of a matplotlib axes handle
 
-    adjust_spines(plt.gca(), ['left', 'bottom'])
+    Usage
+    -----
+    >>> adjust_spines(plt.gca(), spines=['left', 'bottom'])
     """
     for loc, spine in ax.spines.items():
         if loc in spines:

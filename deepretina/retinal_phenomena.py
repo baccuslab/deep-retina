@@ -150,31 +150,34 @@ def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=
         return movie
 
 
-def osr(km):
-    """Omitted stimulus response"""
-    duration = 2
-    interval = 10
-    nflashes = 5
-    intensity = -1.0
+def osr(km, duration=2, interval=10, nflashes=3, intensity=-2.0):
+    """Omitted stimulus response
 
-    # generate the OSR stimulus
+    Parameters
+    ----------
+    duration : int
+        Length of each flash in samples (default: 2)
+
+    interval : int
+        Number of frames between each flash (default: 10)
+
+    nflashes : int
+        Number of flashes to show before the omitted flash (default: 5)
+
+    intensity : float
+        The intensity (luminance) of each flash (default: -2.0)
+    """
+
+    # generate the stimulus
     single_flash = stim.flash(duration, interval, interval * 2, intensity=intensity)
     omitted_flash = stim.flash(duration, interval, interval * 2, intensity=0.0)
     flash_group = list(repeat(single_flash, nflashes))
     zero_pad = np.zeros((interval, 1, 1))
     X = stim.concat(zero_pad, *flash_group, omitted_flash, *flash_group, nx=50, nh=40)
 
-    # feed it to the model
     resp = km.predict(X)
-
-    # generate the figure
-    fig = plt.figure(figsize=(4, 8))
-    ax0 = plt.subplot(211)
-    ax0.plot(X[:, -1, 0, 0])
-    ax1 = plt.subplot(212)
-    ax1.plot(resp)
-
-    return (fig, ax0, ax1), X, resp
+    fig, _ = viz.response1D(X[:, -1, 0, 0].copy(), resp, figsize=(20, 8))
+    return fig, X, resp
 
 
 def motion_anticipation(km):

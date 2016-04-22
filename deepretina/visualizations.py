@@ -47,7 +47,7 @@ def gif(filename, array, fps=10, scale=1.0):
 
     # copy into the color dimension if the images are black and white
     if array.ndim == 3:
-        array = array.reshape(*array.shape, 1) * np.ones((1, 1, 1, 3))
+        array = np.tile(array, (1, 1, 1, 3))
 
     # make the moviepy clip
     clip = ImageSequenceClip(list(array), fps=fps).resize(scale)
@@ -77,34 +77,48 @@ def response1D(x, r, dt=0.01, us_factor=50, figsize=(16, 10)):
     """
     assert x.size == r.shape[0], "Dimensions do not agree"
     time = np.arange(x.size) * dt
-    fig = plt.figure(figsize=figsize)
-
     nrows = 8
     nspan = 6
-    ax0 = plt.subplot2grid((nrows, 1), (0, 0))
-    ax1 = plt.subplot2grid((nrows, 1), (nrows - nspan, 0), rowspan=nspan)
 
     # upsample the stimulus
     time_us = np.linspace(0, time[-1], us_factor * time.size)
     x = interp1d(time, x, kind='nearest')(time_us)
-
-    # 1D stimulus trace
     maxval = abs(x).max()
-    ax0.fill_between(time_us, np.zeros_like(x), x, color='lightgrey', interpolate=True)
-    ax0.plot(time_us, x, '-', color='gray')
-    ax0.set_xlim(0, time_us[-1] + dt)
-    ax0.set_yticks([-maxval, maxval])
-    ax0.set_yticklabels([-maxval, maxval], fontsize=22)
-    adjust_spines(ax0, spines=('left'))
+    maxrate = r.max()
 
-    # neural responses
-    ax1.plot(time, r.mean(axis=1), '-', color='firebrick')
-    ax1.set_xlim(0, time[-1] + dt)
-    ax1.set_ylabel('Firing rate (Hz)')
-    ax1.set_xlabel('Time (s)')
-    adjust_spines(ax1)
+    # helper function
+    def mkplot(rate, title=''):
+        fig = plt.figure(figsize=figsize)
+        ax0 = plt.subplot2grid((nrows, 1), (0, 0))
+        ax1 = plt.subplot2grid((nrows, 1), (nrows - nspan, 0), rowspan=nspan)
 
-    return fig, (ax0, ax1)
+        # 1D stimulus trace
+        ax0.fill_between(time_us, np.zeros_like(x), x, color='lightgrey', interpolate=True)
+        ax0.plot(time_us, x, '-', color='gray')
+        ax0.set_xlim(0, time_us[-1] + dt)
+        ax0.set_yticks([-maxval, maxval])
+        ax0.set_yticklabels([-maxval, maxval], fontsize=22)
+        ax0.set_title(title)
+        adjust_spines(ax0, spines=('left'))
+
+        # neural responses
+        ax1.plot(time, rate, '-', color='firebrick')
+        ax1.set_xlim(0, time[-1] + dt)
+        ax1.set_ylim(0, maxrate)
+        ax1.set_ylabel('Firing rate (Hz)')
+        ax1.set_xlabel('Time (s)')
+        adjust_spines(ax1)
+
+        return fig
+
+    figures = list()
+    figures.append(mkplot(r.mean(axis=1), title='Population response'))
+
+    # loop over cells
+    for ci in range(r.shape[1]):
+        figures.append(mkplot(r[:, ci], title='Cell {}'.format(ci + 1)))
+
+    return figures
 
 
 def plot_traces_grid(weights, tax=None, color='k', lw=3):

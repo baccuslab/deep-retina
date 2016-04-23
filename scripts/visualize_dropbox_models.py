@@ -1,5 +1,7 @@
 import os
 from deepretina.toolbox import scandb
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
@@ -29,8 +31,8 @@ def main(database_directory):
                     # save the figures
                     os.mkdir(paramdir)
                     for ix, fig in enumerate(figs):
-                        fname = os.path.join(paramdir, 'fig{}.jpg'.format(ix))
-                        fig.savefig(fname, bbox_inches='tight', dpi=100)
+                        fname = os.path.join(paramdir, 'fig{}.svg'.format(ix))
+                        fig.savefig(fname, bbox_inches='tight')
 
                     plt.close('all')
 
@@ -39,4 +41,5 @@ def main(database_directory):
                     continue
 
 if __name__ == "__main__":
-    main('/Volumes/sni/deep-retina/database/')
+    # main('/Volumes/sni/deep-retina/database/')
+    main('/home/nirum/database/')

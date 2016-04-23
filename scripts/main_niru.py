@@ -66,7 +66,7 @@ def fit_convnet(cells, train_stimuli, exptdate, nclip=0, readme=None):
                      filter_size=(13, 13), weight_init='normal',
                      l2_reg_weights=(0.01, 0.01, 0.01),
                      l1_reg_activity=(0.0, 0.0, 0.001),
-                     dropout=(0.0, 0.0))
+                     dropout=(0.1, 0.0))
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='poisson')
@@ -113,33 +113,32 @@ def fit_glm(cells, train_stimuli, exptdate, l2, readme=None):
 
 if __name__ == '__main__':
 
+    # ===
     # GLM
-    # for l2a in np.logspace(-2, 1, 4):
-        # for l2b in np.logspace(-3, 0, 4):
-            # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b), description='full GLM, l2=({}, {})'.format(l2a, l2b))
-
+    # ===
     # l2a = 0.1
     # l2b = 0.0
     # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b))
 
-    mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', nclip=6000)
-    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=5000, description='subpoisson Whitenoise (clipping one minute of each repeat)')
-    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=0, description='subpoisson Whitenoise w/o clipping')
-    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=30000, description='subpoisson Whitenoise (clipping five  minutes of each repeat)')
+    # ==========
+    # Medium OFF
+    # ==========
+    # cells = [4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 34, 35, 36]
+    # mdl = fit_convnet(cells, ['whitenoise'], 'all-cells', nclip=6000)
 
-    # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['naturalscene'], '15-10-07', description='LN models w/ sta initialization (ns)')
-    # mdl = fit_ln([0, 1, 2, 3, 4, 5], ['whitenoise'], '15-10-07', description='LN models w/ sta initialization (wn)')
+    # ========
+    # 15-10-07
+    # ========
+    mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=6000)
 
-    # mdl = fit_ln(list(range(37)), ['whitenoise'], 'all-cells', description='LN models on whitenoise')
-    # mdl = fit_ln(list(range(37)), ['naturalscene'], 'all-cells', description='LN models on naturalscene')
-
+    # =========
+    # 15-11-21a
+    # =========
     # gc_151121a = [6, 10, 12, 13]
-    # mdl = fit_convnet(gc_151121a, ['naturalscene'], '15-11-21a', description='15-11-21a Convnet on natural scenes 2-24-16')
-    # mdl = fit_ln(gc_151121a, ['naturalscene'], '15-11-21a', description='LN models w/ sta initialization (ns)')
-    # mdl = fit_ln(gc_151121a, ['whitenoise'], '15-11-21a', description='LN models w/ sta initialization (wn)')
+    # mdl = fit_convnet(gc_151121a, ['whitenoise'], '15-11-21a', nclip=6000)
 
+    # =========
+    # 15-11-21b
+    # =========
     # gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    # mdl = fit_ln(gc_151121b, ['naturalscene'], '15-11-21b', description='LN models w/ sta initialization (ns)')
-    # mdl = fit_ln(gc_151121b, ['whitenoise'], '15-11-21b', description='LN models w/ sta initialization (wn)')
-
-    # mdl = fit_convnet(list(range(37)), ['whitenoise', 'naturalscene'], 'all-cells')
+    # mdl = fit_convnet(gc_151121b, ['naturalscene'], '15-11-21b')

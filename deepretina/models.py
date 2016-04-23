@@ -115,7 +115,7 @@ def convnet(input_shape, nout,
     # first convolutional layer
     layers.append(Convolution2D(num_filters[0], filter_size[0], filter_size[1],
                                 input_shape=input_shape, init=weight_init,
-                                border_mode='same', subsample=(1, 1),
+                                border_mode='valid', subsample=(1, 1),
                                 **_regularize(0)))
 
     # Add relu activation

@@ -13,6 +13,76 @@ from matplotlib import animation, gridspec
 from scipy.interpolate import interp1d
 
 
+def roc_curve(fpr, tpr, auc=None, fmt='-', color='navy', ax=None):
+    """Plots an ROC curve"""
+    labelstr = 'AUC={:0.3f}'.format(auc) if auc is not None else ''
+
+    if ax is None:
+        fig = plt.figure(figsize=(8, 8))
+        ax = fig.add_subplot(111)
+        ax.plot([0., 1.], [0., 1.], '--', color='lightgrey', lw=4)
+
+    if fmt == '-':
+        x = np.linspace(0, 1, 1e3)
+        f = interp1d(fpr, tpr, kind='nearest', fill_value='extrapolate')
+        ax.plot(x, f(x), '-', color=color, label=labelstr)
+
+    elif fmt == '.':
+        ax.plot(fpr, tpr, '.', color=color, label=labelstr)
+
+    plt.legend(loc=4, fancybox=True, frameon=True)
+    ax.set_xlabel('False positive rate', fontsize=20)
+    ax.set_xlim(0, 1.05)
+    ax.set_ylabel('True positive rate', fontsize=20)
+    ax.set_ylim(0, 1.05)
+    ax.set_aspect('equal')
+    adjust_spines(ax)
+
+    return ax
+
+
+def gif(filename, array, fps=10, scale=1.0):
+    """Creates a gif given a stack of images using moviepy
+
+    Notes
+    -----
+    works with the bleeding edge version of moviepy (not the pip version)
+
+    Usage
+    -----
+    >>> X = randn(100, 64, 64)
+    >>> gif('test.gif', X)
+
+    Parameters
+    ----------
+    filename : string
+        The filename of the gif to write to
+
+    array : array_like
+        A numpy array that contains a sequence of images
+
+    fps : int
+        frames per second (default: 10)
+
+    scale : float
+        how much to rescale each image by (default: 1.0)
+    """
+    from moviepy.editor import ImageSequenceClip
+
+    # ensure that the file has the .gif extension
+    fname, _ = os.path.splitext(filename)
+    filename = fname + '.gif'
+
+    # broadcast along the color dimension if the images are black and white
+    if array.ndim == 3:
+        array = array[..., np.newaxis] * np.ones(3)
+
+    # make the moviepy clip
+    clip = ImageSequenceClip(list(array), fps=fps).resize(scale)
+    clip.write_gif(filename, fps=fps)
+    return clip
+
+
 def response1D(x, r, dt=0.01, us_factor=50, figsize=(16, 10)):
     """Plots a response given a 1D (temporal) representation of the stimulus
 
@@ -35,34 +105,48 @@ def response1D(x, r, dt=0.01, us_factor=50, figsize=(16, 10)):
     """
     assert x.size == r.shape[0], "Dimensions do not agree"
     time = np.arange(x.size) * dt
-    fig = plt.figure(figsize=figsize)
-
     nrows = 8
     nspan = 6
-    ax0 = plt.subplot2grid((nrows, 1), (0, 0))
-    ax1 = plt.subplot2grid((nrows, 1), (nrows - nspan, 0), rowspan=nspan)
 
     # upsample the stimulus
     time_us = np.linspace(0, time[-1], us_factor * time.size)
     x = interp1d(time, x, kind='nearest')(time_us)
-
-    # 1D stimulus trace
     maxval = abs(x).max()
-    ax0.fill_between(time_us, np.zeros_like(x), x, color='lightgrey', interpolate=True)
-    ax0.plot(time_us, x, '-', color='gray')
-    ax0.set_xlim(0, time_us[-1] + dt)
-    ax0.set_yticks([-maxval, maxval])
-    ax0.set_yticklabels([-maxval, maxval], fontsize=22)
-    adjust_spines(ax0, spines=('left'))
+    maxrate = r.max()
 
-    # neural responses
-    ax1.plot(time, r.mean(axis=1), '-', color='firebrick')
-    ax1.set_xlim(0, time[-1] + dt)
-    ax1.set_ylabel('Firing rate (Hz)')
-    ax1.set_xlabel('Time (s)')
-    adjust_spines(ax1)
+    # helper function
+    def mkplot(rate, title=''):
+        fig = plt.figure(figsize=figsize)
+        ax0 = plt.subplot2grid((nrows, 1), (0, 0))
+        ax1 = plt.subplot2grid((nrows, 1), (nrows - nspan, 0), rowspan=nspan)
 
-    return fig, (ax0, ax1)
+        # 1D stimulus trace
+        ax0.fill_between(time_us, np.zeros_like(x), x, color='lightgrey', interpolate=True)
+        ax0.plot(time_us, x, '-', color='gray')
+        ax0.set_xlim(0, time_us[-1] + dt)
+        ax0.set_yticks([-maxval, maxval])
+        ax0.set_yticklabels([-maxval, maxval], fontsize=22)
+        ax0.set_title(title)
+        adjust_spines(ax0, spines=('left'))
+
+        # neural responses
+        ax1.plot(time, rate, '-', color='firebrick')
+        ax1.set_xlim(0, time[-1] + dt)
+        ax1.set_ylim(0, maxrate)
+        ax1.set_ylabel('Firing rate (Hz)')
+        ax1.set_xlabel('Time (s)')
+        adjust_spines(ax1)
+
+        return fig
+
+    figures = list()
+    figures.append(mkplot(r.mean(axis=1), title='Population response'))
+
+    # loop over cells
+    for ci in range(r.shape[1]):
+        figures.append(mkplot(r[:, ci], title='Cell {}'.format(ci + 1)))
+
+    return figures
 
 
 def plot_traces_grid(weights, tax=None, color='k', lw=3):
@@ -399,6 +483,7 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
                         ax.imshow(spatial, interpolation='nearest', cmap=cmap, clim=colorlimit)
                     else:
                         ax.imshow(spatial, interpolation='nearest', cmap=cmap)
+                    plt.title('Subunit %i' %plt_idx)
                     plt.grid('off')
                     plt.axis('off')
 

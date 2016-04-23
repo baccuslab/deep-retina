@@ -5,8 +5,10 @@ Metrics comparing predicted and recorded firing rates
 
 from __future__ import absolute_import, division, print_function
 import numpy as np
+import sklearn
 from scipy.stats import pearsonr
 from functools import wraps
+from tqdm import tqdm
 
 __all__ = ['cc', 'lli', 'rmse', 'fev']
 
@@ -71,3 +73,30 @@ def fev(r, rhat):
     https://wikipedia.org/en/Fraction_of_variance_unexplained
     """
     return 1.0 - rmse(r, rhat)[0]**2 / r.var()
+
+
+def roc(r, rhat):
+    """Generates an ROC curve"""
+    thresholds = np.linspace(0, 100, 1e2)
+    data = np.vstack([binarized(r, rhat, thr) for thr in tqdm(thresholds)])
+    fpr = data[:, 0]
+    tpr = data[:, 1]
+    auc = sklearn.metrics.auc(fpr, tpr, reorder=True)
+    return fpr, tpr, auc
+
+
+def binarized(r, rhat, threshold):
+    """Computes fraction of correct predictions given the threshold"""
+    rb = r > threshold
+    rhatb = rhat > threshold
+
+    true_positive = sum(rb & rhatb)
+    true_negative = sum(np.invert(rb) & np.invert(rhatb))
+    false_positive = sum(np.invert(rb) & rhatb)
+    false_negative = sum(rb & np.invert(rhatb))
+
+    true_positive_rate = true_positive / (true_positive + false_negative)
+    false_positive_rate = false_positive / (false_positive + true_negative)
+
+    # return (true_positive_rate, false_positive_rate), (true_positive, true_negative, false_positive, false_negative)
+    return false_positive_rate, true_positive_rate

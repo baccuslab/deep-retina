@@ -40,6 +40,11 @@ def scandb(directory):
     return sorted(models, key=attrgetter('timestamp'), reverse=True)
 
 
+def select(models, keys):
+    """Selects the models with the given keys from the list of models"""
+    return filter(lambda mdl: mdl.hashkey in keys, models)
+
+
 def matcher(desc, key):
     """Returns a fucntion that matches a model given the desc and key"""
 

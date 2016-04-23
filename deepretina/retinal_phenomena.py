@@ -13,8 +13,8 @@ def step_response(model, duration=100, delay=50, nsamples=200, intensity=-1.):
     """Step response"""
     X = stim.concat(stim.flash(duration, delay, nsamples, intensity=intensity))
     resp = model.predict(X)
-    fig, _ = viz.response1D(X[:, -1, 0, 0].copy(), resp)
-    return fig, X, resp
+    figs = viz.response1D(X[:, -1, 0, 0].copy(), resp)
+    return figs, X, resp
 
 
 def paired_flash(model, ifi=5, duration=1, intensity=-2.0, padding=50):
@@ -41,11 +41,11 @@ def paired_flash(model, ifi=5, duration=1, intensity=-2.0, padding=50):
     resp = model.predict(X)
 
     # visualize
-    fig, _ = viz.response1D(X[:, -1, 0, 0].copy(), resp)
+    figs = viz.response1D(X[:, -1, 0, 0].copy(), resp)
     plt.show()
     plt.draw()
 
-    return fig, X, resp
+    return figs, X, resp
 
 
 def reversing_grating(model, size=5, phase=0.):
@@ -53,8 +53,8 @@ def reversing_grating(model, size=5, phase=0.):
     grating = stim.grating(barsize=(size, 0), phase=(phase, 0.0), intensity=(1.0, 1.0), us_factor=1, blur=0)
     X = stim.concat(stim.reverse(grating, halfperiod=50, nsamples=300))
     resp = model.predict(X)
-    fig, _ = viz.response1D(X[:, -1, 0, 0].copy(), resp)
-    return fig, X, resp
+    figs = viz.response1D(X[:, -1, 0, 0].copy(), resp)
+    return figs, X, resp
 
 
 def contrast_adaptation(model, c0, c1, duration=50, delay=50, nsamples=140, nrepeats=10):
@@ -68,9 +68,9 @@ def contrast_adaptation(model, c0, c1, duration=50, delay=50, nsamples=140, nrep
     responses = np.stack([model.predict(stim.concat(np.random.randn(*envelope.shape) * envelope))
                           for _ in trange(nrepeats)])
 
-    fig, _ = viz.response1D(envelope[40:, 0, 0], responses.mean(axis=0))
+    figs = viz.response1D(envelope[40:, 0, 0], responses.mean(axis=0))
 
-    return fig, envelope, responses
+    return figs, envelope, responses
 
 
 def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=0.93,
@@ -176,8 +176,8 @@ def osr(km, duration=2, interval=10, nflashes=3, intensity=-2.0):
     X = stim.concat(zero_pad, *flash_group, omitted_flash, *flash_group, nx=50, nh=40)
 
     resp = km.predict(X)
-    fig, _ = viz.response1D(X[:, -1, 0, 0].copy(), resp, figsize=(20, 8))
-    return fig, X, resp
+    figs = viz.response1D(X[:, -1, 0, 0].copy(), resp, figsize=(20, 8))
+    return figs, X, resp
 
 
 def motion_anticipation(km):

@@ -11,6 +11,13 @@ import numpy as np
 import h5py
 from scipy.stats import zscore
 from .utils import notify, allmetrics
+NUM_BLOCKS = {
+    '15-10-07': 6,
+    '15-11-21a': 6,
+    '15-11-21b': 6,
+    '16-10-07': 3,
+    '16-10-08': 3,
+}
 
 Exptdata = namedtuple('Exptdata', ['X', 'y'])
 __all__ = ['Experiment', 'loadexpt']
@@ -19,7 +26,7 @@ __all__ = ['Experiment', 'loadexpt']
 class Experiment(object):
     """Lightweight class to keep track of loaded experiment data"""
 
-    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, nskip=0, dt=1e-2, load_fraction=1.0, zscore_flag=True):
+    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, xinds=(0, None), yinds=(0, None), holdout=0.1, nskip=0, dt=1e-2, load_fraction=1.0, zscore_flag=True):
         """Keeps track of experimental data
 
         Parameters
@@ -60,7 +67,6 @@ class Experiment(object):
 
         zscore_flag : bool
             Whether stimulus should be zscored (default: True)
-
         """
 
         # store experiment variables (for saving later)
@@ -80,7 +86,7 @@ class Experiment(object):
         self.dt = dt
 
         # partially apply function arguments to the loadexpt function
-        load_data = partial(loadexpt, expt, cells, history=history, load_fraction=load_fraction, zscore_flag=zscore_flag)
+        load_data = partial(loadexpt, expt, cells, history=history, load_fraction=load_fraction, zscore_flag=zscore_flag, xinds=xinds, yinds=yinds)
 
         # load training data, and generate the train/validation split, for each filename
         self._train_data = {}
@@ -172,7 +178,7 @@ class Experiment(object):
         return self._train_data['whitenoise'].X.shape[1:]
 
 
-def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0, nskip=0, zscore_flag=True):
+def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0, nskip=0, zscore_flag=True, xinds=(0, None), yinds=(0, None)):
     """Loads an experiment from an h5 file on disk
 
     Parameters
@@ -217,15 +223,16 @@ def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0, n
             # get the length of the experiment
             expt_length = f[train_or_test]['time'].size
 
-            # hard coded number of repeats
+            # hard coded number of repeats based on the experiment date. Blocks are only used on
+            # the training stimulus set
             if train_or_test is 'train':
-                num_repeats = 6
+                num_blocks = NUM_BLOCKS[expt]
             else:
-                num_repeats = 1
+                num_blocks = 1
 
             if nskip > 0:
                 # clip the front of each repeat by nskip samples (d
-                clipped_indices = np.arange(expt_length).reshape(num_repeats, -1)[:, nskip:].ravel()
+                clipped_indices = np.arange(expt_length).reshape(num_blocks, -1)[:, nskip:].ravel()
 
                 # sub select the indices based on the given load_fraction
                 num_samples = int(np.floor(clipped_indices.size * load_fraction))
@@ -234,11 +241,15 @@ def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0, n
                 num_samples = int(np.floor(expt_length * load_fraction))
                 indices = np.arange(expt_length)[:num_samples]
 
+            # slice into the spatial dimensions
+            xs = slice(*xinds)
+            ys = slice(*yinds)
+
             if zscore_flag:
                 # load the stimulus as a float32 array, and z-score it
-                stim = zscore(np.array(f[train_or_test]['stimulus']).astype('float32'))[indices]
+                stim = zscore(np.array(f[train_or_test]['stimulus']).astype('float32'))[indices, xs, ys]
             else:
-                stim = np.array(f[train_or_test]['stimulus']).astype('float32')[indices]
+                stim = np.array(f[train_or_test]['stimulus']).astype('float32')[indices, xs, ys]
 
             # reshape into the Toeplitz matrix (nsamples, history, *stim_dims)
             stim_reshaped = rolling_window(stim, history, time_axis=0)

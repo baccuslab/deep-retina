@@ -129,7 +129,7 @@ if __name__ == '__main__':
     # ========
     # 15-10-07
     # ========
-    mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=6000)
+    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=6000)
 
     # =========
     # 15-11-21a
@@ -141,4 +141,16 @@ if __name__ == '__main__':
     # 15-11-21b
     # =========
     # gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    # mdl = fit_convnet(gc_151121b, ['naturalscene'], '15-11-21b')
+    # mdl = fit_convnet(gc_151121b, ['naturalscene'], '15-11-21b', nclip=6000)
+
+    # ========
+    # 16-01-07
+    # ========
+    gc_160107 = [0, 2, 7, 10, 11, 12, 31]
+    mdl = fit_convnet(gc_160107, ['naturalscene'], '16-01-07', nclip=6000, description='16-10-07 naturalscene model')
+
+    # ========
+    # 16-01-08
+    # ========
+    gc_160108 = [0, 3, 7, 9, 11]
+    mdl = fit_convnet(gc_160108, ['naturalscene'], '16-01-08', nclip=6000, description='16-10-08 naturalscene model')

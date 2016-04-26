@@ -13,9 +13,9 @@ from matplotlib import animation, gridspec
 from scipy.interpolate import interp1d
 
 
-def roc_curve(fpr, tpr, auc=None, fmt='-', color='navy', ax=None):
+def roc_curve(fpr, tpr, name='', auc=None, fmt='-', color='navy', ax=None):
     """Plots an ROC curve"""
-    labelstr = 'AUC={:0.3f}'.format(auc) if auc is not None else ''
+    labelstr = '{} (AUC={:0.3f})'.format(name, auc) if auc is not None else name
 
     if ax is None:
         fig = plt.figure(figsize=(8, 8))
@@ -32,9 +32,9 @@ def roc_curve(fpr, tpr, auc=None, fmt='-', color='navy', ax=None):
 
     plt.legend(loc=4, fancybox=True, frameon=True)
     ax.set_xlabel('False positive rate', fontsize=20)
-    ax.set_xlim(0, 1.05)
+    ax.set_xlim(-0.05, 1.05)
     ax.set_ylabel('True positive rate', fontsize=20)
-    ax.set_ylim(0, 1.05)
+    ax.set_ylim(-0.05, 1.05)
     ax.set_aspect('equal')
     adjust_spines(ax)
 
@@ -83,7 +83,7 @@ def gif(filename, array, fps=10, scale=1.0):
     return clip
 
 
-def response1D(x, r, dt=0.01, us_factor=50, figsize=(16, 10)):
+def response1D(x, r, dt=0.01, us_factor=50, figsize=(16, 10), name='Cell'):
     """Plots a response given a 1D (temporal) representation of the stimulus
 
     Parameters
@@ -140,11 +140,11 @@ def response1D(x, r, dt=0.01, us_factor=50, figsize=(16, 10)):
         return fig
 
     figures = list()
-    figures.append(mkplot(r.mean(axis=1), title='Population response'))
+    figures.append(mkplot(r.mean(axis=1), title='{} population response'.format(name)))
 
     # loop over cells
     for ci in range(r.shape[1]):
-        figures.append(mkplot(r[:, ci], title='Cell {}'.format(ci + 1)))
+        figures.append(mkplot(r[:, ci], title='{} {}'.format(name, ci + 1)))
 
     return figures
 

@@ -8,7 +8,7 @@ from time import time
 __all__ = ['train']
 
 
-def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0):
+def train(model, experiment, monitor, num_epochs):
     """Train the given network against the given data
 
     Parameters
@@ -16,7 +16,7 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
     model : keras.models.Model or glms.GLM
         A GLM or Keras Model object
 
-    data : experiments.Experiment
+    experiment : experiments.Experiment
         An Experiment object
 
     monitor : io.Monitor
@@ -38,19 +38,16 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
     iteration = 0
     train_start = time()
 
+    # update message
+    MSG = '[{}]\tLoss: {:5.4f}\t\tIteration time: {:5.2f} seconds'
+
     # loop over epochs
     try:
         for epoch in range(num_epochs):
             print('Epoch #{} of {}'.format(epoch + 1, num_epochs))
 
-            # update learning rate on reduce_lr_every, assuming it is positive
-            if (reduce_lr_every > 0) and (epoch > 0) and (epoch % reduce_lr_every == 0):
-                lr = model.optimizer.lr.get_value()
-                model.optimizer.lr.set_value(lr * reduce_rate)
-                print('\t(Changed learning rate to {} from {})'.format(lr * reduce_rate, lr))
-
             # loop over data batches for this epoch
-            for X, y in data.train(shuffle=True):
+            for X, y in experiment.train(shuffle=True):
 
                 # update on save_every, assuming it is positive
                 if (monitor is not None) and (iteration % monitor.save_every == 0):
@@ -65,7 +62,7 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
 
                 # update
                 iteration += 1
-                print('[{}]\tLoss: {:5.4f}\t\tIteration time: {:5.2f} seconds'.format(iteration, float(loss), elapsed_time))
+                print(MSG.format(iteration, float(loss), elapsed_time))
 
     except KeyboardInterrupt:
         print('\nCleaning up')

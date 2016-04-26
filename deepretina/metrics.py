@@ -1,8 +1,6 @@
 """
 Metrics comparing predicted and recorded firing rates
-
 """
-
 from __future__ import absolute_import, division, print_function
 import numpy as np
 import sklearn

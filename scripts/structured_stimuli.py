@@ -49,7 +49,8 @@ if __name__ == '__main__':
     db = scandb('/Volumes/sni/deep-retina/database')
 
     # keys to analyze
-    keys = ['0b7e61', '4ef88d', '689d81', '3520cd', 'b06a60', '3585ed'] # 'd66598', '']
+    # keys = ['0b7e61', '4ef88d', '689d81', '3520cd', 'b06a60', '3585ed'] # 'd66598', '']
+    keys = ['4cac52']
 
     # run the suite of structured stimuli through the models
     [run_battery(mdl.hashkey, mdl.keras()) for mdl in select(db, keys)]

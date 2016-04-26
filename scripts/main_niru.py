@@ -6,7 +6,7 @@ from __future__ import absolute_import
 from deepretina.models import sequential, convnet, ln
 from deepretina.core import train
 from deepretina.experiments import Experiment, _loadexpt_h5
-from deepretina.io import KerasMonitor, GLMMonitor, main_wrapper
+from deepretina.io import KerasMonitor, Monitor, main_wrapper
 from deepretina.glms import GLM
 import numpy as np
 from keras.optimizers import RMSprop
@@ -42,7 +42,7 @@ def fit_ln(cells, train_stimuli, exptdate, readme=None):
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
     # create a monitor
-    monitor = KerasMonitor('ln', model, data, readme, save_every=10)
+    monitor = KerasMonitor('ln', model, data, readme, save_every=20)
 
     # train
     train(model, data, monitor, num_epochs=50)
@@ -103,7 +103,7 @@ def fit_glm(cells, train_stimuli, exptdate, l2, readme=None):
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=0)
 
     # create a monitor to track progress
-    monitor = GLMMonitor('GLM', model, data, readme, save_every=20)
+    monitor = Monitor('GLM', model, data, readme, save_every=20)
 
     # train
     train(model, data, monitor, num_epochs=25)
@@ -147,10 +147,10 @@ if __name__ == '__main__':
     # 16-01-07
     # ========
     gc_160107 = [0, 2, 7, 10, 11, 12, 31]
-    mdl = fit_convnet(gc_160107, ['naturalscene'], '16-01-07', nclip=6000, description='16-10-07 naturalscene model')
+    mdl = fit_convnet(gc_160107, ['naturalscene'], '16-01-07', nclip=6000, description='16-10-07 naturalscene model (goodcells)')
 
     # ========
     # 16-01-08
     # ========
     gc_160108 = [0, 3, 7, 9, 11]
-    mdl = fit_convnet(gc_160108, ['naturalscene'], '16-01-08', nclip=6000, description='16-10-08 naturalscene model')
+    mdl = fit_convnet(gc_160108, ['naturalscene'], '16-01-08', nclip=6000, description='16-10-08 naturalscene model (goodcells)')

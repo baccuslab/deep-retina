@@ -280,7 +280,7 @@ class Monitor:
 
 
 class KerasMonitor(Monitor):
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         """Builds a Monitor object to keep track of train/test performance
 
         Parameters
@@ -300,7 +300,7 @@ class KerasMonitor(Monitor):
         save_every : int
             how often to save (in terms of the number of batches)
         """
-        super().__init__(*args)
+        super().__init__(*args, **kwargs)
 
         # writes Keras architecture files to disk
         self._save_text('architecture.json', self.model.to_json())

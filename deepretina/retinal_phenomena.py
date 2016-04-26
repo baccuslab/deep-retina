@@ -12,7 +12,7 @@ from tqdm import tqdm, trange
 def step_response(model, duration=100, delay=50, nsamples=200, intensity=-1.):
     """Step response"""
     X = stim.concat(stim.flash(duration, delay, nsamples, intensity=intensity))
-    resp = model.predict(X)
+    resp = model(X)
     figs = viz.response1D(X[:, -1, 0, 0].copy(), resp)
     return figs, X, resp
 
@@ -38,7 +38,7 @@ def paired_flash(model, ifi=5, duration=1, intensity=-2.0, padding=50):
     X = stim.paired_flashes(ifi, duration, intensity, padding)
 
     # pass it through the model
-    resp = model.predict(X)
+    resp = model(X)
 
     # visualize
     figs = viz.response1D(X[:, -1, 0, 0].copy(), resp)
@@ -52,7 +52,7 @@ def reversing_grating(model, size=5, phase=0.):
     """A reversing grating stimulus"""
     grating = stim.grating(barsize=(size, 0), phase=(phase, 0.0), intensity=(1.0, 1.0), us_factor=1, blur=0)
     X = stim.concat(stim.reverse(grating, halfperiod=50, nsamples=300))
-    resp = model.predict(X)
+    resp = model(X)
     figs = viz.response1D(X[:, -1, 0, 0].copy(), resp)
     return figs, X, resp
 
@@ -65,7 +65,7 @@ def contrast_adaptation(model, c0, c1, duration=50, delay=50, nsamples=140, nrep
     envelope += c0
 
     # generate a bunch of responses to random noise with the given contrast envelope
-    responses = np.stack([model.predict(stim.concat(np.random.randn(*envelope.shape) * envelope))
+    responses = np.stack([model(stim.concat(np.random.randn(*envelope.shape) * envelope))
                           for _ in trange(nrepeats)])
 
     figs = viz.response1D(envelope[40:, 0, 0], responses.mean(axis=0))
@@ -150,7 +150,7 @@ def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=
         return movie
 
 
-def osr(km, duration=2, interval=10, nflashes=3, intensity=-2.0):
+def osr(model, duration=2, interval=10, nflashes=3, intensity=-2.0):
     """Omitted stimulus response
 
     Parameters
@@ -175,12 +175,12 @@ def osr(km, duration=2, interval=10, nflashes=3, intensity=-2.0):
     zero_pad = np.zeros((interval, 1, 1))
     X = stim.concat(zero_pad, *flash_group, omitted_flash, *flash_group, nx=50, nh=40)
 
-    resp = km.predict(X)
+    resp = model(X)
     figs = viz.response1D(X[:, -1, 0, 0].copy(), resp, figsize=(20, 8))
     return figs, X, resp
 
 
-def motion_anticipation(km):
+def motion_anticipation(model):
     """Generates the Berry motion anticipation stimulus
 
     Stimulus from the paper:
@@ -189,7 +189,7 @@ def motion_anticipation(km):
 
     Parameters
     ----------
-    km : keras.Model
+    model : keras.Model
 
     Returns
     -------
@@ -203,10 +203,10 @@ def motion_anticipation(km):
 
     # moving bar stimulus and responses
     c_right, stim_right = stim.driftingbar(velocity, width)
-    resp_right = km.predict(stim_right)
+    resp_right = model(stim_right)
 
     c_left, stim_left = stim.driftingbar(-velocity, 2)
-    resp_left = km.predict(stim_left)
+    resp_left = model(stim_left)
     max_drift = resp_left.max()
 
     # flashed bar stimulus
@@ -215,7 +215,7 @@ def motion_anticipation(km):
                for x in flash_centers)
 
     # flash responses are a 3-D array with dimensions (centers, stimulus time, cell)
-    flash_responses = np.stack([km.predict(stim.concat(f)) for f in tqdm(flashes)])
+    flash_responses = np.stack([model(stim.concat(f)) for f in tqdm(flashes)])
 
     # pick off the flash responses at a particular time point
     resp_flash = flash_responses.mean(axis=2)[:, 8]

@@ -81,6 +81,7 @@ def roc(r, rhat):
     data = np.vstack([binarized(r, rhat, thr) for thr in tqdm(thresholds)])
     fpr = data[:, 0]
     tpr = data[:, 1]
+    tpr[np.isnan(tpr)] = 0.     # nans should be zero
     auc = sklearn.metrics.auc(fpr, tpr, reorder=True)
     return fpr, tpr, auc
 

@@ -16,7 +16,7 @@ from .utils import notify
 __all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet']
 
 
-def sequential(layers, optimizer, loss='poisson_loss'):
+def sequential(layers, optimizer, loss='poisson'):
     """Compiles a Keras model with the given layers
 
     Parameters

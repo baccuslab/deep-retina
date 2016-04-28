@@ -1,6 +1,7 @@
 """
 Metrics comparing predicted and recorded firing rates
 """
+
 from __future__ import absolute_import, division, print_function
 import numpy as np
 import sklearn
@@ -52,10 +53,16 @@ def cc(r, rhat):
 
 
 @multicell
-def lli(r, rhat):
+def lli(r, rhat, meanrate=None):
     """Log-likelihood (arbitrary units)"""
     epsilon = 1e-9
-    return np.mean(r * np.log(rhat + epsilon) - rhat)
+    loglikelihood = np.mean(r * np.log(rhat + epsilon) - rhat)
+
+    # subtract off the loglikelihood of a mean rate model
+    if meanrate is not None:
+        loglikelihood -= np.mean(r * np.log(meanrate + epsilon) - meanrate)
+
+    return loglikelihood
 
 
 @multicell

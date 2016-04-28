@@ -67,6 +67,42 @@ def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
     return layers
 
 
+def multiconv(input_shape, nout, convlayers=((8, 15), (16, 7)),
+              W_reg=((0., 0.), (0., 0.)), act_reg=((0., 0.), (0., 0.))):
+    """N convolutional layers followed by a final affine layer"""
+    layers = list()
+
+    # first convolutional layer
+    for (n, size), w_args, act_args in zip(convlayers, W_reg, act_reg):
+        args = (n, size, size)
+        kwargs = {
+            'border_mode': 'valid',
+            'subsample': (1, 1),
+            'init': 'normal',
+            'W_regularizer': l1l2(*w_args),
+            'activity_regularizer': l1l2(*act_args),
+        }
+        if len(layers) == 0:
+            kwargs['input_shape'] = input_shape
+
+        # add convolutional layer
+        layers.append(Convolution2D(*args, **kwargs))
+
+        # add ReLu
+        layers.append(Activation('relu'))
+
+    # flatten
+    layers.append(Flatten())
+
+    # Add a final dense (affine) layer
+    layers.append(Dense(nout, init='normal', W_regularizer=l1l2(1e-3, 1e-4)))
+
+    # Finish it off with a parameterized softplus
+    layers.append(ParametricSoftplus())
+
+    return layers
+
+
 def convnet(input_shape, nout,
             num_filters=(8, 16), filter_size=(13, 13),
             weight_init='normal',

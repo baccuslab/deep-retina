@@ -4,7 +4,7 @@ Niru main script
 
 from __future__ import absolute_import
 from itertools import product
-from deepretina.models import sequential, convnet, ln
+from deepretina.models import sequential, convnet, ln, multiconv
 from deepretina.core import train
 from deepretina.experiments import Experiment, _loadexpt_h5
 from deepretina.io import KerasMonitor, Monitor, main_wrapper
@@ -124,6 +124,41 @@ def fit_convnet(cells, train_stimuli, exptdate, nclip=0, readme=None):
 
 
 @main_wrapper
+def fit_convconv(cells, train_stimuli, exptdate, readme=None):
+    """Main script for fitting a multilayered convnet
+
+    author: Niru Maheswaranathan
+    """
+    stim_shape = (40, 50, 50)
+    ncells = len(cells)
+    batchsize = 5000
+
+    # specify convolutional layers (nfilters, filtersize)
+    # and regularization (l1, l2)
+    convlayers = [(8, 15), (16, 7)]
+    W_reg = [(0., 1e-3), (0., 1e-3)]
+    act_reg = [(0., 0.), (0., 0.)]
+
+    # get the convnet layers
+    layers = multiconv(stim_shape, ncells, convlayers, W_reg, act_reg)
+
+    # compile the keras model
+    model = sequential(layers, 'adam', loss='poisson')
+
+    # load experiment data
+    test_stimuli = ['whitenoise', 'naturalscene']
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=6000)
+
+    # create a monitor to track progress
+    monitor = KerasMonitor('multilayered_convnet', model, data, readme, save_every=20)
+
+    # train
+    train(model, data, monitor, num_epochs=50)
+
+    return model
+
+
+@main_wrapper
 def fit_glm(cells, train_stimuli, exptdate, l2, readme=None):
     """Main script for fitting a GLM
 
@@ -169,18 +204,20 @@ if __name__ == '__main__':
     # 15-10-07
     # ========
     # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=6000)
+    mdl = fit_convconv([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', readme=None)
+    mdl = fit_convconv([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', readme=None)
 
     # LN
     # cells = range(1, 5)
-    stimtypes = ('whitenoise', 'naturalscene')
+    # stimtypes = ('whitenoise', 'naturalscene')
     # filtersizes = [1, 3, 5, 9, 11, 13, 15]
     # for ci, stimtype, fs in product(cells, stimtypes, filtersizes):
         # fit_cutout(ci, [stimtype], '15-10-07', filtersize=fs, l2=1e-3, description='LN cutout 15-10-07, {}, cell {}, filtersize={}'.format(stimtype, ci, fs))
     # fit_cutout(0, ['whitenoise'], '15-10-07', filtersize=13, l2=1e-3, description='LN cutout 15-10-07, whitenoise, cell 0, filtersize=13')
     # for fs in filtersizes:
         # fit_cutout(0, ['naturalscene'], '15-10-07', filtersize=13, l2=1e-3, description='LN cutout 15-10-07, naturalscene, cell 0, filtersize={}'.format(fs))
-    for st in stimtypes:
-        fit_ln([0, 1, 2, 3, 4], [st], '15-10-07', l2=1e-3, description='LN on {}, 15-10-07'.format(st))
+    # for st in stimtypes:
+        # fit_ln([0, 1, 2, 3, 4], [st], '15-10-07', l2=1e-3, description='LN on {}, 15-10-07'.format(st))
 
     # =========
     # 15-11-21a

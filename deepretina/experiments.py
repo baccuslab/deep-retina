@@ -27,7 +27,7 @@ __all__ = ['Experiment', 'loadexpt']
 class Experiment(object):
     """Class to keep track of loaded experiment data"""
 
-    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, nskip=0, zscore_flag=True):
+    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, nskip=6000, zscore_flag=True):
         """Keeps track of experimental data
 
         Parameters
@@ -173,7 +173,7 @@ class Experiment(object):
                 stim[key] = Exptdata(ex.X[:, :, xi, yi], ex.y)
 
 
-def loadexpt(expt, cells, filename, train_or_test, history, nskip=0, zscore_flag=True):
+def loadexpt(expt, cells, filename, train_or_test, history, nskip=6000, zscore_flag=True):
     """Loads an experiment from an h5 file on disk
 
     Parameters

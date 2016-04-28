@@ -100,7 +100,7 @@ class Experiment(object):
             self._validation_batches.extend(zip(repeat(filename), val))
 
         # load the data for each experiment, store as a list of Exptdata tuple
-        self._test_data = {filename: load_data(filename, 'test') for filename in test_filenames}
+        self._test_data = {filename: load_data(filename, 'test', nskip=0) for filename in test_filenames}
 
         # save batches_per_epoch for calculating # epochs later
         self.batches_per_epoch = len(self._train_batches)
@@ -173,7 +173,7 @@ class Experiment(object):
                 stim[key] = Exptdata(ex.X[:, :, xi, yi], ex.y)
 
 
-def loadexpt(expt, cells, filename, train_or_test, history, nskip=6000, zscore_flag=True):
+def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=True):
     """Loads an experiment from an h5 file on disk
 
     Parameters

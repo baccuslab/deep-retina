@@ -63,6 +63,7 @@ def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
     layers = list()
     layers.append(Flatten(input_shape=input_shape))
     layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg)))
+    layers.append(BatchNormalization())
     layers.append(ParametricSoftplus())
     return layers
 

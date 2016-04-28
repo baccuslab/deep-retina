@@ -204,8 +204,8 @@ if __name__ == '__main__':
     # 15-10-07
     # ========
     # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=6000)
-    mdl = fit_convconv([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', readme=None)
-    mdl = fit_convconv([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', readme=None)
+    mdl = fit_convconv([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', description='2-layer convnet on whitenoise (similar to 3520cd)')
+    mdl = fit_convconv([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', description='2-layer convnet on naturalscenes (similar architecture to 3520cd)')
 
     # LN
     # cells = range(1, 5)

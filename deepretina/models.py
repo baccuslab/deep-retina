@@ -80,7 +80,7 @@ def multiconv(input_shape, nout, convlayers=((8, 15), (16, 7)),
             'subsample': (1, 1),
             'init': 'normal',
             'W_regularizer': l1l2(*w_args),
-            'activity_regularizer': l1l2(*act_args),
+            'activity_regularizer': activity_l1l2(*act_args),
         }
         if len(layers) == 0:
             kwargs['input_shape'] = input_shape

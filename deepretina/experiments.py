@@ -165,6 +165,13 @@ class Experiment(object):
 
         return avg_scores, all_scores
 
+    def cutout(self, xi, yi):
+        """Cuts out the given slice from the stimuli in this experiment"""
+        for stimset in ('_train_data', '_test_data'):
+            stim = self.__dict__[stimset]
+            for key, ex in stim.items():
+                stim[key] = Exptdata(ex.X[:, :, xi, yi], ex.y)
+
 
 def loadexpt(expt, cells, filename, train_or_test, history, nskip=0, zscore_flag=True):
     """Loads an experiment from an h5 file on disk
@@ -292,7 +299,7 @@ def _loadexpt_h5(expt, filename):
 
 def cutout(ex, xi, yi):
     """Cuts out a slice from the exptdata tuple"""
-    return Exptdata(ex.X[:, xi, yi], ex.y)
+    return Exptdata(ex.X[:, :, xi, yi], ex.y)
 
 
 def _train_val_split(length, batchsize, holdout):

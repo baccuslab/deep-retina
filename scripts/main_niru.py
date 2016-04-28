@@ -3,49 +3,88 @@ Niru main script
 """
 
 from __future__ import absolute_import
+from itertools import product
 from deepretina.models import sequential, convnet, ln
 from deepretina.core import train
 from deepretina.experiments import Experiment, _loadexpt_h5
 from deepretina.io import KerasMonitor, Monitor, main_wrapper
 from deepretina.glms import GLM
+from deepretina.utils import cutout_indices
 import numpy as np
 from keras.optimizers import RMSprop
+from pyret import filtertools as ft
 
 
 @main_wrapper
-def fit_ln(cells, train_stimuli, exptdate, readme=None):
+def fit_cutout(cell, train_stimuli, exptdate, filtersize, l2=1e-3, readme=None):
+    """Fits a LN model on a cutout stimulus using keras"""
+
+    history = 40
+    batchsize = 5000
+
+    # load experiment data
+    test_stimuli = ['whitenoise', 'naturalscene']
+    data = Experiment(exptdate, [cell], train_stimuli, test_stimuli, history, batchsize, nskip=6000)
+
+    # get the spatial center of the STA, and the cutout indices
+    cellname = 'cell{:02d}'.format(cell + 1)
+    sta = np.array(_loadexpt_h5(exptdate, 'whitenoise')['stas'][cellname])
+    sta_center = ft.get_ellipse(ft.decompose(sta)[0])[0]
+    xi, yi = cutout_indices(sta_center, size=filtersize)
+
+    # cutout the experiment
+    data.cutout(xi, yi)
+    xdim, ydim = data._train_data[train_stimuli[0]].X.shape[2:]
+
+    # get the layers
+    layers = ln((history, xdim, ydim), 1, weight_init='glorot_uniform', l2_reg=l2)
+
+    # compile it
+    model = sequential(layers, RMSprop(lr=1e-4), loss='poisson')
+
+    # create a monitor
+    monitor = KerasMonitor('ln_cutout', model, data, readme, save_every=20)
+
+    # train
+    train(model, data, monitor, num_epochs=25)
+
+    return model
+
+
+@main_wrapper
+def fit_ln(cells, train_stimuli, exptdate, l2=1e-3, readme=None):
     """Fits an LN model using keras"""
     stim_shape = (40, 50, 50)
     ncells = len(cells)
     batchsize = 5000
 
     # get the layers
-    layers = ln(stim_shape, ncells, weight_init='normal', l2_reg=1.0)
+    layers = ln(stim_shape, ncells, weight_init='normal', l2_reg=l2)
 
     # compile it
-    model = sequential(layers, RMSprop(lr=1e-4), loss='sub_poisson_loss')
+    model = sequential(layers, RMSprop(lr=1e-4), loss='poisson')
 
     # load the STAs
-    stas = []
-    h5file = _loadexpt_h5(exptdate, train_stimuli[0])
-    for ci in cells:
-        key = 'cell{:02}'.format(ci + 1)
-        stas.append(np.array(h5file['stas'][key]).ravel())
+    # stas = []
+    # h5file = _loadexpt_h5(exptdate, train_stimuli[0])
+    # for ci in cells:
+    #     key = 'cell{:02}'.format(ci + 1)
+    #     stas.append(np.array(h5file['stas'][key]).ravel())
 
     # specify the initial weights using the STAs
-    W = np.vstack(stas).T
-    b = np.zeros(W.shape[1])
-    model.layers[1].set_weights([W, b])
+    # W = np.vstack(stas).T
+    # b = np.zeros(W.shape[1])
+    # model.layers[1].set_weights([W, b])
 
     # load experiment data
     test_stimuli = ['whitenoise', 'naturalscene']
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=6000)
 
     # create a monitor
     monitor = KerasMonitor('ln', model, data, readme, save_every=20)
 
     # train
-    train(model, data, monitor, num_epochs=50)
+    train(model, data, monitor, num_epochs=30)
 
     return model
 
@@ -131,6 +170,18 @@ if __name__ == '__main__':
     # ========
     # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=6000)
 
+    # LN
+    # cells = range(1, 5)
+    stimtypes = ('whitenoise', 'naturalscene')
+    # filtersizes = [1, 3, 5, 9, 11, 13, 15]
+    # for ci, stimtype, fs in product(cells, stimtypes, filtersizes):
+        # fit_cutout(ci, [stimtype], '15-10-07', filtersize=fs, l2=1e-3, description='LN cutout 15-10-07, {}, cell {}, filtersize={}'.format(stimtype, ci, fs))
+    # fit_cutout(0, ['whitenoise'], '15-10-07', filtersize=13, l2=1e-3, description='LN cutout 15-10-07, whitenoise, cell 0, filtersize=13')
+    # for fs in filtersizes:
+        # fit_cutout(0, ['naturalscene'], '15-10-07', filtersize=13, l2=1e-3, description='LN cutout 15-10-07, naturalscene, cell 0, filtersize={}'.format(fs))
+    for st in stimtypes:
+        fit_ln([0, 1, 2, 3, 4], [st], '15-10-07', l2=1e-3, description='LN on {}, 15-10-07'.format(st))
+
     # =========
     # 15-11-21a
     # =========
@@ -146,11 +197,11 @@ if __name__ == '__main__':
     # ========
     # 16-01-07
     # ========
-    gc_160107 = [0, 2, 7, 10, 11, 12, 31]
-    mdl = fit_convnet(gc_160107, ['naturalscene'], '16-01-07', nclip=6000, description='16-10-07 naturalscene model (goodcells)')
+    # gc_160107 = [0, 2, 7, 10, 11, 12, 31]
+    # mdl = fit_convnet(gc_160107, ['naturalscene'], '16-01-07', nclip=6000, description='16-10-07 naturalscene model (goodcells)')
 
     # ========
     # 16-01-08
     # ========
-    gc_160108 = [0, 3, 7, 9, 11]
-    mdl = fit_convnet(gc_160108, ['naturalscene'], '16-01-08', nclip=6000, description='16-10-08 naturalscene model (goodcells)')
+    # gc_160108 = [0, 3, 7, 9, 11]
+    # mdl = fit_convnet(gc_160108, ['naturalscene'], '16-01-08', nclip=6000, description='16-10-08 naturalscene model (goodcells)')

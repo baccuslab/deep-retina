@@ -326,7 +326,7 @@ def plot_rates(iteration, dt, **rates):
     for ax, key in zip(axs, sorted(rates.keys())):
         t = dt * np.arange(rates[key][0].size)
         ax.plot(t[inds], rates[key][0][inds], '-', color='powderblue', label='Data')
-        ax.fill_between(t[inds], 0, rates[key][0][inds], facecolor='powderblue', alpha=0.8)
+        ax.fill_between(t[inds], 0, rates[key][0][inds].ravel(), facecolor='powderblue', alpha=0.8)
         ax.plot(t[inds], rates[key][1][inds], '-', color='firebrick', label='Model')
         ax.set_title(str.upper(key) + ' [iter {}]'.format(iteration), fontsize=20)
         ax.set_xlabel('Time (s)', fontsize=16)

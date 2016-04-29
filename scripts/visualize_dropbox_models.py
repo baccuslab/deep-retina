@@ -1,7 +1,6 @@
 import os
 from deepretina.toolbox import scandb
-import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
@@ -41,5 +40,5 @@ def main(database_directory):
                     continue
 
 if __name__ == "__main__":
-    # main('/Volumes/sni/deep-retina/database/')
-    main('/home/nirum/database/')
+    main('/Volumes/sni/deep-retina/database/')
+    # main('/home/nirum/database/')

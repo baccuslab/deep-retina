@@ -419,6 +419,21 @@ def visualize_glm(h5file):
     return [fig1, fig2]
 
 
+def visualize_ln(h5file):
+    """Visualize the parameters of an LN model"""
+
+    # roll the number of cells to be the first dimension
+    W = np.rollaxis(np.array(h5file['layer_1/param_0']), 1)
+
+    # reshape the filters
+    filtersize = np.sqrt(W.shape[1] / 40)
+    filters = np.stack([w.reshape(40, filtersize, filtersize) for w in W])
+
+    # make the plot
+    fig = plot_filters(filters)
+    return [fig]
+
+
 def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
         fig_dir=None, fig_size=(8,10), dpi=300, space=True, time=True, display=True,
         save=False, cmap='seismic', normalize=True):

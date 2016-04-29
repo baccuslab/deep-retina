@@ -78,6 +78,7 @@ class Experiment(object):
         assert holdout >= 0 and holdout < 1, "holdout must be between 0 and 1"
         self.batchsize = batchsize
         self.dt = dt
+        self.holdout = holdout
 
         # partially apply function arguments to the loadexpt function
         load_data = partial(loadexpt, expt, cells, history=history, zscore_flag=zscore_flag)
@@ -174,10 +175,31 @@ class Experiment(object):
                 
     def reroll(self, tau):
         """Applies rolling window to the stimulus for a second time"""
-        for stimset in ('_train_data', '_test_data'):
-            stim = self.__dict__[stimset]
-            for key, ex in stim.items():
-                stim[key] = Exptdata(rolling_window(ex.X, tau), ex.y[tau:, :])
+
+        # reroll training data
+        self._train_batches = list()
+        self._validation_batches = list()
+        for key in self._train_data.keys():
+
+            # modify the stimulus to re-apply rolling window
+            self._train_data[key] = Exptdata(rolling_window(self._train_data[key].X, tau),
+                                             self._train_data[key].y[tau:, :])
+
+            # update the batch indices
+            length = self._train_data[key].X.shape[0]
+            train, val = _train_val_split(length, self.batchsize, self.holdout)
+
+            # append these train/validation batches to the master list
+            self._train_batches.extend(zip(repeat(key), train))
+            self._validation_batches.extend(zip(repeat(key), val))
+
+        # reroll testing data
+        for key in self._test_data.keys():
+            self._test_data[key] = Exptdata(rolling_window(self._test_data[key].X, tau),
+                                            self._test_data[key].y[tau:, :])
+
+        # save batches_per_epoch for calculating # epochs later
+        self.batches_per_epoch = len(self._train_batches)
 
 
 def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=True):

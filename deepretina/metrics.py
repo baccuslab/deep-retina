@@ -18,7 +18,7 @@ def multicell(metric):
     the metric is applied to each item in the list or each matrix row.
     """
     @wraps(metric)
-    def multicell_wrapper(r, rhat):
+    def multicell_wrapper(r, rhat, **kwargs):
 
         # ensure that the arguments have the right shape / dimensions
         for arg in (r, rhat):
@@ -53,16 +53,10 @@ def cc(r, rhat):
 
 
 @multicell
-def lli(r, rhat, meanrate=None):
+def lli(r, rhat):
     """Log-likelihood (arbitrary units)"""
     epsilon = 1e-9
-    loglikelihood = np.mean(r * np.log(rhat + epsilon) - rhat)
-
-    # subtract off the loglikelihood of a mean rate model
-    if meanrate is not None:
-        loglikelihood -= np.mean(r * np.log(meanrate + epsilon) - meanrate)
-
-    return loglikelihood
+    return np.mean(r * np.log(rhat + epsilon) - rhat)
 
 
 @multicell

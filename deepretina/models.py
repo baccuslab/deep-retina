@@ -63,6 +63,7 @@ def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
     layers = list()
     layers.append(Flatten(input_shape=input_shape))
     layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg)))
+    layers.append(BatchNormalization())
     layers.append(ParametricSoftplus())
     return layers
 
@@ -80,7 +81,7 @@ def multiconv(input_shape, nout, convlayers=((8, 15), (16, 7)),
             'subsample': (1, 1),
             'init': 'normal',
             'W_regularizer': l1l2(*w_args),
-            'activity_regularizer': l1l2(*act_args),
+            'activity_regularizer': activity_l1l2(*act_args),
         }
         if len(layers) == 0:
             kwargs['input_shape'] = input_shape

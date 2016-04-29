@@ -204,20 +204,20 @@ if __name__ == '__main__':
     # 15-10-07
     # ========
     # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=6000)
-    mdl = fit_convconv([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', readme=None)
-    mdl = fit_convconv([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', readme=None)
+    # mdl = fit_convconv([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', description='2-layer convnet on whitenoise (similar to 3520cd)')
+    # mdl = fit_convconv([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', description='2-layer convnet on naturalscenes (similar architecture to 3520cd)')
 
     # LN
     # cells = range(1, 5)
-    # stimtypes = ('whitenoise', 'naturalscene')
+    stimtypes = ('whitenoise', 'naturalscene')
     # filtersizes = [1, 3, 5, 9, 11, 13, 15]
     # for ci, stimtype, fs in product(cells, stimtypes, filtersizes):
         # fit_cutout(ci, [stimtype], '15-10-07', filtersize=fs, l2=1e-3, description='LN cutout 15-10-07, {}, cell {}, filtersize={}'.format(stimtype, ci, fs))
     # fit_cutout(0, ['whitenoise'], '15-10-07', filtersize=13, l2=1e-3, description='LN cutout 15-10-07, whitenoise, cell 0, filtersize=13')
     # for fs in filtersizes:
         # fit_cutout(0, ['naturalscene'], '15-10-07', filtersize=13, l2=1e-3, description='LN cutout 15-10-07, naturalscene, cell 0, filtersize={}'.format(fs))
-    # for st in stimtypes:
-        # fit_ln([0, 1, 2, 3, 4], [st], '15-10-07', l2=1e-3, description='LN on {}, 15-10-07'.format(st))
+    for st in stimtypes:
+        fit_ln([0, 1, 2, 3, 4], [st], '15-10-07', l2=1e-3, description='LN on {} with BatchNormalization, 15-10-07'.format(st))
 
     # =========
     # 15-11-21a

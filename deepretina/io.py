@@ -142,7 +142,8 @@ class Monitor:
         iteration : int
             Current iteration of training
         """
-        rhat_train = model_predict(X_train)
+        #rhat_train = model_predict(X_train)
+        rhat_train = model_predict({'stim': X_train}) #only updating this for graph model
 
         # training performance
         avg_train, all_train = allmetrics(r_train, model_predict(X_train), self.metrics)

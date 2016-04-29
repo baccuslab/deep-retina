@@ -30,10 +30,9 @@ def fit_experimentallstm(cells, timesteps, train_stimuli, test_stimuli, exptdate
     # load experiment data
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
 
-    for key in data._train_data.keys():
-        data._train_data[key] = Exp
-    data._train_data
-    data._test_data['whitenoise']
+    data.reroll(timesteps)
+
+    print(data._:wq
 
     # create a monitor to track progress
     monitor = KerasMonitor('experimentallstm', model, data, readme, save_every=10)
@@ -103,4 +102,4 @@ if __name__ == '__main__':
 #    p_arr = [0, 0.25, 0.5, 0.75]
 #    for reg in reg_arr:
 #        for p in p_arr:
-	mdl = fit_experimentallstm([0, 1, 2, 3, 4], ['naturalscene'], ['naturalscene'], '15-10-07')
+	mdl = fit_experimentallstm([0, 1, 2, 3, 4], 100, ['naturalscene'], ['naturalscene'], '15-10-07')

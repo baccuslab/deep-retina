@@ -4,14 +4,14 @@ Construct Keras models
 
 from __future__ import absolute_import, division, print_function
 from keras.models import Sequential, Graph
-from keras.layers.core import Dropout, Dense, Activation, Flatten, TimeDistributedFlatten
+from keras.layers.core import Dropout, Dense, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM, SimpleRNN
 from keras.layers.advanced_activations import PReLU, ParametricSoftplus
 from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise, GaussianDropout
 from keras.regularizers import l1l2, activity_l1l2, l2
-from keras.layers.extra import TimeDistributedConvolution2D, TimeDistributedMaxPooling2D, SubunitSlice
+from keras.layers.extra import TimeDistributedFlatten, TimeDistributedConvolution2D, TimeDistributedMaxPooling2D, SubunitSlice
 from .utils import notify
 
 __all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'experimentallstm', 'generalizedconvnet']
@@ -233,7 +233,7 @@ def experimentallstm(input_shape, nout, num_hidden=50,
 
     #Add an rnn per subunit
     rnn_arr = []
-    for i in xrange(num_filters[0]):
+    for i in range(num_filters[0]):
         graph.add_node(SubunitSlice(i), name='slice'+str(i), input='mp')
         graph.add_node(TimeDistributedFlatten(), name='flatten'+str(i), input='slice'+str(i))
         if lstm_flag:

@@ -11,6 +11,34 @@ from deepretina.io import KerasMonitor, main_wrapper
 
 
 @main_wrapper
+def fit_convnet(cells, train_stimuli, test_stimuli, exptdate, readme=None):
+    """Main script for fitting convnet
+
+    author: Aran Nayebi
+    """
+
+    stim_shape = (40, 50, 50)
+    ncells = len(cells)
+    batchsize = 100 #might want to make this smaller
+
+    # get the layers
+    layers = convnet(stim_shape, ncells)
+
+    # compile the keras model
+    model = sequential(layers, 'adam')
+
+    # load experiment data
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+
+    # create a monitor to track progress
+    monitor = KerasMonitor('convnet', model, data, readme, save_every=10)
+
+    # train
+    train(model, data, monitor, num_epochs=100)
+
+    return model
+
+@main_wrapper
 def fit_experimentallstm(cells, timesteps, train_stimuli, test_stimuli, exptdate, readme=None):
     """Main script for fitting the experimentallstm
 
@@ -19,7 +47,7 @@ def fit_experimentallstm(cells, timesteps, train_stimuli, test_stimuli, exptdate
 
     stim_shape = (timesteps, 40, 50, 50)
     ncells = len(cells)
-    batchsize = 5000 #might want to make this smaller
+    batchsize = 100 #might want to make this smaller
 
     # get the compiled graph model
     model = experimentallstm(stim_shape, ncells)
@@ -32,8 +60,7 @@ def fit_experimentallstm(cells, timesteps, train_stimuli, test_stimuli, exptdate
 
     data.reroll(timesteps)
 
-    print(data._:wq
-
+    print(data._train_data[train_stimuli[0]].X.shape)
     # create a monitor to track progress
     monitor = KerasMonitor('experimentallstm', model, data, readme, save_every=10)
 
@@ -74,7 +101,7 @@ if __name__ == '__main__':
 #	reg = 0.01
 #	p1 = 0.0
 #	p2 = 0.0
-	#mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], ['whitenoise'], '15-10-07', reg, p1, p2,  description='WN convnet, l2_reg={}, dropout1={}, dropout2={}'.format(reg, p1, p2))
+#	mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], ['whitenoise'], '15-10-07', description='WN convnet, l2_reg={}'.format(reg))
 
 #    reg = 0.01
 #    p1 = 0.25
@@ -102,4 +129,4 @@ if __name__ == '__main__':
 #    p_arr = [0, 0.25, 0.5, 0.75]
 #    for reg in reg_arr:
 #        for p in p_arr:
-	mdl = fit_experimentallstm([0, 1, 2, 3, 4], 100, ['naturalscene'], ['naturalscene'], '15-10-07')
+	mdl = fit_experimentallstm([0, 1, 2, 3, 4], 100, ['naturalscene'], ['naturalscene'], '15-10-07', description='Experimental RNN with an RNN per subunit type')

@@ -132,6 +132,7 @@ def fit_convconv(cells, train_stimuli, exptdate, readme=None):
     stim_shape = (40, 50, 50)
     ncells = len(cells)
     batchsize = 5000
+    noise_sigma = 0.1
 
     # specify convolutional layers (nfilters, filtersize)
     # and regularization (l1, l2)
@@ -140,7 +141,7 @@ def fit_convconv(cells, train_stimuli, exptdate, readme=None):
     act_reg = [(0., 0.), (0., 0.)]
 
     # get the convnet layers
-    layers = multiconv(stim_shape, ncells, convlayers, W_reg, act_reg)
+    layers = multiconv(stim_shape, ncells, noise_sigma, convlayers, W_reg, act_reg)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='poisson')

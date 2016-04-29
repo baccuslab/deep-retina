@@ -171,6 +171,13 @@ class Experiment(object):
             stim = self.__dict__[stimset]
             for key, ex in stim.items():
                 stim[key] = Exptdata(ex.X[:, :, xi, yi], ex.y)
+                
+    def reroll(self, tau):
+        """Applies rolling window to the stimulus for a second time"""
+        for stimset in ('_train_data', '_test_data'):
+            stim = self.__dict__[stimset]
+            for key, ex in stim.items():
+                stim[key] = Exptdata(rolling_window(ex.X, tau), ex.y[tau:, :])
 
 
 def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=True):

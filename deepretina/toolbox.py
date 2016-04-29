@@ -137,7 +137,7 @@ def zoo(models, filename='modelzoo-{}.csv'):
         data.extend(map(str, (ix, train, val, wn_test, ns_test)))
         return ','.join(data)
 
-    skiplist = ('11795a', '65a38b', 'e4790c')       # these are the 3_31_2016 datasets
+    skiplist = ('11795a', '65a38b', 'e4790c', '35b009', '3ccf99', '781506', 'd4ef12')
     stop_at = '2fcc94'
 
     subselected = takewhile(lambda m: m.hashkey != stop_at, models)

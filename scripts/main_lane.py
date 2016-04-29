@@ -57,7 +57,7 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
 
     # get the convnet layers
     layers = generalizedconvnet(stim_shape, ncells, 
-            architecture=('conv', 'flatten', 'affine'),
+            architecture=('conv', 'relu', 'flatten', 'affine'),
             num_filters=[8], filter_sizes=[15], weight_init='normal',
             l2_reg=0.02) # dropout=0.25, noise=0.1
 

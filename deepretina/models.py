@@ -3,17 +3,18 @@ Construct Keras models
 """
 
 from __future__ import absolute_import, division, print_function
-from keras.models import Sequential
-from keras.layers.core import Dropout, Dense, Activation, Flatten
+from keras.models import Sequential, Graph
+from keras.layers.core import Dropout, Dense, Activation, Flatten, TimeDistributedFlatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
-from keras.layers.recurrent import LSTM
-from keras.layers.advanced_activations import ParametricSoftplus
+from keras.layers.recurrent import LSTM, SimpleRNN
+from keras.layers.advanced_activations import PReLU, ParametricSoftplus
 from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise, GaussianDropout
 from keras.regularizers import l1l2, activity_l1l2, l2
+from keras.layers.extra import TimeDistributedConvolution2D, TimeDistributedMaxPooling2D, SubunitSlice
 from .utils import notify
 
-__all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet']
+__all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'experimentallstm', 'generalizedconvnet']
 
 
 def sequential(layers, optimizer, loss='poisson_loss'):
@@ -41,7 +42,6 @@ def sequential(layers, optimizer, loss='poisson_loss'):
     with notify('Compiling'):
         model.compile(loss=loss, optimizer=optimizer)
     return model
-
 
 def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
     """A linear-nonlinear stack of layers
@@ -190,6 +190,75 @@ def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='he_normal', l2_re
 
     return layers
 
+def experimentallstm(input_shape, nout, num_hidden=50,
+            num_filters=(8, 16), filter_size=(13, 13),
+            optimizer='adam', loss='poisson_loss', lstm_flag=False, weight_init='normal', reg=0.01):
+    """Experimental Convolutional-LSTM neural network
+
+    Parameters
+    ----------
+    input_shape : tuple
+        The shape of the stimulus (e.g. (time, 40,50,50))
+
+    nout : int
+        Number of output cells
+
+    num_filters : tuple, optional
+        Number of filters in each layer. Default: (8, 16)
+
+    filter_size : tuple, optional
+        Convolutional filter size. Default: (13, 13)
+
+    weight_init : string, optional
+        Keras weight initialization (default: 'normal')
+
+    reg: Just does l2 reg, can make this choice fancier and more modular later on
+    """
+
+    graph = Graph()
+
+    # first define input
+    graph.add_input(name='stim', input_shape=input_shape)
+
+    #first convolutional layer
+    graph.add_node(TimeDistributedConvolution2D(num_filters[0], filter_size[0], filter_size[1],
+                                init=weight_init,
+                                border_mode='valid', subsample=(1, 1), W_regularizer=l2(reg)), name='conv0', input='stim')
+
+    # Add relu activation
+    graph.add_node(Activation('relu'), name='r0', input='conv0')
+
+    # max pooling layer
+    graph.add_node(TimeDistributedMaxPooling2D(pool_size=(2, 2)), name='mp', input='r0')
+
+    #Add an rnn per subunit
+    rnn_arr = []
+    for i in xrange(num_filters[0]):
+        graph.add_node(SubunitSlice(i), name='slice'+str(i), input='mp')
+        graph.add_node(TimeDistributedFlatten(), name='flatten'+str(i), input='slice'+str(i))
+        if lstm_flag:
+           graph.add_node(LSTM(num_hidden, return_sequences=False), name='rnn'+str(i), input='flatten'+str(i))
+        else:
+           graph.add_node(SimpleRNN(num_hidden, return_sequences=False), name='rnn'+str(i), input='flatten'+str(i))
+        rnn_arr.append('rnn'+str(i))
+
+    # Add first dense layer after concatenating RNN outputs
+    graph.add_node(Dense(num_filters[1], init=weight_init, W_regularizer=l2(reg)), name='dense0', inputs=rnn_arr, merge_mode='concat')
+
+    # Add relu activation
+    graph.add_node(Activation('relu'), name='r1', input='dense0')
+    
+    # Add a final dense (affine) layer
+    graph.add_node(Dense(nout, init=weight_init, W_regularizer=l2(reg)), name='dense1', input='r1')
+    
+    # Finish it off with a parametrized softplus
+    graph.add_node(ParametricSoftplus(), name='softplus', input='dense1')
+    
+    graph.add_output(name='loss', input='softplus')
+
+    with notify('Compiling'):
+        graph.compile(optimizer, {'loss': loss})
+    return graph
 
 def generalizedconvnet(input_shape, nout,
                        architecture=('conv', 'relu', 'pool', 'flatten', 'affine', 'relu', 'affine'),

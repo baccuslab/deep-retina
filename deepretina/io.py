@@ -9,7 +9,7 @@ from collections import namedtuple
 from itertools import product
 from functools import wraps
 from .utils import notify, allmetrics
-from keras.utils import visualize_util
+#from keras.utils import visualize_util
 from warnings import warn
 from cycler import cycler
 import numpy as np
@@ -298,10 +298,10 @@ class KerasMonitor(Monitor):
         self.model = model
 
         # writes Keras architecture files to disk
-        self._save_text('architecture.json', self.model.to_json())
-        self._save_text('architecture.yaml', self.model.to_yaml())
-        visualize_util.plot(self.model, to_file=self._dbpath('architecture.png'))
-        self._copy_to_dropbox('architecture.png')
+        #self._save_text('architecture.json', self.model.to_json())
+        #self._save_text('architecture.yaml', self.model.to_yaml())
+        #visualize_util.plot(self.model, to_file=self._dbpath('architecture.png'))
+        #self._copy_to_dropbox('architecture.png')
 
     def save(self, epoch, iteration, X_train, r_train, model_predict):
         """updated iteration"""

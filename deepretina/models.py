@@ -68,7 +68,7 @@ def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
     return layers
 
 
-def multiconv(input_shape, nout, convlayers=((8, 15), (16, 7)),
+def multiconv(input_shape, nout, sigma_noise=0.1, convlayers=((8, 15), (16, 7)),
               W_reg=((0., 0.), (0., 0.)), act_reg=((0., 0.), (0., 0.))):
     """N convolutional layers followed by a final affine layer"""
     layers = list()
@@ -88,6 +88,9 @@ def multiconv(input_shape, nout, convlayers=((8, 15), (16, 7)),
 
         # add convolutional layer
         layers.append(Convolution2D(*args, **kwargs))
+
+        # add gaussian noise
+        layers.append(GaussianNoise(sigma_noise))
 
         # add ReLu
         layers.append(Activation('relu'))

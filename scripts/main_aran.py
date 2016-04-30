@@ -58,12 +58,12 @@ def fit_experimentallstm(cells, timesteps, train_stimuli, test_stimuli, exptdate
     # load experiment data
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[1], batchsize)
 
-    print(data._train_data[train_stimuli[0]].X.shape)
+   # print(data._train_data[train_stimuli[0]].X.shape)
 
     data.reroll(timesteps)
 
 
-    print(data._train_data[train_stimuli[0]].X.shape)
+    #print(data._train_data[train_stimuli[0]].X.shape)
     # create a monitor to track progress
     monitor = KerasMonitor('experimentallstm', model, data, readme, save_every=10)
 

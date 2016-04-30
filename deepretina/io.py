@@ -143,9 +143,9 @@ class Monitor:
             Current iteration of training
         """
         #rhat_train = model_predict(X_train)
-        print(X_train.shape)
+        #print(X_train.shape)
         rhat_train = model_predict({'stim': X_train}) #only updating this for graph model
-        print(rhat_train['loss'].shape)
+        #print(rhat_train['loss'].shape)
 
         # training performance
         avg_train, all_train = allmetrics(r_train, model_predict({'stim': X_train}), self.metrics)
@@ -175,8 +175,8 @@ class Monitor:
             # for one cell
             filename = 'cell{}'.format(cells)
             plot_rates(iteration, self.experiment.dt,
-                       train=(r_train, rhat_train),
-                       validation=(r_val, rhat_val))
+                       train=(r_train, rhat_train['loss']),
+                       validation=(r_val, rhat_val['loss']))
             self._save_figure(filename)
 
         else:
@@ -184,8 +184,8 @@ class Monitor:
             for ix, cell in enumerate(cells):
                 filename = 'cell{}'.format(cell)
                 plot_rates(iteration, self.experiment.dt,
-                           train=(r_train[:, ix], rhat_train[:, ix]),
-                           validation=(r_val[:, ix], rhat_val[:, ix]))
+                           train=(r_train[:, ix], rhat_train['loss'][:, ix]),
+                           validation=(r_val[:, ix], rhat_val['loss'][:, ix]))
                 self._save_figure(filename)
 
         # plot the performance curves

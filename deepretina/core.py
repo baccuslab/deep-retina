@@ -60,7 +60,7 @@ def train(model, data, monitor, num_epochs, reduce_lr_every=-1, reduce_rate=1.0)
 
                 # train on the batch
                 tstart = time()
-                loss = model.train_on_batch(X, y)[0]
+                loss = model.train_on_batch({'stim':X, 'loss':y})[0]
                 elapsed_time = time() - tstart
 
                 # update

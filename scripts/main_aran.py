@@ -56,9 +56,12 @@ def fit_experimentallstm(cells, timesteps, train_stimuli, test_stimuli, exptdate
 #    model = sequential(layers, 'adam')
 
     # load experiment data
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[1], batchsize)
+
+    print(data._train_data[train_stimuli[0]].X.shape)
 
     data.reroll(timesteps)
+
 
     print(data._train_data[train_stimuli[0]].X.shape)
     # create a monitor to track progress

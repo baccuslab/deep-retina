@@ -140,7 +140,7 @@ class Experiment(object):
         r = self._train_data[expt].y[inds]
 
         # make predictions
-        rhat = modelrate(X)
+        rhat = modelrate({'stim':X})
 
         # evaluate using the given metrics
         return allmetrics(r, rhat, metrics), r, rhat
@@ -159,7 +159,7 @@ class Experiment(object):
 
             # get data and model firing rates
             r = exptdata.y
-            rhat = modelrate(exptdata.X)
+            rhat = modelrate({'stim':exptdata.X})
 
             # evaluate
             avg_scores[fname], all_scores[fname] = allmetrics(r, rhat, metrics)

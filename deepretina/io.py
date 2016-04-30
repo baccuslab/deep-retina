@@ -145,10 +145,10 @@ class Monitor:
         #rhat_train = model_predict(X_train)
         print(X_train.shape)
         rhat_train = model_predict({'stim': X_train}) #only updating this for graph model
-        print(rhat_train.shape)
+        print(rhat_train['loss'].shape)
 
         # training performance
-        avg_train, all_train = allmetrics(r_train, model_predict(X_train), self.metrics)
+        avg_train, all_train = allmetrics(r_train, model_predict({'stim': X_train}), self.metrics)
         data_row = [epoch, iteration] + [avg_train[metric] for metric in self.metrics]
         self._append_csv('train.csv', data_row)
 

@@ -221,9 +221,7 @@ def experimentallstm(input_shape, nout, num_hidden=50,
     graph.add_input(name='stim', input_shape=input_shape)
 
     #first convolutional layer
-    graph.add_node(TimeDistributedConvolution2D(num_filters[0], filter_size[0], filter_size[1],
-                                init=weight_init,
-                                border_mode='valid', subsample=(1, 1), W_regularizer=l2(reg)), name='conv0', input='stim')
+    graph.add_node(TimeDistributedConvolution2D(num_filters[0], filter_size[0], filter_size[1], init=weight_init, border_mode='valid', subsample=(1, 1), W_regularizer=l2(reg)), name='conv0', input='stim')
 
     # Add relu activation
     graph.add_node(Activation('relu'), name='r0', input='conv0')

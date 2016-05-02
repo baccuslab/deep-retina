@@ -23,7 +23,7 @@ def retrain(model_hash, cells, train_stimuli, test_stimuli, exptdate, readme=Non
     author: Lane McIntosh
     """
 
-    stim_shape = (40, 50, 50)
+    stim_shape = (30, 50, 50)
     ncells = len(cells)
     batchsize = 5000
 
@@ -55,4 +55,5 @@ if __name__ == '__main__':
     gc_all_cells = list(range(37))
     #mdl = retrain('3dd884 convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=5000)
     #mdl = retrain('f6e22a convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=5000)
-    mdl = retrain('3520cd convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', weight_name='centered_random_weights.h5', nclip=5000)
+    #mdl = retrain('3520cd convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', weight_name='centered_random_weights.h5', nclip=5000)
+    mdl = retrain('0cfc2a convnet', gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', weight_name='centered_weights.h5', nclip=6000)

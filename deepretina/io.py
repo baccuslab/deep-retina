@@ -37,13 +37,16 @@ directories = {
 
 
 class Monitor:
-    def __init__(self, name, experiment, readme, save_every):
+    def __init__(self, name, model, experiment, readme, save_every):
         """Monitor base class
 
         Parameters
         ----------
         name : str
             A short string describing this model
+
+        model : object
+            A Keras or GLM model object
 
         experiment : experiments.Experiment
             A pointer to an Experiment class used to grab test data
@@ -55,6 +58,7 @@ class Monitor:
             Parameters are saved only every save_every iterations
         """
         self.name = name
+        self.model = model
         self.experiment = experiment
         self.save_every = save_every
         self.metrics = ('cc', 'lli', 'rmse', 'fev')
@@ -118,7 +122,7 @@ class Monitor:
 
     def _update_best(self, epoch, iteration):
         """Called when there is a new best iteration"""
-        pass
+        self.model.save_weights(self._dbpath('best_weights.h5'), overwrite=True)
 
     def cleanup(self, iteration, elapsed_time):
         """Called when the model has finished training"""
@@ -191,6 +195,10 @@ class Monitor:
             with h5py.File(self._dbpath('results.h5'), 'r') as f:
                 plot_performance(self.metrics, f, self.experiment.batches_per_epoch, plottype=plottype)
             self._save_figure(filename, dpi=100)
+
+        # save the weights
+        filename = 'epoch{:03d}_iter{:05d}_weights.h5'.format(epoch, iteration)
+        self.model.save_weights(self._dbpath(filename))
 
     def _dbpath(self, filename):
         """Generates a full path to save the given file in the database directory"""
@@ -272,7 +280,7 @@ class Monitor:
 
 
 class KerasMonitor(Monitor):
-    def __init__(self, name, model, experiment, readme, save_every):
+    def __init__(self, *args, **kwargs):
         """Builds a Monitor object to keep track of train/test performance
 
         Parameters
@@ -292,69 +300,13 @@ class KerasMonitor(Monitor):
         save_every : int
             how often to save (in terms of the number of batches)
         """
-        super().__init__(name, experiment, readme, save_every)
-
-        # pointer to Keras model
-        self.model = model
+        super().__init__(*args, **kwargs)
 
         # writes Keras architecture files to disk
         self._save_text('architecture.json', self.model.to_json())
         self._save_text('architecture.yaml', self.model.to_yaml())
         visualize_util.plot(self.model, to_file=self._dbpath('architecture.png'))
         self._copy_to_dropbox('architecture.png')
-
-    def save(self, epoch, iteration, X_train, r_train, model_predict):
-        """updated iteration"""
-        super().save(epoch, iteration, X_train, r_train, model_predict)
-
-        # save the weights
-        filename = 'epoch{:03d}_iter{:05d}_weights.h5'.format(epoch, iteration)
-        self.model.save_weights(self._dbpath(filename))
-
-    def _update_best(self, epoch, iteration):
-        """Runs whenever there is a new 'best' iteration"""
-        # save best weights
-        self.model.save_weights(self._dbpath('best_weights.h5'), overwrite=True)
-
-
-class GLMMonitor(Monitor):
-    def __init__(self, name, model, experiment, readme, save_every):
-        """Builds a Monitor object to keep track of train/test performance
-
-        Parameters
-        ----------
-        name : string
-            a name for this model
-
-        model : a GLM object
-            reference to the GLM object
-
-        experiment : Experiment
-            a collection of experimental data (see experiments.py)
-
-        readme : string
-            a markdown formatted string to save as the README
-
-        save_every : int
-            how often to save (in terms of the number of batches)
-        """
-        super().__init__(name, experiment, readme, save_every)
-
-        # pointer to the model
-        self.model = model
-
-    def save(self, epoch, iteration, X_train, r_train, model_predict):
-        """updated iteration"""
-        super().save(epoch, iteration, X_train, r_train, model_predict)
-
-        # save the weights
-        filename = 'epoch{:03d}_iter{:05d}_weights.h5'.format(epoch, iteration)
-        self.model.save_weights(self._dbpath(filename))
-
-    def _update_best(self, epoch, iteration):
-        """Runs whenever there is a new 'best' iteration"""
-        # save best weights
-        self.model.save_weights(self._dbpath('best_weights.h5'), overwrite=True)
 
 
 def plot_rates(iteration, dt, **rates):
@@ -374,7 +326,7 @@ def plot_rates(iteration, dt, **rates):
     for ax, key in zip(axs, sorted(rates.keys())):
         t = dt * np.arange(rates[key][0].size)
         ax.plot(t[inds], rates[key][0][inds], '-', color='powderblue', label='Data')
-        ax.fill_between(t[inds], 0, rates[key][0][inds], facecolor='powderblue', alpha=0.8)
+        ax.fill_between(t[inds], 0, rates[key][0][inds].ravel(), facecolor='powderblue', alpha=0.8)
         ax.plot(t[inds], rates[key][1][inds], '-', color='firebrick', label='Model')
         ax.set_title(str.upper(key) + ' [iter {}]'.format(iteration), fontsize=20)
         ax.set_xlabel('Time (s)', fontsize=16)

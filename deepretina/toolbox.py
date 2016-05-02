@@ -15,7 +15,7 @@ from keras.models import model_from_json, model_from_config
 from .experiments import loadexpt, rolling_window
 from .models import sequential
 from . import metrics
-from .visualizations import visualize_convnet, visualize_glm
+from .visualizations import visualize_convnet, visualize_glm, visualize_ln
 import pandas as pd
 import json
 from tqdm import tqdm
@@ -38,6 +38,11 @@ def scandb(directory):
             models.append(Model(directory, folder))
 
     return sorted(models, key=attrgetter('timestamp'), reverse=True)
+
+
+def select(models, keys):
+    """Selects the models with the given keys from the list of models"""
+    return filter(lambda mdl: mdl.hashkey in keys, models)
 
 
 def matcher(desc, key):
@@ -243,11 +248,14 @@ class Model:
         """Plots the parameters of this model"""
         weights = self.weights(filename)
 
-        if self.modeltype == 'convnet':
+        if self.modeltype in ('convnet', 'multilayered_convnet'):
             figures = visualize_convnet(weights, self.architecture['layers'])
 
         elif self.modeltype.lower() == 'glm':
             figures = visualize_glm(weights)
+
+        elif self.modeltype.lower() in ('ln_cutout', 'ln'):
+            figures = visualize_ln(weights)
 
         else:
             raise ValueError("I don't know how to plot a model of type '{}'".format(self.modeltype))
@@ -288,7 +296,7 @@ def modify_model(model_path, weight_filename, changed_params):
     INPUT:
         model_path		the full path to the saved weight and architecture files, ending in '/'
         weight_filename	an h5 file with the weights
-        changed_params  dictionary of new parameters. 
+        changed_params  dictionary of new parameters.
                         e.g. {'loss': 'poisson', 'lr': 0.1, 'dropout': 0.25, 'name': 'Adam',
                         'layers': [{'layer_id': 0, 'trainable': false}]}
         OUTPUT:

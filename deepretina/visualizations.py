@@ -13,6 +13,34 @@ from matplotlib import animation, gridspec
 from scipy.interpolate import interp1d
 
 
+def roc_curve(fpr, tpr, name='', auc=None, fmt='-', color='navy', ax=None):
+    """Plots an ROC curve"""
+    labelstr = '{} (AUC={:0.3f})'.format(name, auc) if auc is not None else name
+
+    if ax is None:
+        fig = plt.figure(figsize=(8, 8))
+        ax = fig.add_subplot(111)
+        ax.plot([0., 1.], [0., 1.], '--', color='lightgrey', lw=4)
+
+    if fmt == '-':
+        x = np.linspace(0, 1, 1e3)
+        f = interp1d(fpr, tpr, kind='nearest', fill_value='extrapolate')
+        ax.plot(x, f(x), '-', color=color, label=labelstr)
+
+    elif fmt == '.':
+        ax.plot(fpr, tpr, '.', color=color, label=labelstr)
+
+    plt.legend(loc=4, fancybox=True, frameon=True)
+    ax.set_xlabel('False positive rate', fontsize=20)
+    ax.set_xlim(-0.05, 1.05)
+    ax.set_ylabel('True positive rate', fontsize=20)
+    ax.set_ylim(-0.05, 1.05)
+    ax.set_aspect('equal')
+    adjust_spines(ax)
+
+    return ax
+
+
 def gif(filename, array, fps=10, scale=1.0):
     """Creates a gif given a stack of images using moviepy
 
@@ -45,9 +73,9 @@ def gif(filename, array, fps=10, scale=1.0):
     fname, _ = os.path.splitext(filename)
     filename = fname + '.gif'
 
-    # copy into the color dimension if the images are black and white
+    # broadcast along the color dimension if the images are black and white
     if array.ndim == 3:
-        array = array.reshape(*array.shape, 1) * np.ones((1, 1, 1, 3))
+        array = array[..., np.newaxis] * np.ones(3)
 
     # make the moviepy clip
     clip = ImageSequenceClip(list(array), fps=fps).resize(scale)
@@ -55,7 +83,7 @@ def gif(filename, array, fps=10, scale=1.0):
     return clip
 
 
-def response1D(x, r, dt=0.01, us_factor=50, figsize=(16, 10)):
+def response1D(x, r, dt=0.01, us_factor=50, figsize=(16, 10), name='Cell'):
     """Plots a response given a 1D (temporal) representation of the stimulus
 
     Parameters
@@ -77,34 +105,48 @@ def response1D(x, r, dt=0.01, us_factor=50, figsize=(16, 10)):
     """
     assert x.size == r.shape[0], "Dimensions do not agree"
     time = np.arange(x.size) * dt
-    fig = plt.figure(figsize=figsize)
-
     nrows = 8
     nspan = 6
-    ax0 = plt.subplot2grid((nrows, 1), (0, 0))
-    ax1 = plt.subplot2grid((nrows, 1), (nrows - nspan, 0), rowspan=nspan)
 
     # upsample the stimulus
     time_us = np.linspace(0, time[-1], us_factor * time.size)
     x = interp1d(time, x, kind='nearest')(time_us)
-
-    # 1D stimulus trace
     maxval = abs(x).max()
-    ax0.fill_between(time_us, np.zeros_like(x), x, color='lightgrey', interpolate=True)
-    ax0.plot(time_us, x, '-', color='gray')
-    ax0.set_xlim(0, time_us[-1] + dt)
-    ax0.set_yticks([-maxval, maxval])
-    ax0.set_yticklabels([-maxval, maxval], fontsize=22)
-    adjust_spines(ax0, spines=('left'))
+    maxrate = r.max()
 
-    # neural responses
-    ax1.plot(time, r.mean(axis=1), '-', color='firebrick')
-    ax1.set_xlim(0, time[-1] + dt)
-    ax1.set_ylabel('Firing rate (Hz)')
-    ax1.set_xlabel('Time (s)')
-    adjust_spines(ax1)
+    # helper function
+    def mkplot(rate, title=''):
+        fig = plt.figure(figsize=figsize)
+        ax0 = plt.subplot2grid((nrows, 1), (0, 0))
+        ax1 = plt.subplot2grid((nrows, 1), (nrows - nspan, 0), rowspan=nspan)
 
-    return fig, (ax0, ax1)
+        # 1D stimulus trace
+        ax0.fill_between(time_us, np.zeros_like(x), x, color='lightgrey', interpolate=True)
+        ax0.plot(time_us, x, '-', color='gray')
+        ax0.set_xlim(0, time_us[-1] + dt)
+        ax0.set_yticks([-maxval, maxval])
+        ax0.set_yticklabels([-maxval, maxval], fontsize=22)
+        ax0.set_title(title)
+        adjust_spines(ax0, spines=('left'))
+
+        # neural responses
+        ax1.plot(time, rate, '-', color='firebrick')
+        ax1.set_xlim(0, time[-1] + dt)
+        ax1.set_ylim(0, maxrate)
+        ax1.set_ylabel('Firing rate (Hz)')
+        ax1.set_xlabel('Time (s)')
+        adjust_spines(ax1)
+
+        return fig
+
+    figures = list()
+    figures.append(mkplot(r.mean(axis=1), title='{} population response'.format(name)))
+
+    # loop over cells
+    for ci in range(r.shape[1]):
+        figures.append(mkplot(r[:, ci], title='{} {}'.format(name, ci + 1)))
+
+    return figures
 
 
 def plot_traces_grid(weights, tax=None, color='k', lw=3):
@@ -375,6 +417,21 @@ def visualize_glm(h5file):
     fig2 = plot_traces_grid(np.rollaxis(history, 0, 3))
 
     return [fig1, fig2]
+
+
+def visualize_ln(h5file):
+    """Visualize the parameters of an LN model"""
+
+    # roll the number of cells to be the first dimension
+    W = np.rollaxis(np.array(h5file['layer_1/param_0']), 1)
+
+    # reshape the filters
+    filtersize = np.sqrt(W.shape[1] / 40)
+    filters = np.stack([w.reshape(40, filtersize, filtersize) for w in W])
+
+    # make the plot
+    fig = plot_filters(filters)
+    return [fig]
 
 
 def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',

@@ -140,3 +140,10 @@ def tuplify(x, n):
     if isinstance(x, Number):
         x = tuple(repeat(x, n))
     return x
+
+
+def cutout_indices(center, size=7, ndim=50):
+    """Cuts out a region with the given size around a point"""
+    xinds = slice(center[0] - size, center[0] + size)
+    yinds = slice(center[1] - size, center[1] + size)
+    return xinds, yinds

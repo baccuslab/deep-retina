@@ -11,15 +11,23 @@ import numpy as np
 import h5py
 from scipy.stats import zscore
 from .utils import notify, allmetrics
+NUM_BLOCKS = {
+    '15-10-07': 6,
+    '15-11-21a': 6,
+    '15-11-21b': 6,
+    '16-01-07': 3,
+    '16-01-08': 3,
+}
 
 Exptdata = namedtuple('Exptdata', ['X', 'y'])
+dt = 1e-2
 __all__ = ['Experiment', 'loadexpt']
 
 
 class Experiment(object):
-    """Lightweight class to keep track of loaded experiment data"""
+    """Class to keep track of loaded experiment data"""
 
-    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, nskip=0, dt=1e-2, load_fraction=1.0, zscore_flag=True):
+    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, nskip=6000, zscore_flag=True):
         """Keeps track of experimental data
 
         Parameters
@@ -52,15 +60,8 @@ class Experiment(object):
             Used to remove times when the retina is rapidly adapting to the change in stimulus
             statistics. (Default: 0)
 
-        dt : float
-            The sampling period (in seconds). (default: 0.01)
-
-        load_fraction : float
-            What fraction of the training stimulus to load (default: 1.0)
-
         zscore_flag : bool
             Whether stimulus should be zscored (default: True)
-
         """
 
         # store experiment variables (for saving later)
@@ -71,7 +72,6 @@ class Experiment(object):
             'test_datasets': ' + '.join(test_filenames),
             'history': history,
             'batchsize': batchsize,
-            'load_fraction': load_fraction,
             'clipped': nskip * dt,
         }
 
@@ -80,7 +80,7 @@ class Experiment(object):
         self.dt = dt
 
         # partially apply function arguments to the loadexpt function
-        load_data = partial(loadexpt, expt, cells, history=history, load_fraction=load_fraction, zscore_flag=zscore_flag)
+        load_data = partial(loadexpt, expt, cells, history=history, zscore_flag=zscore_flag)
 
         # load training data, and generate the train/validation split, for each filename
         self._train_data = {}
@@ -100,7 +100,7 @@ class Experiment(object):
             self._validation_batches.extend(zip(repeat(filename), val))
 
         # load the data for each experiment, store as a list of Exptdata tuple
-        self._test_data = {filename: load_data(filename, 'test') for filename in test_filenames}
+        self._test_data = {filename: load_data(filename, 'test', nskip=0) for filename in test_filenames}
 
         # save batches_per_epoch for calculating # epochs later
         self.batches_per_epoch = len(self._train_batches)
@@ -165,14 +165,22 @@ class Experiment(object):
 
         return avg_scores, all_scores
 
-    @property
-    def ndim(self):
-        """Returns the number of filter dimensions"""
-        key, _ = self._train_batches[0]
-        return self._train_data['whitenoise'].X.shape[1:]
+    def cutout(self, xi, yi):
+        """Cuts out the given slice from the stimuli in this experiment"""
+        for stimset in ('_train_data', '_test_data'):
+            stim = self.__dict__[stimset]
+            for key, ex in stim.items():
+                stim[key] = Exptdata(ex.X[:, :, xi, yi], ex.y)
+                
+    def reroll(self, tau):
+        """Applies rolling window to the stimulus for a second time"""
+        for stimset in ('_train_data', '_test_data'):
+            stim = self.__dict__[stimset]
+            for key, ex in stim.items():
+                stim[key] = Exptdata(rolling_window(ex.X, tau), ex.y[tau:, :])
 
 
-def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0, nskip=0, zscore_flag=True):
+def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=True):
     """Loads an experiment from an h5 file on disk
 
     Parameters
@@ -192,59 +200,39 @@ def loadexpt(expt, cells, filename, train_or_test, history, load_fraction=1.0, n
     history : int
         Number of samples of history to include in the toeplitz stimulus
 
-    load_fraction : float, optional
-        Fraction of the expt to load, must be between 0 and 1 (Default: 1.0)
-
     nskip : float, optional
         Number of samples to skip at the beginning of each repeat (Default: 0)
 
     zscore_flag : bool
         Whether to zscore the stimulus (Default: True)
-
     """
-
-    assert load_fraction > 0 and load_fraction <= 1, "Fraction of data to load must be between 0 and 1"
-    assert history > 0 and type(history) is int, "Temporal history parameter must be a positive integer"
-    assert train_or_test in ('train', 'test'), "The train_or_test parameter must be 'train' or 'test'"
+    assert history > 0 and type(history) is int, "Temporal history must be a positive integer"
+    assert train_or_test in ('train', 'test'), "train_or_test must be 'train' or 'test'"
 
     with notify('Loading {}ing data for {}/{}'.format(train_or_test, expt, filename)):
 
         # load the hdf5 file
         filepath = os.path.join(os.path.expanduser('~/experiments/data'), expt, filename + '.h5')
-
         with h5py.File(filepath, mode='r') as f:
 
-            # get the length of the experiment
             expt_length = f[train_or_test]['time'].size
 
-            # hard coded number of repeats
-            if train_or_test is 'train':
-                num_repeats = 6
-            else:
-                num_repeats = 1
+            # load the stimulus into memory as a numpy array
+            stim = np.array(f[train_or_test]['stimulus']).astype('float32')
 
-            if nskip > 0:
-                # clip the front of each repeat by nskip samples (d
-                clipped_indices = np.arange(expt_length).reshape(num_repeats, -1)[:, nskip:].ravel()
-
-                # sub select the indices based on the given load_fraction
-                num_samples = int(np.floor(clipped_indices.size * load_fraction))
-                indices = clipped_indices[:num_samples]
-            else:
-                num_samples = int(np.floor(expt_length * load_fraction))
-                indices = np.arange(expt_length)[:num_samples]
-
+            # z-score the stimulus if desired
             if zscore_flag:
-                # load the stimulus as a float32 array, and z-score it
-                stim = zscore(np.array(f[train_or_test]['stimulus']).astype('float32'))[indices]
-            else:
-                stim = np.array(f[train_or_test]['stimulus']).astype('float32')[indices]
+                stim = zscore(stim)
+
+            # apply clipping to remove the stimulus just after transitions
+            num_blocks = NUM_BLOCKS[expt] if train_or_test == 'train' else 1
+            valid_indices = np.arange(expt_length).reshape(num_blocks, -1)[:, nskip:].ravel()
 
             # reshape into the Toeplitz matrix (nsamples, history, *stim_dims)
-            stim_reshaped = rolling_window(stim, history, time_axis=0)
+            stim_reshaped = rolling_window(stim[valid_indices], history, time_axis=0)
 
             # get the response for this cell (nsamples, ncells)
-            resp = np.array(f[train_or_test]['response/firing_rate_10ms'][cells]).T[indices]
+            resp = np.array(f[train_or_test]['response/firing_rate_10ms'][cells]).T[valid_indices]
             resp = resp[history:]
 
     return Exptdata(stim_reshaped, resp)
@@ -309,12 +297,16 @@ def deprecated_loadexpt(cellidx, filename, method, history, fraction=1., cutout=
 
 def _loadexpt_h5(expt, filename):
     """Loads an h5py reference to an experiment on disk"""
-
     filepath = os.path.join(os.path.expanduser('~/experiments/data'),
                             expt,
                             filename + '.h5')
 
     return h5py.File(filepath, mode='r')
+
+
+def cutout(ex, xi, yi):
+    """Cuts out a slice from the exptdata tuple"""
+    return Exptdata(ex.X[:, :, xi, yi], ex.y)
 
 
 def _train_val_split(length, batchsize, holdout):

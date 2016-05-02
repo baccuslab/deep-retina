@@ -16,7 +16,7 @@ from .utils import notify
 __all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet']
 
 
-def sequential(layers, optimizer, loss='poisson_loss'):
+def sequential(layers, optimizer, loss='poisson'):
     """Compiles a Keras model with the given layers
 
     Parameters
@@ -63,7 +63,47 @@ def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
     layers = list()
     layers.append(Flatten(input_shape=input_shape))
     layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg)))
+    layers.append(BatchNormalization())
     layers.append(ParametricSoftplus())
+    return layers
+
+
+def multiconv(input_shape, nout, sigma, convlayers=((8, 15), (16, 7)),
+              W_reg=((0., 0.), (0., 0.)), act_reg=((0., 0.), (0., 0.))):
+    """N convolutional layers followed by a final affine layer"""
+    layers = list()
+
+    # first convolutional layer
+    for (n, size), w_args, act_args in zip(convlayers, W_reg, act_reg):
+        args = (n, size, size)
+        kwargs = {
+            'border_mode': 'valid',
+            'subsample': (1, 1),
+            'init': 'normal',
+            'W_regularizer': l1l2(*w_args),
+            'activity_regularizer': activity_l1l2(*act_args),
+        }
+        if len(layers) == 0:
+            kwargs['input_shape'] = input_shape
+
+        # add convolutional layer
+        layers.append(Convolution2D(*args, **kwargs))
+
+        # add gaussian noise
+        layers.append(GaussianNoise(sigma))
+
+        # add ReLu
+        layers.append(Activation('relu'))
+
+    # flatten
+    layers.append(Flatten())
+
+    # Add a final dense (affine) layer
+    layers.append(Dense(nout, init='normal', W_regularizer=l1l2(1e-3, 1e-4)))
+
+    # Finish it off with a parameterized softplus
+    layers.append(ParametricSoftplus())
+
     return layers
 
 
@@ -115,7 +155,7 @@ def convnet(input_shape, nout,
     # first convolutional layer
     layers.append(Convolution2D(num_filters[0], filter_size[0], filter_size[1],
                                 input_shape=input_shape, init=weight_init,
-                                border_mode='same', subsample=(1, 1),
+                                border_mode='valid', subsample=(1, 1),
                                 **_regularize(0)))
 
     # Add relu activation

@@ -13,7 +13,6 @@ from deepretina.io import KerasMonitor, main_wrapper
 def fit_nips_conv(cells, train_stimuli, exptdate, readme=None):
     """Main script for fitting a multilayered convnet"""
     stim_shape = (40, 50, 50)
-    ncells = len(cells)
     batchsize = 5000
     noise_sigma = 0.1
 
@@ -24,7 +23,7 @@ def fit_nips_conv(cells, train_stimuli, exptdate, readme=None):
     act_reg = [(0., 0.), (0., 0.)]
 
     # get the convnet layers
-    layers = nips_conv(stim_shape, ncells, noise_sigma, convlayers, W_reg, act_reg)
+    layers = nips_conv(len(cells))
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='poisson')

@@ -36,8 +36,8 @@ def sequential(layers, optimizer, loss='poisson'):
     model : keras.models.Sequential
         A compiled Keras model object
     """
-    model = Sequential()
-    [model.add(layer) for layer in layers]
+    model = Sequential(layers)
+    # [model.add(layer) for layer in layers]
     with notify('Compiling'):
         model.compile(loss=loss, optimizer=optimizer)
     return model
@@ -113,8 +113,8 @@ def nips_conv(num_cells):
 
     # Add a final dense (affine) layer
     layers.append(Dense(num_cells, init='normal',
-                        W_regularizer=l1l2(0, l2_weight),
-                        activity_regularizer=l1l2(1e-3, 0.)))
+                        W_regularizer=l1l2(0., l2_weight),
+                        activity_regularizer=activity_l1l2(1e-3, 0.)))
 
     # Finish it off with a parameterized softplus
     layers.append(ParametricSoftplus())

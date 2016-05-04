@@ -3,16 +3,10 @@ NIPS main script
 """
 
 from __future__ import absolute_import
-from itertools import product
-from deepretina.models import sequential, convnet, ln, multiconv
+from deepretina.models import sequential, nips_conv
 from deepretina.core import train
-from deepretina.experiments import Experiment, _loadexpt_h5
-from deepretina.io import KerasMonitor, Monitor, main_wrapper
-from deepretina.glms import GLM
-from deepretina.utils import cutout_indices
-import numpy as np
-from keras.optimizers import RMSprop
-from pyret import filtertools as ft
+from deepretina.experiments import Experiment
+from deepretina.io import KerasMonitor, main_wrapper
 
 
 @main_wrapper
@@ -30,7 +24,7 @@ def fit_nips_conv(cells, train_stimuli, exptdate, readme=None):
     act_reg = [(0., 0.), (0., 0.)]
 
     # get the convnet layers
-    layers = multiconv(stim_shape, ncells, noise_sigma, convlayers, W_reg, act_reg)
+    layers = nips_conv(stim_shape, ncells, noise_sigma, convlayers, W_reg, act_reg)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='poisson')
@@ -53,14 +47,14 @@ if __name__ == '__main__':
     # ===============
     # 15-10-07 (Aran)
     # ===============
-    # cells = [0, 1, 2, 3 ,4]
+    # cells = [0, 1, 2, 3, 4]
     # fit_nips_conv(cells, ['naturalscene'], '15-10-07', description="15-10-07 nips model on naturalscene")
     # fit_nips_conv(cells, ['whitenoise'], '15-10-07', description="15-10-07 nips model on whitenoise")
 
     # ================
     # 15-11-21a (Lane)
     # ================
-    # cells = [6, 10, 12 13]
+    # cells = [6, 10, 12, 13]
     # fit_nips_conv(cells, ['naturalscene'], '15-11-21a', description="15-11-21a nips model on naturalscene")
     # fit_nips_conv(cells, ['whitenoise'], '15-11-21a', description="15-11-21a nips model on whitenoise")
 

@@ -13,7 +13,7 @@ from keras.layers.noise import GaussianNoise, GaussianDropout
 from keras.regularizers import l1l2, activity_l1l2, l2
 from .utils import notify
 
-__all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet']
+__all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet', 'nips_conv']
 
 
 def sequential(layers, optimizer, loss='poisson'):

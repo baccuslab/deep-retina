@@ -301,10 +301,10 @@ def generalizedconvnet(input_shape, nout,
                 # initial convolutional layer
                 layers.append(Convolution2D(num_filters[0], filter_sizes[0], filter_sizes[0],
                                             input_shape=input_shape, init=weight_init,
-                                            border_mode='same', subsample=(1, 1), W_regularizer=l2(l2_reg)))
+                                            border_mode='valid', subsample=(1, 1), W_regularizer=l2(l2_reg)))
             else:
                 layers.append(Convolution2D(num_filters[layer_id], filter_sizes[layer_id],
-                                            filter_sizes[layer_id], init=weight_init, border_mode='same',
+                                            filter_sizes[layer_id], init=weight_init, border_mode='valid',
                                             subsample=(1, 1), W_regularizer=l2(l2_reg)))
 
         # Add relu activation

@@ -53,19 +53,19 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
 
     stim_shape = (40, 50, 50)
     ncells = len(cells)
-    batchsize = 8000
+    batchsize = 6000
 
     # get the convnet layers
     layers = generalizedconvnet(stim_shape, ncells, 
-            architecture=('conv', 'flatten', 'affine'),
-            num_filters=[8], filter_sizes=[15], weight_init='normal',
-            l2_reg=0.02) # dropout=0.25, noise=0.1
+            architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine'),
+            num_filters=[8, -1, -1, 16], filter_sizes=[15, -1, -1, 10], weight_init='normal',
+            l2_reg=0.02, dropout=0.25, sigma=0.1)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='poisson_loss')
 
     # load experiment data
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip, zscore_flag=True)
 
     # create a monitor to track progress
     monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
@@ -177,4 +177,5 @@ if __name__ == '__main__':
     #mdl = fit_fixedrnn(gc_15_10_07, ['naturalscenes_affine_c82720'], ['whitenoise_affine_3dd884', 'naturalscenes_affine_c82720'], '15-10-07')
     #mdl = fit_fixedlstm(gc_15_10_07, ['naturalscenes_affine_c82720'], ['whitenoise_affine_3dd884', 'naturalscenes_affine_c82720'], '15-10-07')
     #mdl = fit_fixedrnn(gc_15_10_07, ['naturalscene_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-10-07')
-    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000)
+    #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000)
+    mdl = fit_generalizedconvnet(gc_15_10_07, ['naturalscene_augmented_3x'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000)

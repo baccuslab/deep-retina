@@ -2,7 +2,7 @@ future
 numpy
 scipy
 theano
-keras
+keras==0.3.2
 h5py
 matplotlib
 pydot-ng

@@ -14,13 +14,6 @@ def fit_nips_conv(cells, train_stimuli, exptdate, readme=None):
     """Main script for fitting a multilayered convnet"""
     stim_shape = (40, 50, 50)
     batchsize = 5000
-    noise_sigma = 0.1
-
-    # specify convolutional layers (nfilters, filtersize)
-    # and regularization (l1, l2)
-    convlayers = [(8, 15), (16, 7)]
-    W_reg = [(0., 1e-3), (0., 1e-3)]
-    act_reg = [(0., 0.), (0., 0.)]
 
     # get the convnet layers
     layers = nips_conv(len(cells))

@@ -53,9 +53,9 @@ if __name__ == '__main__':
     # ================
     # 15-11-21a (Lane)
     # ================
-    # cells = [6, 10, 12, 13]
-    # fit_nips_conv(cells, ['naturalscene'], '15-11-21a', description="15-11-21a nips model on naturalscene")
-    # fit_nips_conv(cells, ['whitenoise'], '15-11-21a', description="15-11-21a nips model on whitenoise")
+    cells = [6, 10, 12, 13]
+    fit_nips_conv(cells, ['naturalscene'], '15-11-21a', description="15-11-21a nips model on naturalscene")
+    fit_nips_conv(cells, ['whitenoise'], '15-11-21a', description="15-11-21a nips model on whitenoise")
 
     # ================
     # 15-11-21b (Niru)

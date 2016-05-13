@@ -53,16 +53,16 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
 
     stim_shape = (40, 50, 50)
     ncells = len(cells)
-    batchsize = 6000
+    batchsize = 8000
 
     # get the convnet layers
     layers = generalizedconvnet(stim_shape, ncells, 
             architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine'),
-            num_filters=[8, -1, -1, 16], filter_sizes=[15, -1, -1, 10], weight_init='normal',
-            l2_reg=0.02, dropout=0.25, sigma=0.1)
+            num_filters=[8, -1, -1, 16], filter_sizes=[15, -1, -1, 7], weight_init='normal',
+            l2_reg=0.01, dropout=0.25, sigma=10.0)
 
     # compile the keras model
-    model = sequential(layers, 'adam', loss='poisson_loss')
+    model = sequential(layers, 'adam', loss='poisson')
 
     # load experiment data
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip, zscore_flag=True)
@@ -178,4 +178,4 @@ if __name__ == '__main__':
     #mdl = fit_fixedlstm(gc_15_10_07, ['naturalscenes_affine_c82720'], ['whitenoise_affine_3dd884', 'naturalscenes_affine_c82720'], '15-10-07')
     #mdl = fit_fixedrnn(gc_15_10_07, ['naturalscene_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-10-07')
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000)
-    mdl = fit_generalizedconvnet(gc_15_10_07, ['naturalscene_augmented_3x'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000)
+    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_augmented_3x'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000)

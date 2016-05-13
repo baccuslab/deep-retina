@@ -137,7 +137,7 @@ def zoo(models, filename='modelzoo-{}.csv'):
         data.extend(map(str, (ix, train, val, wn_test, ns_test)))
         return ','.join(data)
 
-    skiplist = ('11795a', '65a38b', 'e4790c')       # these are the 3_31_2016 datasets
+    skiplist = ('11795a', '65a38b', 'e4790c', '35b009', '3ccf99', '781506', 'd4ef12')
     stop_at = '2fcc94'
 
     subselected = takewhile(lambda m: m.hashkey != stop_at, models)
@@ -439,9 +439,7 @@ def list_layers(model_path, weight_filename):
     layer_names = list(weights)
 
     # print header
-    print(tableprint.hr(3))
     print(tableprint.header(['layer', 'weights', 'biases']))
-    print(tableprint.hr(3))
 
     params = []
     for l in layer_names:
@@ -453,7 +451,7 @@ def list_layers(model_path, weight_filename):
         else:
             print(tableprint.row([l.encode('ascii', 'ignore'), '', '']))
 
-    print(tableprint.hr(3))
+    print(tableprint.bottom(3))
 
 
 def computecorr(data, maxlag, dt=1e-2):

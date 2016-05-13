@@ -77,10 +77,10 @@ def nips_conv(num_cells):
     sigma = 0.1
 
     # convolutional layer sizes
-    convlayers = [(12, 15), (12, 11)]
+    convlayers = [(16, 15), (8, 9)]
 
     # l2_weight_regularization for every layer
-    l2_weight = 0.02
+    l2_weight = 1e-3
 
     # weight and activity regularization
     W_reg = [(0., l2_weight), (0., l2_weight)]

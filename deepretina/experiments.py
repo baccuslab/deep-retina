@@ -225,7 +225,7 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=T
                 stim = zscore(stim)
 
             # apply clipping to remove the stimulus just after transitions
-            num_blocks = NUM_BLOCKS[expt] if train_or_test == 'train' else 1
+            num_blocks = NUM_BLOCKS[expt] if train_or_test == 'train' and nskip>0 else 1
             valid_indices = np.arange(expt_length).reshape(num_blocks, -1)[:, nskip:].ravel()
 
             # reshape into the Toeplitz matrix (nsamples, history, *stim_dims)

@@ -57,9 +57,9 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
 
     # get the convnet layers
     layers = generalizedconvnet(stim_shape, ncells, 
-            architecture=('conv', 'requ', 'batchnorm', 'flatten', 'dropout', 'affine', 'requ', 'batchnorm', 'flatten', 'affine'),
-            num_filters=[8, -1, -1, -1, -1, 16], filter_sizes=[15], weight_init='normal',
-            l2_reg=0.01, dropout=0.5, sigma=0.0)
+            architecture=('conv', 'noise', 'relu', 'flatten', 'affine', 'noise', 'relu', 'affine'),
+            num_filters=[8, -1, -1, -1, 16], filter_sizes=[15], weight_init='normal',
+            l2_reg=0.05, dropout=0.25, sigma=0.1)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='poisson')
@@ -178,5 +178,6 @@ if __name__ == '__main__':
     #mdl = fit_fixedlstm(gc_15_10_07, ['naturalscenes_affine_c82720'], ['whitenoise_affine_3dd884', 'naturalscenes_affine_c82720'], '15-10-07')
     #mdl = fit_fixedrnn(gc_15_10_07, ['naturalscene_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-10-07')
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000)
-    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_augmented_3x'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='conv-affine-affine architecture on whitenoise')
-    mdl = fit_generalizedconvnet(gc_15_10_07, ['naturalscene_augmented_3x'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='conv-affine-affine architecture on naturalscene')
+    #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_augmented_3x'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='conv-affine-affine version of 3520cd on whitenoise')
+    #mdl = fit_generalizedconvnet(gc_15_10_07, ['naturalscene_augmented_3x'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='conv-affine-affine version of 3520cd on naturalscene')
+    mdl = fit_fixedlstm(gc_15_10_07, ['naturalscenes_affine_007c52'], ['whitenoise_affine_9a1b0c', 'naturalscenes_affine_007c52'], '15-10-07')

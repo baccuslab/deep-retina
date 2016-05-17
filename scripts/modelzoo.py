@@ -225,13 +225,17 @@ for dirs, subdirs, files in walker:
         elif model_id[-2:] == 'ln':
             model_type = 'ln'
             l2 = layers[1]['W_regularizer']['l2']
+        elif model_id[-2:] == 'ln_cutout':
+            model_type = 'ln_cutout'
+            l2 = layers[1]['W_regularizer']['l2']
         else:
             model_type = 'convnet' 
             try:
                 l2 = layers[0]['W_regularizer']['l2']
             except:
-                import pdb
-                pdb.set_trace()
+                l2 = 0.0
+                #import pdb
+                #pdb.set_trace()
 
         if 'Dropout' in layer_names:
             dropout = [l['p'] for l in layers if 'Dropout' in l['name']][0]

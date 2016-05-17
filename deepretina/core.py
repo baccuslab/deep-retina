@@ -8,7 +8,7 @@ from time import time
 __all__ = ['train']
 
 
-def train(model, experiment, monitor, num_epochs):
+def train(model, experiment, monitor, num_epochs, augment=False):
     """Train the given network against the given data
 
     Parameters
@@ -57,7 +57,11 @@ def train(model, experiment, monitor, num_epochs):
 
                 # train on the batch
                 tstart = time()
-                loss = model.train_on_batch(X, y)[0]
+                if augment:
+                    augmented_y = y
+                    loss = model.train_on_batch(X, augmented_y)[0]
+                else:
+                    loss = model.train_on_batch(X, y)[0]
                 elapsed_time = time() - tstart
 
                 # update

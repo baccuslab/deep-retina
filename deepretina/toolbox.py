@@ -137,7 +137,7 @@ def zoo(models, filename='modelzoo-{}.csv'):
         data.extend(map(str, (ix, train, val, wn_test, ns_test)))
         return ','.join(data)
 
-    skiplist = ('11795a', '65a38b', 'e4790c')       # these are the 3_31_2016 datasets
+    skiplist = ('11795a', '65a38b', 'e4790c', '35b009', '3ccf99', '781506', 'd4ef12')
     stop_at = '2fcc94'
 
     subselected = takewhile(lambda m: m.hashkey != stop_at, models)
@@ -318,6 +318,11 @@ def modify_model(model_path, weight_filename, changed_params):
                 idxs = [i for i in range(len(arch['layers'])) if arch['layers'][i]['name'] == 'Dropout']
                 for i in idxs:
                     arch['layers'][i]['p'] = changed_params['dropout']
+            # key is sigma for GaussianNoise layers
+            elif key in ['sigma']:
+                idxs = [i for i in range(len(arch['layers'])) if arch['layers'][i]['name'] == 'GaussianNoise']
+                for i in idxs:
+                    arch['layers'][i]['sigma'] = changed_params['sigma']
             # change parameters of individual layers
             elif key in ['layers']:
                 # changed_params['layers'] should be a list of dicts
@@ -439,9 +444,7 @@ def list_layers(model_path, weight_filename):
     layer_names = list(weights)
 
     # print header
-    print(tableprint.hr(3))
     print(tableprint.header(['layer', 'weights', 'biases']))
-    print(tableprint.hr(3))
 
     params = []
     for l in layer_names:
@@ -453,7 +456,7 @@ def list_layers(model_path, weight_filename):
         else:
             print(tableprint.row([l.encode('ascii', 'ignore'), '', '']))
 
-    print(tableprint.hr(3))
+    print(tableprint.bottom(3))
 
 
 def computecorr(data, maxlag, dt=1e-2):

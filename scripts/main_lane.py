@@ -57,9 +57,9 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
 
     # get the convnet layers
     layers = generalizedconvnet(stim_shape, ncells, 
-            architecture=('conv', 'noise', 'relu', 'flatten', 'affine', 'noise', 'relu', 'affine'),
-            num_filters=[8, -1, -1, -1, 16], filter_sizes=[15], weight_init='normal',
-            l2_reg=0.05, dropout=0.25, sigma=0.1)
+            architecture=('conv', 'requ', 'batchnorm', 'flatten', 'dropout', 'affine', 'requ', 'batchnorm', 'flatten', 'affine'),
+            num_filters=[8, -1, -1, -1, -1, 16], filter_sizes=[15], weight_init='normal',
+            l2_reg=0.01, dropout=0.5)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='poisson')
@@ -71,7 +71,7 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
     monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
 
     # train
-    train(model, data, monitor, num_epochs=100)
+    train(model, data, monitor, num_epochs=50)
 
     return model
 
@@ -180,4 +180,6 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000)
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_augmented_3x'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='conv-affine-affine version of 3520cd on whitenoise')
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['naturalscene_augmented_3x'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='conv-affine-affine version of 3520cd on naturalscene')
-    mdl = fit_fixedlstm(gc_15_10_07, ['naturalscene_affine_007c52'], ['whitenoise_affine_9a1b0c', 'naturalscene_affine_007c52'], '15-10-07', description='fixedlstm naturalscene on 007c52')
+    #mdl = fit_fixedlstm(gc_15_10_07, ['naturalscene_affine_007c52'], ['whitenoise_affine_9a1b0c', 'naturalscene_affine_007c52'], '15-10-07', description='fixedlstm naturalscene on 007c52')
+    mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine model on 15-11-21a naturalscene')
+    mdl = fit_generalizedconvnet(gc_15_11_21a, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine model on 15-11-21a whitenoise')

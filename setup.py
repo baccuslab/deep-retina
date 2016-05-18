@@ -7,7 +7,7 @@ setup(name = 'deepretina',
         author = 'Niru Maheshwaranathan, Lane McIntosh, Aran Nayebi',
         author_email = 'lmcintosh@stanford.edu',
         url = 'https://github.com/baccuslab/deep-retina.git',
-        requires = [i.strip() for i in open("requirements.txt").readlines()],
+        install_requires = [i.strip() for i in open("requirements.txt").readlines()],
         long_description = '''
             The deepretina package contains methods for learning convolutional
             and LSTM neural network models of the retina.

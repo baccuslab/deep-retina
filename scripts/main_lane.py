@@ -181,5 +181,6 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_augmented_3x'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='conv-affine-affine version of 3520cd on whitenoise')
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['naturalscene_augmented_3x'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='conv-affine-affine version of 3520cd on naturalscene')
     #mdl = fit_fixedlstm(gc_15_10_07, ['naturalscene_affine_007c52'], ['whitenoise_affine_9a1b0c', 'naturalscene_affine_007c52'], '15-10-07', description='fixedlstm naturalscene on 007c52')
-    mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine model on 15-11-21a naturalscene')
-    mdl = fit_generalizedconvnet(gc_15_11_21a, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine model on 15-11-21a whitenoise')
+    #mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine model on 15-11-21a naturalscene')
+    #mdl = fit_generalizedconvnet(gc_15_11_21a, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine model on 15-11-21a whitenoise')
+    mdl = fit_fixedlstm(gc_15_11_21a, ['naturalscene_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-11-21a', description='fixedlstm naturalscene on 3154c9 convnet activities')

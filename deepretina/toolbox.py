@@ -25,7 +25,7 @@ from .utils import xcorr, pairs
 from scipy.stats import sem
 
 
-def scandb(directory):
+def scandb(directory, nmax=-1):
     """Scans the given directory for any model folders and returns a
     list of Model objects for each folder in the directory
     """
@@ -33,7 +33,7 @@ def scandb(directory):
 
     # scan base directory for models folders, only load those with a README
     regex = re.compile(r'^([a-z0-9]){6} ')
-    for folder in tqdm(filter(regex.match, os.listdir(directory))):
+    for folder in tqdm(list(filter(regex.match, os.listdir(directory)))[:nmax]):
         if os.path.isdir(os.path.join(directory, folder)):
             models.append(Model(directory, folder))
 
@@ -112,39 +112,44 @@ def search(models, desc='', key='', disp=True):
     return matches
 
 
-def zoo(models, filename='modelzoo-{}.csv'):
+def zoo(models, filename='modelzoo-{}-{}.csv', metric='fev'):
     """Generates a performance CSV file"""
     headers = 'key,type,exptdate,date,train_datasets,bestiter,train,validation,wn_test,ns_test'
 
     def row(mdl):
-        data = ["'{}'".format(mdl.hashkey),
-                mdl.modeltype,
-                mdl.experiment['date'],
-                mdl.metadata['date'],
-                mdl.experiment['train_datasets'],
-                ]
+        try:
+            data = ["'{}'".format(mdl.hashkey),
+                    mdl.modeltype,
+                    mdl.experiment['date'],
+                    mdl.metadata['date'],
+                    mdl.experiment['train_datasets'],
+                    ]
 
-        ix = mdl.bestiter(metric='cc')
-        train = mdl.train['CC'][ix]
-        val = mdl.validation['CC'][ix]
+            ix = mdl.bestiter(metric=metric)
+            train = mdl.train[metric.upper()][ix]
+            val = mdl.validation[metric.upper()][ix]
 
-        wn_test = mdl.performance(ix, 'whitenoise', on='test', metric='cc').mean() \
-            if 'whitenoise' in mdl.results['test'] else None
+            wn_test = mdl.performance(ix, 'whitenoise', on='test', metric=metric).mean() \
+                if 'whitenoise' in mdl.results['test'] else None
 
-        ns_test = mdl.performance(ix, 'naturalscene', on='test', metric='cc').mean() \
-            if 'naturalscene' in mdl.results['test'] else None
+            ns_test = mdl.performance(ix, 'naturalscene', on='test', metric='fev').mean() \
+                if 'naturalscene' in mdl.results['test'] else None
 
-        data.extend(map(str, (ix, train, val, wn_test, ns_test)))
-        return ','.join(data)
+            data.extend(map(str, (ix, train, val, wn_test, ns_test)))
+            return ','.join(data)
+        except:
+            # fuck
+            return ','.join(['NaN']*10)
 
-    skiplist = ('11795a', '65a38b', 'e4790c', '35b009', '3ccf99', '781506', 'd4ef12')
+    skiplist = ('11795a', '65a38b', 'e4790c', '35b009', '3ccf99', '781506', 'd4ef12',
+                '48dc18', '27998b', '4b3624', 'c37935')
     stop_at = '2fcc94'
 
     subselected = takewhile(lambda m: m.hashkey != stop_at, models)
     filtered = filter(lambda m: m.hashkey not in skiplist, subselected)
     rows = map(row, filtered)
 
-    with open(filename.format(time.strftime('%Y-%m-%d')), 'x') as f:
+    with open(filename.format(time.strftime('%Y-%m-%d'), metric), 'x') as f:
         f.write(headers + '\n')
         f.write('\n'.join(tqdm(rows)))
 
@@ -388,7 +393,7 @@ def load_partial_model(model, stop_layer=None, start_layer=0):
         new_layers = layers[start_layer:stop_layer]
         new_model = sequential(new_layers, 'adam', loss='poisson')
         new_model.compile(optimizer='adam', loss='poisson')
-        for idl,l in enumerate(new_model.layers):
+        for idl, l in enumerate(new_model.layers):
             l.set_weights(new_layers[idl].get_weights())
 
         return new_model.predict
@@ -607,8 +612,7 @@ def get_weights(filepath, layer=0, param=0):
     return weights
 
 
-def inject_noise(keras_model, noise_strength, stimulus, ntrials=10,
-        target_layer=0):
+def inject_noise(keras_model, noise_strength, stimulus, ntrials=10, target_layer=0):
     '''
         Inject noise into a keras model at a given layer to
         measure shared parameters and noise correlations

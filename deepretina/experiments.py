@@ -23,7 +23,6 @@ Exptdata = namedtuple('Exptdata', ['X', 'y'])
 dt = 1e-2
 __all__ = ['Experiment', 'loadexpt']
 
-
 class Experiment(object):
     """Class to keep track of loaded experiment data"""
 
@@ -171,14 +170,19 @@ class Experiment(object):
             stim = self.__dict__[stimset]
             for key, ex in stim.items():
                 stim[key] = Exptdata(ex.X[:, :, xi, yi], ex.y)
-                
+
+    def subselect(self, fraction):
+        """subselects a number of training batches"""
+        batches = self.__dict__['_train_batches']
+        num_batches = int(np.ceil(fraction * len(batches)))
+        self.__dict__['_train_batches'] = batches[:num_batches]
+
     def reroll(self, tau):
         """Applies rolling window to the stimulus for a second time"""
         for stimset in ('_train_data', '_test_data'):
             stim = self.__dict__[stimset]
             for key, ex in stim.items():
                 stim[key] = Exptdata(rolling_window(ex.X, tau), ex.y[tau:, :])
-
 
 def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=True):
     """Loads an experiment from an h5 file on disk
@@ -225,7 +229,7 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=T
                 stim = zscore(stim)
 
             # apply clipping to remove the stimulus just after transitions
-            num_blocks = NUM_BLOCKS[expt] if train_or_test == 'train' else 1
+            num_blocks = NUM_BLOCKS[expt] if train_or_test == 'train' and nskip>0 else 1
             valid_indices = np.arange(expt_length).reshape(num_blocks, -1)[:, nskip:].ravel()
 
             # reshape into the Toeplitz matrix (nsamples, history, *stim_dims)
@@ -236,7 +240,6 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=T
             resp = resp[history:]
 
     return Exptdata(stim_reshaped, resp)
-
 
 def deprecated_loadexpt(cellidx, filename, method, history, fraction=1., cutout=False, cutout_cell=0):
     """
@@ -294,7 +297,6 @@ def deprecated_loadexpt(cellidx, filename, method, history, fraction=1., cutout=
 
     return Exptdata(stim_reshaped, resp)
 
-
 def _loadexpt_h5(expt, filename):
     """Loads an h5py reference to an experiment on disk"""
     filepath = os.path.join(os.path.expanduser('~/experiments/data'),
@@ -303,11 +305,9 @@ def _loadexpt_h5(expt, filename):
 
     return h5py.File(filepath, mode='r')
 
-
 def cutout(ex, xi, yi):
     """Cuts out a slice from the exptdata tuple"""
     return Exptdata(ex.X[:, :, xi, yi], ex.y)
-
 
 def _train_val_split(length, batchsize, holdout):
     """Returns a set of training and a set of validation indices
@@ -337,7 +337,6 @@ def _train_val_split(length, batchsize, holdout):
     num_holdout = int(np.round(holdout * num_batches))
 
     return batch_indices[num_holdout:].copy(), batch_indices[:num_holdout].copy()
-
 
 def rolling_window(array, window, time_axis=0):
     """
@@ -395,7 +394,6 @@ def rolling_window(array, window, time_axis=0):
         return np.rollaxis(arr.T, 1, 0)
     else:
         return arr
-
 
 def deprecated_rolling_window(array, window, time_axis=0):
     """

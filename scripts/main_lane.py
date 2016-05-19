@@ -83,9 +83,9 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     author: Lane McIntosh
     """
 
-    input_shape = (1000,16)
+    input_shape = (1000,32)
     ncells = len(cells)
-    batchsize = 750
+    batchsize = 250
 
     # get the convnet layers
     layers = fixedlstm(input_shape, len(cells), num_hidden=200, weight_init='normal', l2_reg=0.01)
@@ -183,4 +183,5 @@ if __name__ == '__main__':
     #mdl = fit_fixedlstm(gc_15_10_07, ['naturalscene_affine_007c52'], ['whitenoise_affine_9a1b0c', 'naturalscene_affine_007c52'], '15-10-07', description='fixedlstm naturalscene on 007c52')
     #mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine model on 15-11-21a naturalscene')
     #mdl = fit_generalizedconvnet(gc_15_11_21a, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine model on 15-11-21a whitenoise')
-    mdl = fit_fixedlstm(gc_15_11_21a, ['naturalscene_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-11-21a', description='fixedlstm naturalscene on 3154c9 convnet activities')
+    #mdl = fit_fixedlstm(list(range(4)), ['naturalscene_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-11-21a', description='fixedlstm naturalscene on 3154c9 convnet activities')
+    mdl = fit_fixedlstm(list(range(19)), ['naturalscene_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-11-21b', description='fixedlstm naturalscene on 15-11-21b')

@@ -3,8 +3,7 @@ Niru main script
 """
 
 from __future__ import absolute_import
-from itertools import product
-from deepretina.models import sequential, convnet, ln, multiconv
+from deepretina.models import sequential, convnet, ln
 from deepretina.core import train
 from deepretina.experiments import Experiment, _loadexpt_h5
 from deepretina.io import KerasMonitor, Monitor, main_wrapper
@@ -16,7 +15,7 @@ from pyret import filtertools as ft
 
 
 @main_wrapper
-def fit_cutout(cell, train_stimuli, exptdate, filtersize, l2=1e-3, readme=None):
+def fit_cutout(cell, train_stimuli, exptdate, filtersize, l2=1e-3, load_fraction=1.0, readme=None):
     """Fits a LN model on a cutout stimulus using keras"""
 
     history = 40
@@ -25,6 +24,9 @@ def fit_cutout(cell, train_stimuli, exptdate, filtersize, l2=1e-3, readme=None):
     # load experiment data
     test_stimuli = ['whitenoise', 'naturalscene']
     data = Experiment(exptdate, [cell], train_stimuli, test_stimuli, history, batchsize, nskip=6000)
+
+    # subselect
+    data.subselect(load_fraction)
 
     # get the spatial center of the STA, and the cutout indices
     cellname = 'cell{:02d}'.format(cell + 1)
@@ -160,22 +162,37 @@ def fit_convconv(cells, train_stimuli, exptdate, readme=None):
 
 
 @main_wrapper
-def fit_glm(cells, train_stimuli, exptdate, l2, readme=None):
+def fit_glm(cell, train_stimuli, exptdate, filtersize, l2, readme=None):
     """Main script for fitting a GLM
 
     author: Niru Maheswaranathan
     """
-
-    stim_shape = (40, 50, 50)
-    coupling_history = 20
     batchsize = 5000
-
-    # build the GLM
-    model = GLM(stim_shape, coupling_history, len(cells), lr=2e-4, l2={'filter': l2[0], 'history': l2[1]})
+    history = 40
 
     # load experimental data
     test_stimuli = ['whitenoise']
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=0)
+    data = Experiment(exptdate, [cell], train_stimuli, test_stimuli, history, batchsize, nskip=6000)
+
+    # get the spatial center of the STA, and the cutout indices
+    cellname = 'cell{:02d}'.format(cell + 1)
+    sta = np.array(_loadexpt_h5(exptdate, 'whitenoise')['stas'][cellname])
+    try:
+        sta_center = ft.get_ellipse(ft.decompose(sta)[0])[0]
+        xi, yi = cutout_indices(sta_center, size=filtersize)
+    except:
+        return None
+
+    # cutout the experiment
+    data.cutout(xi, yi)
+    xdim, ydim = data._train_data[train_stimuli[0]].X.shape[2:]
+
+    # dimensions
+    stim_shape = (history, xdim, ydim)
+    coupling_history = 20
+
+    # build the GLM
+    model = GLM(stim_shape, coupling_history, 1, lr=2e-4, l2={'filter': l2[0], 'history': l2[1]})
 
     # create a monitor to track progress
     monitor = Monitor('GLM', model, data, readme, save_every=20)
@@ -185,15 +202,27 @@ def fit_glm(cells, train_stimuli, exptdate, l2, readme=None):
 
     return model
 
-
 if __name__ == '__main__':
 
     # ===
     # GLM
     # ===
-    # l2a = 0.1
-    # l2b = 0.0
-    # mdl = fit_glm([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', (l2a, l2b))
+    l2a = 0.1
+    l2b = 0.0
+    filtersize = 5
+    gc_151121a = [6, 10, 12, 13]
+    #for ci in gc_151121a:
+    #    fit_glm(ci, ['whitenoise'], '15-11-21a', filtersize, (l2a, l2b), description='Cutout GLM 15-11-21a, whitenoise, cell {}'.format(ci))
+    #    fit_cutout(ci, ['whitenoise'], '15-11-21a', filtersize=filtersize, l2=1e-3, description='LN cutout 15-11-21a, whitenoise, cell {}'.format(ci))
+    #    fit_glm(ci, ['naturalscene'], '15-11-21a', filtersize, (l2a, l2b), description='Cutout GLM 15-11-21a, naturalscene, cell {}'.format(ci))
+    #    fit_cutout(ci, ['naturalscene'], '15-11-21a', filtersize=filtersize, l2=1e-3, description='LN cutout 15-11-21a, naturalscene, cell {}'.format(ci))
+
+    gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16] #, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+    for ci in gc_151121b:
+        fit_glm(ci, ['whitenoise'], '15-11-21b', filtersize, (l2a, l2b), description='Cutout GLM 15-11-21b, whitenoise, cell {}'.format(ci))
+        fit_cutout(ci, ['whitenoise'], '15-11-21b', filtersize=filtersize, l2=1e-3, description='LN cutout 15-11-21b, whitenoise, cell {}'.format(ci))
+        fit_glm(ci, ['naturalscene'], '15-11-21b', filtersize, (l2a, l2b), description='Cutout GLM 15-11-21b, naturalscene, cell {}'.format(ci))
+        fit_cutout(ci, ['naturalscene'], '15-11-21b', filtersize=filtersize, l2=1e-3, description='LN cutout 15-11-21b, naturalscene, cell {}'.format(ci))
 
     # ==========
     # Medium OFF
@@ -210,7 +239,7 @@ if __name__ == '__main__':
 
     # LN
     # cells = range(1, 5)
-    # stimtypes = ('whitenoise', 'naturalscene')
+    # stimtypes = ('whitenoise')
     # filtersizes = [1, 3, 5, 9, 11, 13, 15]
     # for ci, stimtype, fs in product(cells, stimtypes, filtersizes):
         # fit_cutout(ci, [stimtype], '15-10-07', filtersize=fs, l2=1e-3, description='LN cutout 15-10-07, {}, cell {}, filtersize={}'.format(stimtype, ci, fs))
@@ -219,6 +248,11 @@ if __name__ == '__main__':
         # fit_cutout(0, ['naturalscene'], '15-10-07', filtersize=13, l2=1e-3, description='LN cutout 15-10-07, naturalscene, cell 0, filtersize={}'.format(fs))
     # for st in stimtypes:
         # fit_ln([0, 1, 2, 3, 4], [st], '15-10-07', l2=1e-3, description='LN on {} with BatchNormalization, 15-10-07'.format(st))
+
+    # load fraction LN
+    # for lf in [0.1, 0.2, 0.4, 0.6]:
+    #     for ci in range(5):
+    #         fit_cutout(ci, ['whitenoise'], '15-10-07', filtersize=5, l2=1e-3, load_fraction=lf, description='load_fraction={}, LN cutout, cell {}'.format(lf, ci))
 
     # =========
     # 15-11-21a

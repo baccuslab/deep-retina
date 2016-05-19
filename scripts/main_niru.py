@@ -177,8 +177,11 @@ def fit_glm(cell, train_stimuli, exptdate, filtersize, l2, readme=None):
     # get the spatial center of the STA, and the cutout indices
     cellname = 'cell{:02d}'.format(cell + 1)
     sta = np.array(_loadexpt_h5(exptdate, 'whitenoise')['stas'][cellname])
-    sta_center = ft.get_ellipse(ft.decompose(sta)[0])[0]
-    xi, yi = cutout_indices(sta_center, size=filtersize)
+    try:
+        sta_center = ft.get_ellipse(ft.decompose(sta)[0])[0]
+        xi, yi = cutout_indices(sta_center, size=filtersize)
+    except:
+        return None
 
     # cutout the experiment
     data.cutout(xi, yi)
@@ -207,9 +210,19 @@ if __name__ == '__main__':
     l2a = 0.1
     l2b = 0.0
     filtersize = 5
-    for ci in range(5):
-        fit_glm(ci, ['whitenoise'], '15-10-07', filtersize, (l2a, l2b), description='Cutout GLM 15-10-07, whitenoise, cell {}'.format(ci))
-        fit_glm(ci, ['naturalscene'], '15-10-07', filtersize, (l2a, l2b), description='Cutout GLM 15-10-07, naturalscene, cell {}'.format(ci))
+    gc_151121a = [6, 10, 12, 13]
+    for ci in gc_151121a:
+        fit_glm(ci, ['whitenoise'], '15-11-21a', filtersize, (l2a, l2b), description='Cutout GLM 15-11-21a, whitenoise, cell {}'.format(ci))
+        fit_cutout(ci, ['whitenoise'], '15-11-21a', filtersize=filtersize, l2=1e-3, description='LN cutout 15-11-21a, whitenoise, cell {}'.format(ci))
+        fit_glm(ci, ['naturalscene'], '15-11-21a', filtersize, (l2a, l2b), description='Cutout GLM 15-11-21a, naturalscene, cell {}'.format(ci))
+        fit_cutout(ci, ['naturalscene'], '15-11-21a', filtersize=filtersize, l2=1e-3, description='LN cutout 15-11-21a, naturalscene, cell {}'.format(ci))
+
+    # gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+    # for ci in gc_151121b:
+    #     fit_glm(ci, ['whitenoise'], '15-11-21b', filtersize, (l2a, l2b), description='Cutout GLM 15-11-21b, whitenoise, cell {}'.format(ci))
+    #     fit_cutout(ci, ['whitenoise'], '15-11-21b', filtersize=filtersize, l2=1e-3, description='LN cutout 15-11-21b, whitenoise, cell {}'.format(ci))
+    #     fit_glm(ci, ['naturalscene'], '15-11-21b', filtersize, (l2a, l2b), description='Cutout GLM 15-11-21b, naturalscene, cell {}'.format(ci))
+    #     fit_cutout(ci, ['naturalscene'], '15-11-21b', filtersize=filtersize, l2=1e-3, description='LN cutout 15-11-21b, naturalscene, cell {}'.format(ci))
 
     # ==========
     # Medium OFF

@@ -147,3 +147,9 @@ def cutout_indices(center, size=7, ndim=50):
     xinds = slice(center[0] - size, center[0] + size + 1)
     yinds = slice(center[1] - size, center[1] + size + 1)
     return xinds, yinds
+
+def _deprecated_cutout_indices(center, size=7, ndim=50):
+    """Cuts out a region with the given size around a point"""
+    xinds = slice(center[0] - size, center[0] + size)
+    yinds = slice(center[1] - size, center[1] + size)
+    return xinds, yinds

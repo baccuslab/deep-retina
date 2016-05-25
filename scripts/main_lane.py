@@ -45,7 +45,7 @@ def fit_convnet(cells, train_stimuli, test_stimuli, exptdate, readme=None):
 
 
 @main_wrapper
-def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0, readme=None, sigma=0.1):
+def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0, readme=None, sigma=0.1, num_filters=(8,16)):
     """Main script for fitting a convnet
 
     author: Lane McIntosh
@@ -57,16 +57,21 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
 
     # get the convnet layers
     #### BEST CONV-CONV-AFFINE ARCHITECTURE ####
-    layers = generalizedconvnet(stim_shape, ncells,
-            architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine'),
-            num_filters=[8, -1, -1, 16], filter_sizes=[15, -1, -1, 7], weight_init='normal',
-            l2_reg=0.05, dropout=0.25, sigma=sigma)
+    #layers = generalizedconvnet(stim_shape, ncells,
+    #        architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine'),
+    #        num_filters=[8, -1, -1, 16], filter_sizes=[15, -1, -1, 7], weight_init='normal',
+    #        l2_reg=0.05, dropout=0.25, sigma=sigma)
     
     #### BEST CONV-AFFINE-AFFINE ARCHITECTURE ####
     #layers = generalizedconvnet(stim_shape, ncells, 
     #        architecture=('conv', 'requ', 'batchnorm', 'flatten', 'dropout', 'affine', 'requ', 'batchnorm', 'flatten', 'affine'),
     #        num_filters=[8, -1, -1, -1, -1, 16], filter_sizes=[15], weight_init='normal',
     #        l2_reg=0.01, dropout=0.5)
+
+    layers = generalizedconvnet(stim_shape, ncells, 
+            architecture=('conv', 'relu', 'flatten', 'dropout', 'affine', 'relu', 'affine'),
+            num_filters=[num_filters[0], -1, -1, -1, num_filters[1]], filter_sizes=[17], weight_init='normal',
+            l2_reg=0.02, dropout=0.4)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='poisson')
@@ -78,7 +83,7 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
     monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
 
     # train
-    train(model, data, monitor, num_epochs=50)
+    train(model, data, monitor, num_epochs=100)
 
     return model
 
@@ -112,13 +117,13 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     return model
 
 @main_wrapper
-def fit_fixedrnn(cells, train_stimuli, test_stimuli, exptdate, readme=None):
+def fit_fixedrnn(cells, train_stimuli, test_stimuli, exptdate, readme=None, num_affine=16):
     """Main script for fitting a convnet
 
     author: Lane McIntosh
     """
 
-    input_shape = (1000,16)
+    input_shape = (1000,num_affine)
     ncells = len(cells)
     batchsize = 4000
     num_hidden = 100
@@ -150,7 +155,7 @@ def fit_fixedrnn(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     model = sequential(layers, 'adam', loss='sub_poisson_loss')
 
     # load experiment data
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, input_shape[0], batchsize, zscore_flag=False)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, input_shape[0], batchsize, zscore_flag=False, nskip=0)
 
     # create a monitor to track progress
     monitor = KerasMonitor('fixedrnn', model, data, readme, save_every=20)
@@ -194,9 +199,11 @@ if __name__ == '__main__':
     #mdl = fit_fixedlstm(list(range(19)), ['naturalscene_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-11-21b', description='fixedlstm naturalscene on 15-11-21b')
 
     # Run conv-conv-architectures with much higher sigmas
-    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='noise injection of 40std', sigma=40.0)
-    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='noise injection of 100std', sigma=100.0)
+    #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='noise injection of 15std', sigma=15.0)
 
     # Run fixed_rnns
-    mdl = fit_fixedrnn(list(range(4)), ['naturalscene_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-11-21a', description='fixedrnn naturalscene on 15-11-21a')
-    mdl = fit_fixedrnn(list(range(19)), ['naturalscene_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-11-21b', description='fixedrnn naturalscene on 15-11-21b')
+    #mdl = fit_fixedrnn(list(range(4)), ['whitenoise_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-11-21a', description='fixedrnn whitenoise on 15-11-21a')
+    #mdl = fit_fixedrnn(list(range(19)), ['whitenoise_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-11-21b', description='fixedrnn whitenoise on 15-11-21b', num_affine=32)
+
+    mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine on 15-11-21a naturalscene')
+    mdl = fit_generalizedconvnet(gc_15_11_21b, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-11-21b', nclip=6000, description='conv-affine-affine on 15-11-21b naturalscene', num_filters=(16,32))

@@ -253,7 +253,9 @@ def generalizedconvnet(input_shape, nout,
                        dropout=0.0,
                        dropout_type='binary',
                        l2_reg=0.0,
-                       sigma=0.01):
+                       sigma=0.01,
+                       activityl1=0.0,
+                       activityl2=0.0):
     """Generic convolutional neural network
 
     Parameters
@@ -352,10 +354,11 @@ def generalizedconvnet(input_shape, nout,
         # Add dense (affine) layer
         if layer_type == 'affine':
             if layer_id == len(architecture) - 1:
-                # add final affine layer with softplus activation
-                layers.append(Dense(nout, init=weight_init,
-                                    W_regularizer=l2(l2_reg),
-                                    activation='softplus'))
+                # add final affine layer
+                layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg), 
+                            activity_regularizer=activity_l1l2(activityl1, activityl2)))
+                # add softplus activation
+                layers.append(Activation('softplus'))
             else:
                 layers.append(Dense(num_filters[layer_id], init=weight_init, W_regularizer=l2(l2_reg)))
 

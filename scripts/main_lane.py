@@ -69,9 +69,9 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
     #        l2_reg=0.01, dropout=0.5)
 
     layers = generalizedconvnet(stim_shape, ncells, 
-            architecture=('conv', 'relu', 'flatten', 'dropout', 'affine', 'relu', 'affine'),
+            architecture=('conv', 'relu', 'flatten', 'dropout', 'affine', 'relu', 'affine', 'softplus'),
             num_filters=[num_filters[0], -1, -1, -1, num_filters[1]], filter_sizes=[17], weight_init='normal',
-            l2_reg=0.02, dropout=0.4)
+            l2_reg=0.02, dropout=0.4, activityl1=1e-3)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='poisson')

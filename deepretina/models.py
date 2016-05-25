@@ -246,7 +246,7 @@ def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='he_normal', l2_re
 
 
 def generalizedconvnet(input_shape, nout,
-                       architecture=('conv', 'relu', 'pool', 'flatten', 'affine', 'relu', 'affine'),
+                       architecture=('conv', 'relu', 'pool', 'flatten', 'affine', 'relu', 'affine', 'softplus'),
                        num_filters=(4, -1, -1, -1, 16),
                        filter_sizes=(9, -1, -1, -1, -1),
                        weight_init='normal',
@@ -357,9 +357,13 @@ def generalizedconvnet(input_shape, nout,
                 # add final affine layer
                 layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg), 
                             activity_regularizer=activity_l1l2(activityl1, activityl2)))
-                # add softplus activation
-                layers.append(Activation('softplus'))
             else:
                 layers.append(Dense(num_filters[layer_id], init=weight_init, W_regularizer=l2(l2_reg)))
+
+        if layer_type == 'softplus':
+            layers.append(Activation('softplus'))
+
+        if layer_type == 'param_softplus':
+            layers.append(ParametricSoftplus())
 
     return layers

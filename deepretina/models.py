@@ -353,7 +353,8 @@ def generalizedconvnet(input_shape, nout,
 
         # Add dense (affine) layer
         if layer_type == 'affine':
-            if layer_id == len(architecture) - 1:
+            # second to last layer, since assuming there is an activation after
+            if layer_id == len(architecture) - 2:
                 # add final affine layer
                 layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg), 
                             activity_regularizer=activity_l1l2(activityl1, activityl2)))

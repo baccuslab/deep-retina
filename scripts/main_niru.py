@@ -247,7 +247,7 @@ if __name__ == '__main__':
     #    fit_glm(ci, ['naturalscene'], '15-11-21a', filtersize, (l2a, l2b), description='Cutout GLM 15-11-21a, naturalscene, cell {}'.format(ci))
     #    fit_cutout(ci, ['naturalscene'], '15-11-21a', filtersize=filtersize, l2=1e-3, description='LN cutout 15-11-21a, naturalscene, cell {}'.format(ci))
 
-    gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+    gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16] #, 17, 18, 19, 20, 21, 22, 23, 24, 25]
     for ci in gc_151121b:
         fit_glm(ci, ['whitenoise'], '15-11-21b', filtersize, (l2a, l2b), description='Cutout GLM 15-11-21b, whitenoise, cell {}'.format(ci))
         fit_cutout(ci, ['whitenoise'], '15-11-21b', filtersize=filtersize, l2=1e-3, description='LN cutout 15-11-21b, whitenoise, cell {}'.format(ci))

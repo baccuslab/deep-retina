@@ -302,7 +302,7 @@ def plot_spatial_grid(weights, cmap='seismic', normalize=True):
     """
 
     # create the figure
-    fig = plt.figure(figsize=(12, 8))
+    fig = plt.figure(figsize=(16, 12))
 
     # number of convolutional filters and number of affine filters
     nrows = weights.shape[0]

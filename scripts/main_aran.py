@@ -19,7 +19,7 @@ def fit_convnet(cells, train_stimuli, test_stimuli, exptdate, readme=None):
 
     stim_shape = (40, 50, 50)
     ncells = len(cells)
-    batchsize = 100 #might want to make this smaller
+    batchsize = 5000
 
     # get the layers
     layers = convnet(stim_shape, ncells)
@@ -47,28 +47,27 @@ def fit_experimentallstm(cells, timesteps, train_stimuli, test_stimuli, exptdate
 
     stim_shape = (timesteps, 40, 50, 50)
     ncells = len(cells)
-    batchsize = 100 #might want to make this smaller
+    batchsize = 200
 
     # get the compiled graph model
-    model = experimentallstm(stim_shape, ncells)
-
-    # compile the keras model
-#    model = sequential(layers, 'adam')
+    # model = experimentallstm(stim_shape, ncells, num_hidden=700, optimizer='adam', lstm_flag=True, reg=0.01)
+    model = experimentallstm(stim_shape, ncells, optimizer='adam', reg=0.01)
 
     # load experiment data
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[1], batchsize)
 
    # print(data._train_data[train_stimuli[0]].X.shape)
 
-    data.reroll(timesteps)
+    #data.reroll(timesteps)
+    data.segmenttime(timesteps)
 
 
-    #print(data._train_data[train_stimuli[0]].X.shape)
+    print(data._train_data[train_stimuli[0]].X.shape)
     # create a monitor to track progress
     monitor = KerasMonitor('experimentallstm', model, data, readme, save_every=10)
 
     # train
-    train(model, data, monitor, num_epochs=100)
+    train(model, data, monitor, num_epochs=400)
 
     return model
 
@@ -132,4 +131,4 @@ if __name__ == '__main__':
 #    p_arr = [0, 0.25, 0.5, 0.75]
 #    for reg in reg_arr:
 #        for p in p_arr:
-	mdl = fit_experimentallstm([0, 1, 2, 3, 4], 100, ['naturalscene'], ['naturalscene'], '15-10-07', description='Experimental RNN with an RNN per subunit type')
+	mdl = fit_experimentallstm([0, 1, 2, 3, 4], 50, ['naturalscene'], ['naturalscene'], '15-10-07', description='Fully Convolutional RNN with a Convolutional RNN per subunit type with 1x1 convolutional filters for the RNN, and conv layer right after it')

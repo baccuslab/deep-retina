@@ -173,6 +173,34 @@ class Experiment(object):
             for key, ex in stim.items():
                 stim[key] = Exptdata(ex.X[:, :, xi, yi], ex.y)
                 
+    def segmenttime(self, tau):
+        """Add time dimension into nonoverlapping segments"""
+
+        # segment training data
+        self._train_batches = list()
+        self._validation_batches = list()
+        for key in self._train_data.keys():
+
+            # modify the stimulus to add new segmented time dimension
+            self._train_data[key] = Exptdata(time_split(self._train_data[key].X, tau),
+                                             time_split(self._train_data[key].y, tau))
+
+            # update the batch indices
+            length = self._train_data[key].X.shape[0]
+            train, val = _train_val_split(length, self.batchsize, self.holdout)
+
+            # append these train/validation batches to the master list
+            self._train_batches.extend(zip(repeat(key), train))
+            self._validation_batches.extend(zip(repeat(key), val))
+
+        # modify the test stimulus to add new segmented time dimension
+        for key in self._test_data.keys():
+            self._test_data[key] = Exptdata(time_split(self._test_data[key].X, tau),
+                                            time_split(self._test_data[key].y, tau))
+
+        # save batches_per_epoch for calculating # epochs later
+        self.batches_per_epoch = len(self._train_batches)
+
     def reroll(self, tau):
         """Applies rolling window to the stimulus for a second time"""
 
@@ -360,6 +388,14 @@ def _train_val_split(length, batchsize, holdout):
 
     return batch_indices[num_holdout:].copy(), batch_indices[:num_holdout].copy()
 
+
+def time_split(array, timesteps):
+
+    time_multiple = (int)(array.shape[0]/timesteps)
+    length = time_multiple*timesteps
+    array = array[:length]
+    new_shape = (time_multiple, timesteps,) + array.shape[1:]
+    return array.reshape(new_shape)
 
 def rolling_window(array, window, time_axis=0):
     """

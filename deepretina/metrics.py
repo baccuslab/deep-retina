@@ -24,15 +24,14 @@ def multicell(metric):
             assert isinstance(arg, (np.ndarray, list, tuple)), \
                 "Arguments must be a numpy array or list of numpy arrays"
 
-        # convert arguments to matrices
         true_rates = np.atleast_2d(r)
         model_rates = np.atleast_2d(rhat)
 
-        assert true_rates.ndim == 2, "Arguments have too many dimensions"
+        #assert true_rates.ndim == 2, "Arguments have too many dimensions"
         assert true_rates.shape == model_rates.shape, "Shapes must be equal"
 
         # compute scores for each pair
-        scores = [metric(true_rate, model_rate)
+        scores = [metric(true_rate.ravel(), model_rate.ravel())
                   for true_rate, model_rate in zip(true_rates, model_rates)]
 
         # return the mean across cells and the full list

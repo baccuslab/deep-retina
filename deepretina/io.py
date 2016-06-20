@@ -183,11 +183,12 @@ class Monitor:
             # for all cells
             for ix, cell in enumerate(cells):
                 filename = 'cell{}'.format(cell)
+                '''
                 plot_rates(iteration, self.experiment.dt,
                            train=(r_train[:, ix], rhat_train['loss'][:, ix]),
                            validation=(r_val[:, ix], rhat_val['loss'][:, ix]))
                 self._save_figure(filename)
-
+                '''
         # plot the performance curves
         for plottype in ('summary', 'traces'):
             filename = 'performance_{}'.format(plottype)
@@ -243,6 +244,7 @@ class Monitor:
 
     def _save_h5(self, epoch, iteration, all_train, all_val, all_test):
         """Updates the results.h5 file"""
+        
         with h5py.File(self._dbpath('results.h5'), 'r+') as f:
 
             # helper function to extend a dataset along the first dimension
@@ -261,7 +263,7 @@ class Monitor:
 
                 for fname, val in all_test.items():
                     extend('/'.join(('test', fname, metric)), all_test[fname][metric])
-
+             
     def _append_csv(self, filename, row):
         """Appends the list of elements in row as a line in the CSV specified by filename"""
         self._save_text(filename, ','.join(map(str, row)) + '\n')

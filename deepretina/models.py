@@ -4,14 +4,14 @@ Construct Keras models
 
 from __future__ import absolute_import, division, print_function
 from keras.models import Sequential, Graph
-from keras.layers.core import Dropout, Dense, Activation, Flatten
+from keras.layers.core import Dropout, Dense, Activation, Flatten, TimeDistributedDense
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM, SimpleRNN
 from keras.layers.advanced_activations import PReLU, ParametricSoftplus
 from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise, GaussianDropout
 from keras.regularizers import l1l2, activity_l1l2, l2
-from keras.layers.extra import TimeDistributedFlatten, TimeDistributedConvolution2D, TimeDistributedMaxPooling2D, SubunitSlice
+from keras.layers.extra import TimeDistributedFlatten, TimeDistributedConvolution2D, TimeDistributedMaxPooling2D, SubunitSlice, ConvRNN, ImgReshape
 from .utils import notify
 
 __all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'experimentallstm', 'generalizedconvnet']
@@ -192,7 +192,7 @@ def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='he_normal', l2_re
 
 def experimentallstm(input_shape, nout, num_hidden=50,
             num_filters=(8, 16), filter_size=(13, 13),
-            optimizer='adam', loss='poisson_loss', lstm_flag=False, weight_init='normal', reg=0.01):
+            optimizer='adam', loss='poisson_loss', rnn_flag=3, weight_init='normal', reg=0.01):
     """Experimental Convolutional-LSTM neural network
 
     Parameters
@@ -213,6 +213,7 @@ def experimentallstm(input_shape, nout, num_hidden=50,
         Keras weight initialization (default: 'normal')
 
     reg: Just does l2 reg, can make this choice fancier and more modular later on
+    rnn_flag: int either 1,2,or 3 where 1: SimpleRNN, 2: LSTM, 3: ConvRNN
     """
 
     graph = Graph()
@@ -234,12 +235,38 @@ def experimentallstm(input_shape, nout, num_hidden=50,
     for i in range(num_filters[0]):
         graph.add_node(SubunitSlice(i), name='slice'+str(i), input='mp')
         graph.add_node(TimeDistributedFlatten(), name='flatten'+str(i), input='slice'+str(i))
-        if lstm_flag:
-           graph.add_node(LSTM(num_hidden, return_sequences=False), name='rnn'+str(i), input='flatten'+str(i))
-        else:
-           graph.add_node(SimpleRNN(num_hidden, return_sequences=False), name='rnn'+str(i), input='flatten'+str(i))
+        if rnn_flag == 2:
+           graph.add_node(LSTM(num_hidden, return_sequences=True), name='rnn'+str(i), input='flatten'+str(i))
+        elif rnn_flag == 1:
+           graph.add_node(SimpleRNN(num_hidden, return_sequences=True), name='rnn'+str(i), input='flatten'+str(i))
+        else: #default if not specified, applies 1 1x1 filter to each subunit type, each input will be of shape (nb_samples, time, 1, 19, 19) 
+           graph.add_node(ConvRNN(filter_dim=(1, 1, 1), reshape_dim=(1, 19, 19), return_sequences=True), name='rnn'+str(i), input='flatten'+str(i))
         rnn_arr.append('rnn'+str(i))
 
+    if rnn_flag == 1 or rnn_flag == 2:
+       # Add first dense layer after concatenating RNN outputs
+       graph.add_node(TimeDistributedDense(num_filters[1], init=weight_init, W_regularizer=l2(reg)), name='dense0', inputs=rnn_arr, merge_mode='concat', concat_axis=-1)
+       # Add relu activation
+       graph.add_node(Activation('relu'), name='r1', input='dense0')
+    else:
+       # Make network fully convolutional
+       # First, we reshape RNN output to be (nb_samples, time, nb_subunits, rows, cols)
+       graph.add_node(ImgReshape(num_filters[0]), name='reshape', inputs=rnn_arr, merge_mode='concat', concat_axis=-1)
+       # Next, we apply convolutional layer to every timestep
+       graph.add_node(TimeDistributedConvolution2D(num_filters[1], 9, 9, init=weight_init, border_mode='valid', subsample=(1, 1), W_regularizer=l2(reg)), name='finalunits', input='reshape')
+       # Add relu activation
+       graph.add_node(Activation('relu'), name='rect1', input='finalunits')
+       graph.add_node(TimeDistributedFlatten(), name='r1', input='rect1')
+
+    # Add a final dense (affine) layer, with a softplus at the end
+    graph.add_node(TimeDistributedDense(nout, init=weight_init, W_regularizer=l2(reg), activation='softplus'), name='dense1', input='r1')
+    
+    graph.add_output(name='loss', input='dense1')
+
+    with notify('Compiling'):
+        graph.compile(optimizer, {'loss': loss})
+    return graph
+'''
     # Add first dense layer after concatenating RNN outputs
     graph.add_node(Dense(num_filters[1], init=weight_init, W_regularizer=l2(reg)), name='dense0', inputs=rnn_arr, merge_mode='concat')
 
@@ -253,10 +280,7 @@ def experimentallstm(input_shape, nout, num_hidden=50,
     graph.add_node(ParametricSoftplus(), name='softplus', input='dense1')
     
     graph.add_output(name='loss', input='softplus')
-
-    with notify('Compiling'):
-        graph.compile(optimizer, {'loss': loss})
-    return graph
+'''
 
 def generalizedconvnet(input_shape, nout,
                        architecture=('conv', 'relu', 'pool', 'flatten', 'affine', 'relu', 'affine'),

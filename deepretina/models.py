@@ -63,7 +63,6 @@ def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
     layers = list()
     layers.append(Flatten(input_shape=input_shape))
     layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg)))
-    layers.append(BatchNormalization())
     layers.append(ParametricSoftplus())
     return layers
 
@@ -247,14 +246,16 @@ def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='he_normal', l2_re
 
 
 def generalizedconvnet(input_shape, nout,
-                       architecture=('conv', 'relu', 'pool', 'flatten', 'affine', 'relu', 'affine'),
+                       architecture=('conv', 'relu', 'pool', 'flatten', 'affine', 'relu', 'affine', 'softplus'),
                        num_filters=(4, -1, -1, -1, 16),
                        filter_sizes=(9, -1, -1, -1, -1),
                        weight_init='normal',
                        dropout=0.0,
                        dropout_type='binary',
                        l2_reg=0.0,
-                       sigma=0.01):
+                       sigma=0.01,
+                       activityl1=0.0,
+                       activityl2=0.0):
     """Generic convolutional neural network
 
     Parameters
@@ -352,12 +353,18 @@ def generalizedconvnet(input_shape, nout,
 
         # Add dense (affine) layer
         if layer_type == 'affine':
-            if layer_id == len(architecture) - 1:
-                # add final affine layer with softplus activation
-                layers.append(Dense(nout, init=weight_init,
-                                    W_regularizer=l2(l2_reg),
-                                    activation='softplus'))
+            # second to last layer, since assuming there is an activation after
+            if layer_id == len(architecture) - 2:
+                # add final affine layer
+                layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg), 
+                            activity_regularizer=activity_l1l2(activityl1, activityl2)))
             else:
                 layers.append(Dense(num_filters[layer_id], init=weight_init, W_regularizer=l2(l2_reg)))
+
+        if layer_type == 'softplus':
+            layers.append(Activation('softplus'))
+
+        if layer_type == 'param_softplus':
+            layers.append(ParametricSoftplus())
 
     return layers

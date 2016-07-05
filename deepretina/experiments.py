@@ -57,7 +57,7 @@ class Experiment(object):
         nskip : int
             The number of stimulus frames to skip at the beginning of each stimulus block.
             Used to remove times when the retina is rapidly adapting to the change in stimulus
-            statistics. (Default: 0)
+            statistics. (Default: 6000)
 
         zscore_flag : bool
             Whether stimulus should be zscored (default: True)

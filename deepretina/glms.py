@@ -96,13 +96,13 @@ class GLM:
             u[t] += np.tensordot(H[t], self.theta['history'], axes=2)
 
             # draw poisson spikes for this time point
-            spikes[t] = np.random.poisson(self.dt * np.exp(u[t]))
+            spikes[t] = np.random.poisson(self.dt * texp(u[t]))
 
         return u, H
 
     def predict(self, X):
         """Predicts the firing rate given a stimulus"""
-        return np.exp(self.generator(X)[0])
+        return texp(self.generator(X)[0])
 
     def train_on_batch(self, X, y):
         """Updates the parameters on the given batch
@@ -129,7 +129,7 @@ class GLM:
         """
         # forward pass
         u, H = self.generator(X)
-        yhat = np.exp(u)
+        yhat = texp(u)
 
         # compute the objective
         objective = (yhat - y * u).mean()
@@ -209,6 +209,11 @@ def test_glm():
         objs.append(fobj)
 
     return true_model, model, np.array(objs)
+
+
+def texp(x, vmin=-20, vmax=20):
+    """Truncated exponential"""
+    return np.exp(x.clip(vmin, vmax))
 
 if __name__ == "__main__":
 

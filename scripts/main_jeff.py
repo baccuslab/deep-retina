@@ -208,5 +208,5 @@ if __name__ == '__main__':
     #mdl = fit_fixedrnn(list(range(19)), ['whitenoise_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-11-21b', description='fixedrnn whitenoise on 15-11-21b', num_affine=32)
 
     #mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine on 15-11-21a naturalscene with activity reg, parametric softplus, and injected noise')
-    mdl = fit_generalizedconvnet(list(7), ['tpinknoise'], ['tpinknoise', 'spinknoise'], '16-05-17', nclip=0, description='conv-conv-affine on Jeffs 16-05-17 temporal pink noise experiment')
-    mdl = fit_generalizedconvnet(list(7), ['spinknoise'], ['tpinknoise', 'spinknoise'], '16-05-17', nclip=0, description='conv-conv-affine on Jeffs 16-05-17 spatial pink noise experiment')
+    mdl = fit_generalizedconvnet(list(range(7)), ['tpinknoise'], ['tpinknoise', 'spinknoise'], '16-05-17', nclip=0, description='conv-conv-affine on Jeffs 16-05-17 temporal pink noise experiment')
+    mdl = fit_generalizedconvnet(list(range(7)), ['spinknoise'], ['tpinknoise', 'spinknoise'], '16-05-17', nclip=0, description='conv-conv-affine on Jeffs 16-05-17 spatial pink noise experiment')

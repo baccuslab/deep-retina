@@ -57,10 +57,10 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
 
     # get the convnet layers
     #### BEST CONV-CONV-AFFINE ARCHITECTURE ####
-    #layers = generalizedconvnet(stim_shape, ncells,
-    #        architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine'),
-    #        num_filters=[8, -1, -1, 16], filter_sizes=[15, -1, -1, 7], weight_init='normal',
-    #        l2_reg=0.05, dropout=0.25, sigma=sigma)
+    layers = generalizedconvnet(stim_shape, ncells,
+            architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine', 'param_softplus'),
+            num_filters=[num_filters[0], -1, -1, num_filters[1]], filter_sizes=[15, -1, -1, 7], weight_init='normal',
+            l2_reg=0.05, dropout=0.25, sigma=sigma)
     
     #### BEST CONV-AFFINE-AFFINE ARCHITECTURE ####
     #layers = generalizedconvnet(stim_shape, ncells, 
@@ -68,10 +68,10 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
     #        num_filters=[8, -1, -1, -1, -1, 16], filter_sizes=[15], weight_init='normal',
     #        l2_reg=0.01, dropout=0.5)
 
-    layers = generalizedconvnet(stim_shape, ncells, 
-            architecture=('conv', 'relu', 'flatten', 'dropout', 'affine', 'relu', 'affine', 'param_softplus'),
-            num_filters=[num_filters[0], -1, -1, -1, num_filters[1]], filter_sizes=[17], weight_init='normal',
-            l2_reg=0.02, dropout=0.4, activityl1=1e-3)
+    #layers = generalizedconvnet(stim_shape, ncells, 
+    #        architecture=('conv', 'noise', 'relu', 'flatten', 'dropout', 'affine', 'noise', 'relu', 'affine', 'param_softplus'),
+    #        num_filters=[num_filters[0], -1, -1, -1, -1, num_filters[1]], filter_sizes=[17], weight_init='normal',
+    #        l2_reg=0.02, dropout=0.25, activityl1=1e-3, sigma=0.01)
 
     # compile the keras model
     model = sequential(layers, 'adam', loss='poisson')
@@ -176,6 +176,8 @@ if __name__ == '__main__':
     gc_15_11_21b = [0,1,3,4,5,8,9,13,14,16,17,18,19,20,21,22,23,24,25]
     gc_16_01_07 = [0,2,7,10,11,12,31]
     gc_16_01_08 = [0,3,7,9,11]
+    #gc_16_05_31 = [2,3,4,9,10,11,12,14,16,17,18,20,25,27]
+    gc_16_05_31 = [2,3,4,14,16,18,20,25,27]
     #mdl = fit_convnet(list(range(37)), 'naturalscene', 'all-cells')
     #mdl = fit_convnet([0,2,7,10,11,12,31], ['whitenoise', 'naturalscene', 'naturalmovie'], ['whitenoise', 'naturalscene', 'naturalmovie', 'structured'], '16-01-07')
     #mdl = fit_fixedlstm(list(range(37)), ['whitenoise_affine'], ['whitenoise_affine'], 'all-cells')
@@ -205,5 +207,5 @@ if __name__ == '__main__':
     #mdl = fit_fixedrnn(list(range(4)), ['whitenoise_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-11-21a', description='fixedrnn whitenoise on 15-11-21a')
     #mdl = fit_fixedrnn(list(range(19)), ['whitenoise_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-11-21b', description='fixedrnn whitenoise on 15-11-21b', num_affine=32)
 
-    mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine on 15-11-21a naturalscene with activity reg and parametric softplus')
-    mdl = fit_generalizedconvnet(gc_15_11_21b, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-11-21b', nclip=6000, description='conv-affine-affine on 15-11-21b naturalscene with activity reg and parametric softplus', num_filters=(16,32))
+    #mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine on 15-11-21a naturalscene with activity reg, parametric softplus, and injected noise')
+    mdl = fit_generalizedconvnet(gc_16_05_31, ['naturalscene'], ['naturalscene'], '16-05-31', nclip=0, description='conv-conv-affine on 16-05-31 naturalscene', num_filters=(16,32))

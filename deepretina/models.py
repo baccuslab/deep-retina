@@ -349,12 +349,15 @@ def generalizedconvnet(input_shape, nout,
 
         # noise layer
         if layer_type == 'noise':
-            layers.append(GaussianNoise(sigma))
+            if layer_id == 0:
+                layers.append(GaussianNoise(sigma, input_shape=input_shape))
+            else:
+                layers.append(GaussianNoise(sigma))
 
         # Add dense (affine) layer
         if layer_type == 'affine':
             # second to last layer, since assuming there is an activation after
-            if layer_id == len(architecture) - 2:
+            if layer_id > len(architecture) - 3:
                 # add final affine layer
                 layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg), 
                             activity_regularizer=activity_l1l2(activityl1, activityl2)))

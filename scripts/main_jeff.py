@@ -45,7 +45,7 @@ def fit_convnet(cells, train_stimuli, test_stimuli, exptdate, readme=None):
 
 
 @main_wrapper
-def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0, readme=None, sigma=0.001, num_filters=(8,16)):
+def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0, readme=None, sigma=0.1, num_filters=(8,16)):
     """Main script for fitting a convnet
 
     author: Lane McIntosh
@@ -58,9 +58,9 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
     # get the convnet layers
     #### BEST CONV-CONV-AFFINE ARCHITECTURE ####
     layers = generalizedconvnet(stim_shape, ncells,
-            architecture=('noise', 'conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine', 'noise', 'param_softplus'),
-            num_filters=[-1, num_filters[0], -1, -1, num_filters[1]], filter_sizes=[-1, 15, -1, -1, 7], weight_init='normal',
-            l2_reg=0.02, dropout=0.25, sigma=sigma)
+            architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine', 'param_softplus'),
+            num_filters=[num_filters[0], -1, -1, num_filters[1]], filter_sizes=[15, -1, -1, 7], weight_init='normal',
+            l2_reg=0.05, dropout=0.25, sigma=sigma)
     
     #### BEST CONV-AFFINE-AFFINE ARCHITECTURE ####
     #layers = generalizedconvnet(stim_shape, ncells, 
@@ -208,4 +208,5 @@ if __name__ == '__main__':
     #mdl = fit_fixedrnn(list(range(19)), ['whitenoise_affine'], ['whitenoise_affine', 'naturalscene_affine'], '15-11-21b', description='fixedrnn whitenoise on 15-11-21b', num_affine=32)
 
     #mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine on 15-11-21a naturalscene with activity reg, parametric softplus, and injected noise')
-    mdl = fit_generalizedconvnet(gc_16_05_31, ['naturalscene'], ['naturalscene'], '16-05-31', nclip=0, description='conv-conv-affine on 16-05-31 naturalscene', num_filters=(8,16))
+    mdl = fit_generalizedconvnet(list(range(7)), ['tpinknoise'], ['tpinknoise', 'spinknoise'], '16-05-17', nclip=0, description='conv-conv-affine on Jeffs 16-05-17 temporal pink noise experiment')
+    mdl = fit_generalizedconvnet(list(range(7)), ['spinknoise'], ['tpinknoise', 'spinknoise'], '16-05-17', nclip=0, description='conv-conv-affine on Jeffs 16-05-17 spatial pink noise experiment')

@@ -8,7 +8,7 @@ import numpy as np
 import h5py
 from os import path
 from descent.utils import destruct, restruct
-from descent.algorithms import RMSProp
+from descent import rmsprop
 
 __all__ = ['GLM']
 
@@ -41,7 +41,7 @@ class GLM:
         }
 
         # initialize optimizer
-        self.opt = RMSProp(destruct(self.theta_init).copy(), lr=lr)
+        self.opt = rmsprop(destruct(self.theta_init).copy(), lr=lr)
 
         # add regularization
         if type(l2) is float:

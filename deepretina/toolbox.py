@@ -326,8 +326,12 @@ def modify_model(model_path, weight_filename, changed_params):
             # key is sigma for GaussianNoise layers
             elif key in ['sigma']:
                 idxs = [i for i in range(len(arch['layers'])) if arch['layers'][i]['name'] == 'GaussianNoise']
-                for count,i in enumerate(idxs):
-                    arch['layers'][i]['sigma'] = changed_params['sigma'][count]
+                if isinstance(changed_params['sigma'], float):
+                    for i in idxs:
+                        arch['layers'][i]['sigma'] = changed_params['sigma']
+                else:
+                    for count,i in enumerate(idxs):
+                        arch['layers'][i]['sigma'] = changed_params['sigma'][count]
             # change parameters of individual layers
             elif key in ['layers']:
                 # changed_params['layers'] should be a list of dicts

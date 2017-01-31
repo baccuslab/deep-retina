@@ -54,6 +54,38 @@ def fit_cutout(cell, train_stimuli, exptdate, filtersize, l2=1e-3, load_fraction
 
 
 @main_wrapper
+def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, readme=None):
+    """Main script for fitting a convnet
+
+    author: Lane McIntosh
+    """
+
+    stim_shape = (40, 50, 50)
+    ncells = len(cells)
+    batchsize = 5000
+
+    # get the convnet layers
+    layers = generalizedconvnet(stim_shape, ncells, 
+            architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine'),
+            num_filters=[8, -1, -1, 16], filter_sizes=[15, -1, -1, 7], weight_init='normal',
+            l2_reg=0.05, dropout=0.25, sigma=0.1)
+
+    # compile the keras model
+    model = sequential(layers, 'adam', loss='poisson')
+
+    # load experiment data
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+
+    # create a monitor to track progress
+    monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
+
+    # train
+    train(model, data, monitor, num_epochs=100)
+
+    return model
+
+
+@main_wrapper
 def fit_ln(cells, train_stimuli, exptdate, l2=1e-3, readme=None):
     """Fits an LN model using keras"""
     stim_shape = (40, 50, 50)
@@ -104,7 +136,7 @@ def fit_convnet(cells, train_stimuli, exptdate, nclip=0, readme=None):
 
     # get the convnet layers
     layers = convnet(stim_shape, ncells, num_filters=(8, 16),
-                     filter_size=(13, 13), weight_init='normal',
+                     filter_size=(15, 7), weight_init='normal',
                      l2_reg_weights=(0.01, 0.01, 0.01),
                      l1_reg_activity=(0.0, 0.0, 0.001),
                      dropout=(0.1, 0.0))
@@ -193,7 +225,7 @@ def fit_genconv(cells, train_stimuli, exptdate, load_fraction=1.0, readme=None):
 
 
 @main_wrapper
-def fit_glm(cell, train_stimuli, exptdate, filtersize, l2, readme=None):
+def fit_glm(cell, train_stimuli, exptdate, filtersize, l2, load_fraction=1.0, readme=None):
     """Main script for fitting a GLM
 
     author: Niru Maheswaranathan
@@ -204,6 +236,7 @@ def fit_glm(cell, train_stimuli, exptdate, filtersize, l2, readme=None):
     # load experimental data
     test_stimuli = ['whitenoise', 'naturalscene']
     data = Experiment(exptdate, [cell], train_stimuli, test_stimuli, history, batchsize, nskip=6000)
+    data.subselect(load_fraction)
 
     # get the spatial center of the STA, and the cutout indices
     cellname = 'cell{:02d}'.format(cell + 1)
@@ -237,22 +270,22 @@ if __name__ == '__main__':
     # ===
     # GLM
     # ===
-    l2a = 0.1
-    l2b = 0.0
-    filtersize = 5
-    gc_151121a = [6, 10, 12, 13]
+    # l2a = 0.1
+    # l2b = 0.0
+    # filtersize = 5
+    # gc_151121a = [6, 10, 12, 13]
     #for ci in gc_151121a:
     #    fit_glm(ci, ['whitenoise'], '15-11-21a', filtersize, (l2a, l2b), description='Cutout GLM 15-11-21a, whitenoise, cell {}'.format(ci))
     #    fit_cutout(ci, ['whitenoise'], '15-11-21a', filtersize=filtersize, l2=1e-3, description='LN cutout 15-11-21a, whitenoise, cell {}'.format(ci))
     #    fit_glm(ci, ['naturalscene'], '15-11-21a', filtersize, (l2a, l2b), description='Cutout GLM 15-11-21a, naturalscene, cell {}'.format(ci))
     #    fit_cutout(ci, ['naturalscene'], '15-11-21a', filtersize=filtersize, l2=1e-3, description='LN cutout 15-11-21a, naturalscene, cell {}'.format(ci))
 
-    gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16] #, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    for ci in gc_151121b:
-        fit_glm(ci, ['whitenoise'], '15-11-21b', filtersize, (l2a, l2b), description='v3 Cutout GLM 15-11-21b, whitenoise, cell {}'.format(ci))
-        fit_cutout(ci, ['whitenoise'], '15-11-21b', filtersize=filtersize, l2=1e-3, description='v3 Cutout LN 15-11-21b, whitenoise, cell {}'.format(ci))
-        fit_glm(ci, ['naturalscene'], '15-11-21b', filtersize, (l2a, l2b), description='v3 Cutout GLM 15-11-21b, naturalscene, cell {}'.format(ci))
-        fit_cutout(ci, ['naturalscene'], '15-11-21b', filtersize=filtersize, l2=1e-3, description='v3 Cutout LN 15-11-21b, naturalscene, cell {}'.format(ci))
+    # gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16] #, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+    # for ci in gc_151121b:
+        # fit_glm(ci, ['whitenoise'], '15-11-21b', filtersize, (l2a, l2b), description='v3 Cutout GLM 15-11-21b, whitenoise, cell {}'.format(ci))
+        # fit_cutout(ci, ['whitenoise'], '15-11-21b', filtersize=filtersize, l2=1e-3, description='v3 Cutout LN 15-11-21b, whitenoise, cell {}'.format(ci))
+        # fit_glm(ci, ['naturalscene'], '15-11-21b', filtersize, (l2a, l2b), description='v3 Cutout GLM 15-11-21b, naturalscene, cell {}'.format(ci))
+        # fit_cutout(ci, ['naturalscene'], '15-11-21b', filtersize=filtersize, l2=1e-3, description='v3 Cutout LN 15-11-21b, naturalscene, cell {}'.format(ci))
 
     # ==========
     # Medium OFF
@@ -263,9 +296,11 @@ if __name__ == '__main__':
     # ========
     # 15-10-07
     # ========
+    mdl = fit_generalizedconvnet([0, 1, 2, 3, 4], ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')
     # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=6000)
     # mdl = fit_convconv([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', description='2-layer convnet on whitenoise (with gaussian noise)')
     # mdl = fit_convconv([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', description='2-layer convnet on naturalscenes (with gaussian noise)')
+    # mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07')
 
     # LN
     # cells = range(1, 5)
@@ -280,9 +315,11 @@ if __name__ == '__main__':
         # fit_ln([0, 1, 2, 3, 4], [st], '15-10-07', l2=1e-3, description='LN on {} with BatchNormalization, 15-10-07'.format(st))
 
     # load fraction LN
-    # for lf in [0.1, 0.2, 0.4, 0.6]:
-    #     for ci in range(5):
-    #         fit_cutout(ci, ['whitenoise'], '15-10-07', filtersize=5, l2=1e-3, load_fraction=lf, description='load_fraction={}, LN cutout, cell {}'.format(lf, ci))
+    # lf = 1.0
+    #for lf in [0.1, 0.2, 0.4, 0.6]:
+    # for ci in range(5):
+        # fit_glm(ci, ['whitenoise'], '15-10-07', filtersize=5, l2=(0.1, 0.0), load_fraction=lf, description='load_fraction={}, GLM cutout, cell {}'.format(lf, ci))
+        # fit_cutout(ci, ['whitenoise'], '15-10-07', filtersize=5, l2=1e-3, load_fraction=lf, description='load_fraction={}, LN cutout, cell {}'.format(lf, ci))
 
 	# load fraction CNN
 	# for lf in [0.1, 0.2, 0.4, 0.6]:

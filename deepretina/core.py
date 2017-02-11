@@ -56,11 +56,7 @@ def train(model, experiment, monitor, num_epochs, augment=False):
 
                 # train on the batch
                 tstart = time()
-                if augment:
-                    augmented_y = y
-                    loss = model.train_on_batch(X, augmented_y)[0]
-                else:
-                    loss = model.train_on_batch(X, y)[0]
+                loss = model.train_on_batch({'stim':X, 'loss':y})[0]
                 elapsed_time = time() - tstart
 
                 # update

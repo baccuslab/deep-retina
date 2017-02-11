@@ -9,7 +9,6 @@ from collections import namedtuple
 from itertools import product
 from functools import wraps
 from .utils import notify, allmetrics
-from keras.utils import visualize_util
 from warnings import warn
 from cycler import cycler
 import numpy as np
@@ -146,10 +145,13 @@ class Monitor:
         iteration : int
             Current iteration of training
         """
-        rhat_train = model_predict(X_train)
+        #rhat_train = model_predict(X_train)
+        #print(X_train.shape)
+        rhat_train = model_predict({'stim': X_train}) #only updating this for graph model
+        #print(rhat_train['loss'].shape)
 
         # training performance
-        avg_train, all_train = allmetrics(r_train, model_predict(X_train), self.metrics)
+        avg_train, all_train = allmetrics(r_train, model_predict({'stim': X_train}), self.metrics)
         data_row = [epoch, iteration] + [avg_train[metric] for metric in self.metrics]
         self._append_csv('train.csv', data_row)
 
@@ -176,8 +178,8 @@ class Monitor:
             # for one cell
             filename = 'cell{}'.format(cells)
             plot_rates(iteration, self.experiment.dt,
-                       train=(r_train, rhat_train),
-                       validation=(r_val, rhat_val))
+                       train=(r_train, rhat_train['loss']),
+                       validation=(r_val, rhat_val['loss']))
             self._save_figure(filename)
 
         else:
@@ -185,8 +187,8 @@ class Monitor:
             for ix, cell in enumerate(cells):
                 filename = 'cell{}'.format(cell)
                 plot_rates(iteration, self.experiment.dt,
-                           train=(r_train[:, ix], rhat_train[:, ix]),
-                           validation=(r_val[:, ix], rhat_val[:, ix]))
+                           train=(r_train[:, ix], rhat_train['loss'][:, ix]),
+                           validation=(r_val[:, ix], rhat_val['loss'][:, ix]))
                 self._save_figure(filename)
 
         # plot the performance curves
@@ -301,12 +303,6 @@ class KerasMonitor(Monitor):
             how often to save (in terms of the number of batches)
         """
         super().__init__(*args, **kwargs)
-
-        # writes Keras architecture files to disk
-        self._save_text('architecture.json', self.model.to_json())
-        self._save_text('architecture.yaml', self.model.to_yaml())
-        visualize_util.plot(self.model, to_file=self._dbpath('architecture.png'))
-        self._copy_to_dropbox('architecture.png')
 
 
 def plot_rates(iteration, dt, **rates):

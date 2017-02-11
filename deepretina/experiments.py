@@ -11,22 +11,15 @@ import numpy as np
 import h5py
 from scipy.stats import zscore
 from .utils import notify, allmetrics
-NUM_BLOCKS = {
-    '15-10-07': 6,
-    '15-11-21a': 6,
-    '15-11-21b': 6,
-    '16-01-07': 3,
-    '16-01-08': 3,
-}
-
 Exptdata = namedtuple('Exptdata', ['X', 'y'])
 dt = 1e-2
 __all__ = ['Experiment', 'loadexpt']
 
+
 class Experiment(object):
     """Class to keep track of loaded experiment data"""
 
-    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, nskip=6000, zscore_flag=True, augment_flag=False):
+    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, nskip=6000, zscore_flag=True):
         """Keeps track of experimental data
 
         Parameters
@@ -77,24 +70,19 @@ class Experiment(object):
         assert holdout >= 0 and holdout < 1, "holdout must be between 0 and 1"
         self.batchsize = batchsize
         self.dt = dt
+        self.holdout = holdout
 
         # partially apply function arguments to the loadexpt function
         load_data = partial(loadexpt, expt, cells, history=history, zscore_flag=zscore_flag)
-        if augment_flag:
-            augment = partial(augment_fun, expt, cells)
 
         # load training data, and generate the train/validation split, for each filename
         self._train_data = {}
         self._train_batches = list()
         self._validation_batches = list()
-        if augment_flag:
-            self._augment_functions = {}
         for filename in train_filenames:
 
             # load the training experiment as an Exptdata tuple
             self._train_data[filename] = load_data(filename, 'train', nskip=nskip)
-            if augment_flag:
-                self._augment_functions[filename] = augment(filename)
 
             # generate the train/validation split
             length = self._train_data[filename].X.shape[0]
@@ -144,7 +132,7 @@ class Experiment(object):
         r = self._train_data[expt].y[inds]
 
         # make predictions
-        rhat = modelrate(X)
+        rhat = modelrate({'stim':X})
 
         # evaluate using the given metrics
         return allmetrics(r, rhat, metrics), r, rhat
@@ -163,7 +151,7 @@ class Experiment(object):
 
             # get data and model firing rates
             r = exptdata.y
-            rhat = modelrate(exptdata.X)
+            rhat = modelrate({'stim':exptdata.X})
 
             # evaluate
             avg_scores[fname], all_scores[fname] = allmetrics(r, rhat, metrics)
@@ -176,68 +164,6 @@ class Experiment(object):
             stim = self.__dict__[stimset]
             for key, ex in stim.items():
                 stim[key] = Exptdata(ex.X[:, :, xi, yi], ex.y)
-
-    def subselect(self, fraction):
-        """subselects a number of training batches"""
-        batches = self.__dict__['_train_batches']
-        num_batches = int(np.ceil(fraction * len(batches)))
-        self.__dict__['_train_batches'] = batches[:num_batches]
-
-    def reroll(self, tau):
-        """Applies rolling window to the stimulus for a second time"""
-        for stimset in ('_train_data', '_test_data'):
-            stim = self.__dict__[stimset]
-            for key, ex in stim.items():
-                stim[key] = Exptdata(rolling_window(ex.X, tau), ex.y[tau:, :])
-
-    def augment_fun(self, expt, cells, filename):
-        """Returns function to augment data using noise model"""
-        with notify('Augmenting data for {}/{}'.format(expt, filename)):
-
-            # load the hdf5 file
-            filepath = os.path.join(os.path.expanduser('~/experiments/data'), expt, filename + '.h5')
-            with h5py.File(filepath, mode='r') as f:
-                # collect the noise distribution for each cell
-                # ps will be a list of polyfits
-                ps = []
-                for cell in cells:
-                    cell_name = 'cell%02i' %(c+1)
-                    repeats = np.array(f['test/repeats/' + cell_name])
-                    psth = np.mean(repeats[-1], axis=0)
-
-                    # get dictionary where keys are mean rates and values are possible single-trial rates
-                    # note that the keys (mean rates) are truncated at 0.1 Hz resolution
-                    distribution = {}
-                    for t in range(len(psth)):
-                        for r in range(repeats.shape[0]):
-                            new_mean_string = '%0.1f' %psth[t]
-                            new_mean = float(new_mean_string)
-                            if new_mean in distribution.keys():
-                                distribution[new_mean].append(repeats[r,t])
-                            else:
-                                distribution[new_mean] = [repeats[r,t]]
-
-                    sorted_keys = sorted([k for k in distribution.keys()])
-                    means = [np.mean(distribution[k]) for k in sorted_keys]
-                    variances = [np.var(distribution[k]) for k in sorted_keys]
-
-                    # fit a 3rd degree polynomial to the scaling of variance vs means
-                    # since pure interpolation would be perhaps noisier than desired
-                    p = np.polyfit(means, variances, 3)
-                    ps.append(p)
-
-            def augment(y):
-                """Takes rate of shape (cells,time) and returns the estimated rate
-                    from a hypothetical trial"""
-                new_y = np.zeros_like(y)
-                for cell in range(y.shape[0]):
-                    new_y[cell] = np.sum([pj * y[cell]**(len(ps[cell])-invdeg-1) for invdeg,pj in enumerate(ps[cell])], axis=0)
-                return new_y
-
-        return augment
-
-                                
-            
 
 
 def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=True):
@@ -285,7 +211,7 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=T
                 stim = zscore(stim)
 
             # apply clipping to remove the stimulus just after transitions
-            num_blocks = NUM_BLOCKS[expt] if train_or_test == 'train' and nskip>0 else 1
+            num_blocks = NUM_BLOCKS[expt] if train_or_test == 'train' else 1
             valid_indices = np.arange(expt_length).reshape(num_blocks, -1)[:, nskip:].ravel()
 
             # reshape into the Toeplitz matrix (nsamples, history, *stim_dims)
@@ -297,102 +223,6 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=T
 
     return Exptdata(stim_reshaped, resp)
 
-def deprecated_loadexpt(cellidx, filename, method, history, fraction=1., cutout=False, cutout_cell=0):
-    """
-    Loads an experiment from disk
-
-    ..Warning This function is deprecated!!! Only use this with old weights files
-
-    Parameters
-    ----------
-    cellidx : int
-        Index of the cell to load
-    filename : string
-        Name of the hdf5 file to load
-    method : string
-        The key in the hdf5 file to load ('train' or 'test')
-    history : int
-        Number of samples of history to include in the toeplitz stimulus
-    fraction : float, optional
-        Fraction of the experiment to load, must be between 0 and 1. (Default: 1.0)
-    """
-
-    assert fraction > 0 and fraction <= 1, "Fraction of data to load must be between 0 and 1"
-
-    # currently only works with the Oct. 07, 15 experiment
-    expt = '15-10-07'
-
-    with notify('Loading {}ing data'.format(method)):
-
-        # select different filename if you want a cutout
-        if cutout:
-            filename = filename + '_cutout_cell%02d' %(cutout_cell + 1)
-
-        # load the hdf5 file
-        filepath = os.path.join(os.path.expanduser('~/experiments/data'),
-                                expt,
-                                filename + '.h5')
-        f = h5py.File(filepath, 'r')
-
-        # length of the experiment
-        expt_length = f[method]['time'].size
-        num_samples = int(np.floor(expt_length * fraction))
-
-        # load the stimulus
-        stim = zscore(np.array(f[method]['stimulus'][:num_samples]).astype('float32'))
-
-        # reshaped stimulus (nsamples, time/channel, space, space)
-        if history == 0:
-            # don't create the toeplitz matrix
-            stim_reshaped = stim
-        else:
-            stim_reshaped = np.rollaxis(np.rollaxis(rolling_window(stim, history, time_axis=0), 2), 3, 1)
-
-        # get the response for this cell
-        resp = np.array(f[method]['response/firing_rate_10ms'][cellidx, history:num_samples]).T
-
-    return Exptdata(stim_reshaped, resp)
-
-def _loadexpt_h5(expt, filename):
-    """Loads an h5py reference to an experiment on disk"""
-    filepath = os.path.join(os.path.expanduser('~/experiments/data'),
-                            expt,
-                            filename + '.h5')
-
-    return h5py.File(filepath, mode='r')
-
-def cutout(ex, xi, yi):
-    """Cuts out a slice from the exptdata tuple"""
-    return Exptdata(ex.X[:, :, xi, yi], ex.y)
-
-def _train_val_split(length, batchsize, holdout):
-    """Returns a set of training and a set of validation indices
-
-    Parameters
-    ----------
-    length : int
-        The total number of samples of data
-
-    batchsize : int
-        The number of samples to include in each batch
-
-    holdout : float
-        The fraction of batches to hold out for validation
-    """
-    # compute the number of available batches, given the fixed batch size
-    num_batches = int(np.floor(length / batchsize))
-
-    # the total number of samples for training
-    total = int(num_batches * batchsize)
-
-    # generate batch indices, and shuffle the deck of batches
-    batch_indices = np.arange(total).reshape(num_batches, batchsize)
-    np.random.shuffle(batch_indices)
-
-    # compute the held out (validation) batches
-    num_holdout = int(np.round(holdout * num_batches))
-
-    return batch_indices[num_holdout:].copy(), batch_indices[:num_holdout].copy()
 
 def rolling_window(array, window, time_axis=0):
     """
@@ -450,55 +280,3 @@ def rolling_window(array, window, time_axis=0):
         return np.rollaxis(arr.T, 1, 0)
     else:
         return arr
-
-def deprecated_rolling_window(array, window, time_axis=0):
-    """
-    Make an ndarray with a rolling window of the last dimension
-
-    Parameters
-    ----------
-    array : array_like
-        Array to add rolling window to
-
-    window : int
-        Size of rolling window
-
-    time_axis : int, optional
-        The axis of the temporal dimension, either 0 or -1 (Default: 0)
-
-    Returns
-    -------
-    Array that is a view of the original array with a added dimension
-    of size w.
-
-    Examples
-    --------
-    >>> x=np.arange(10).reshape((2,5))
-    >>> rolling_window(x, 3)
-    array([[[0, 1, 2], [1, 2, 3], [2, 3, 4]],
-           [[5, 6, 7], [6, 7, 8], [7, 8, 9]]])
-
-    Calculate rolling mean of last dimension:
-
-    >>> np.mean(rolling_window(x, 3), -1)
-    array([[ 1.,  2.,  3.],
-           [ 6.,  7.,  8.]])
-
-    """
-
-    if time_axis == 0:
-        array = array.T
-
-    elif time_axis == -1:
-        pass
-
-    else:
-        raise ValueError('Time axis must be 0 (first dimension) or -1 (last)')
-
-    assert window >= 1, "`window` must be at least 1."
-    assert window < array.shape[-1], "`window` is too long."
-
-    # with strides
-    shape = array.shape[:-1] + (array.shape[-1] - window, window)
-    strides = array.strides + (array.strides[-1],)
-    return np.lib.stride_tricks.as_strided(array, shape=shape, strides=strides)

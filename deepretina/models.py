@@ -3,17 +3,18 @@ Construct Keras models
 """
 
 from __future__ import absolute_import, division, print_function
-from keras.models import Sequential
+from keras.models import Sequential, Graph
 from keras.layers.core import Dropout, Dense, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
-from keras.layers.recurrent import LSTM
-from keras.layers.advanced_activations import ParametricSoftplus
+from keras.layers.recurrent import LSTM, SimpleRNN
+from keras.layers.advanced_activations import PReLU, ParametricSoftplus
 from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise, GaussianDropout
 from keras.regularizers import l1l2, activity_l1l2, l2
+from keras.layers.extra import TimeDistributedFlatten, TimeDistributedConvolution2D, TimeDistributedMaxPooling2D, SubunitSlice
 from .utils import notify
 
-__all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet', 'nips_conv']
+__all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'experimentallstm', 'nips_conv']
 
 
 def sequential(layers, optimizer, loss='poisson'):
@@ -37,11 +38,9 @@ def sequential(layers, optimizer, loss='poisson'):
         A compiled Keras model object
     """
     model = Sequential(layers)
-    # [model.add(layer) for layer in layers]
     with notify('Compiling'):
         model.compile(loss=loss, optimizer=optimizer)
     return model
-
 
 def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
     """A linear-nonlinear stack of layers
@@ -244,130 +243,70 @@ def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='he_normal', l2_re
 
     return layers
 
-
-def generalizedconvnet(input_shape, nout,
-                       architecture=('conv', 'relu', 'pool', 'flatten', 'affine', 'relu', 'affine', 'softplus'),
-                       num_filters=(4, -1, -1, -1, 16),
-                       filter_sizes=(9, -1, -1, -1, -1),
-                       weight_init='normal',
-                       dropout=0.0,
-                       dropout_type='binary',
-                       l2_reg=0.0,
-                       sigma=0.01,
-                       activityl1=0.0,
-                       activityl2=0.0):
-    """Generic convolutional neural network
+def experimentallstm(input_shape, nout, num_hidden=50,
+            num_filters=(8, 16), filter_size=(13, 13),
+            optimizer='adam', loss='poisson_loss', lstm_flag=False, weight_init='normal', reg=0.01):
+    """Experimental Convolutional-LSTM neural network
 
     Parameters
     ----------
     input_shape : tuple
-        The shape of the stimulus (e.g. (40,50,50))
+        The shape of the stimulus (e.g. (time, 40,50,50))
 
     nout : int
         Number of output cells
 
-    weight_init : string, optional
-        Keras weight initialization (default: 'glorot_normal')
-
-    l2_reg : float, optional
-        l2 regularization on the weights (default: 0.0)
-
     num_filters : tuple, optional
-        Number of filters in each layer. Default: [4, 16]
+        Number of filters in each layer. Default: (8, 16)
 
-    filter_sizes : tuple, optional
-        Convolutional filter size. Default: [9]
-        Assumes that the filter is square.
+    filter_size : tuple, optional
+        Convolutional filter size. Default: (13, 13)
 
-    loss : string or object, optional
-        A Keras objective. Default: 'poisson_loss'
+    weight_init : string, optional
+        Keras weight initialization (default: 'normal')
 
-    optimizer : string or object, optional
-        A Keras optimizer. Default: 'adam'
-
-    weight_init : string
-        weight initialization. Default: 'normal'
-
-    l2_reg : float, optional
-        How much l2 regularization to apply to all filter weights
-
+    reg: Just does l2 reg, can make this choice fancier and more modular later on
     """
-    layers = list()
 
-    for layer_id, layer_type in enumerate(architecture):
+    graph = Graph()
 
-        # convolutional layer
-        if layer_type == 'conv':
-            if layer_id == 0:
-                # initial convolutional layer
-                layers.append(Convolution2D(num_filters[0], filter_sizes[0], filter_sizes[0],
-                                            input_shape=input_shape, init=weight_init,
-                                            border_mode='valid', subsample=(1, 1), W_regularizer=l2(l2_reg)))
-            else:
-                layers.append(Convolution2D(num_filters[layer_id], filter_sizes[layer_id],
-                                            filter_sizes[layer_id], init=weight_init, border_mode='valid',
-                                            subsample=(1, 1), W_regularizer=l2(l2_reg)))
+    # first define input
+    graph.add_input(name='stim', input_shape=input_shape)
 
-        # Add relu activation
-        if layer_type == 'relu':
-            layers.append(Activation('relu'))
+    #first convolutional layer
+    graph.add_node(TimeDistributedConvolution2D(num_filters[0], filter_size[0], filter_size[1], init=weight_init, border_mode='valid', subsample=(1, 1), W_regularizer=l2(reg)), name='conv0', input='stim')
 
-        # Add requ activation
-        if layer_type == 'requ':
-            layers.append(Activation('requ'))
+    # Add relu activation
+    graph.add_node(Activation('relu'), name='r0', input='conv0')
 
-        # Add exp activation
-        if layer_type == 'exp':
-            layers.append(Activation('exp'))
+    # max pooling layer
+    graph.add_node(TimeDistributedMaxPooling2D(pool_size=(2, 2)), name='mp', input='r0')
 
-        # max pooling layer
-        if layer_type =='pool':
-            layers.append(MaxPooling2D(pool_size=(2, 2)))
+    #Add an rnn per subunit
+    rnn_arr = []
+    for i in range(num_filters[0]):
+        graph.add_node(SubunitSlice(i), name='slice'+str(i), input='mp')
+        graph.add_node(TimeDistributedFlatten(), name='flatten'+str(i), input='slice'+str(i))
+        if lstm_flag:
+           graph.add_node(LSTM(num_hidden, return_sequences=False), name='rnn'+str(i), input='flatten'+str(i))
+        else:
+           graph.add_node(SimpleRNN(num_hidden, return_sequences=False), name='rnn'+str(i), input='flatten'+str(i))
+        rnn_arr.append('rnn'+str(i))
 
-        # flatten
-        if layer_type == 'flatten':
-            layers.append(Flatten())
+    # Add first dense layer after concatenating RNN outputs
+    graph.add_node(Dense(num_filters[1], init=weight_init, W_regularizer=l2(reg)), name='dense0', inputs=rnn_arr, merge_mode='concat')
 
-        # dropout
-        if layer_type == 'dropout':
-            if dropout_type == 'gaussian':
-                layers.append(GaussianDropout(dropout))
-            else:
-                layers.append(Dropout(dropout))
+    # Add relu activation
+    graph.add_node(Activation('relu'), name='r1', input='dense0')
+    
+    # Add a final dense (affine) layer
+    graph.add_node(Dense(nout, init=weight_init, W_regularizer=l2(reg)), name='dense1', input='r1')
+    
+    # Finish it off with a parametrized softplus
+    graph.add_node(ParametricSoftplus(), name='softplus', input='dense1')
+    
+    graph.add_output(name='loss', input='softplus')
 
-        # batch normalization
-        if layer_type == 'batchnorm':
-            layers.append(BatchNormalization(epsilon=1e-06, mode=0, axis=-1, momentum=0.9, weights=None))
-
-        # rnn
-        if layer_type == 'rnn':
-            num_hidden = 100
-            layers.append(SimpleRNN(num_hidden, return_sequences=False, go_backwards=False, 
-                        init='glorot_uniform', inner_init='orthogonal', activation='tanh',
-                        W_regularizer=l2(l2_reg), U_regularizer=l2(l2_reg), dropout_W=0.1,
-                        dropout_U=0.1))
-
-        # noise layer
-        if layer_type == 'noise':
-            if layer_id == 0:
-                layers.append(GaussianNoise(sigma, input_shape=input_shape))
-            else:
-                layers.append(GaussianNoise(sigma))
-
-        # Add dense (affine) layer
-        if layer_type == 'affine':
-            # second to last layer, since assuming there is an activation after
-            if layer_id > len(architecture) - 3:
-                # add final affine layer
-                layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg), 
-                            activity_regularizer=activity_l1l2(activityl1, activityl2)))
-            else:
-                layers.append(Dense(num_filters[layer_id], init=weight_init, W_regularizer=l2(l2_reg)))
-
-        if layer_type == 'softplus':
-            layers.append(Activation('softplus'))
-
-        if layer_type == 'param_softplus':
-            layers.append(ParametricSoftplus())
-
-    return layers
+    with notify('Compiling'):
+        graph.compile(optimizer, {'loss': loss})
+    return graph

@@ -198,7 +198,7 @@ def cmask(center, radius, array):
     return x ** 2 + y ** 2 <= radius ** 2
 
 
-def paired_flashes(ifi=20, duration=5, intensity=-1., padding=50):
+def paired_flashes(ifi, duration, intensity, padding):
     """Example of a paired flash stimulus
 
     Parameters
@@ -234,7 +234,7 @@ def paired_flashes(ifi=20, duration=5, intensity=-1., padding=50):
 
 
 def square(halfperiod, nsamples, phase=0., intensity=1.0):
-    """Generates a simple 1-D square wave"""
+    """Generates a 1-D square wave"""
     assert 0 <= phase <= 1, "Phase must be a fraction between 0 and 1"
 
     # if halfperiod is zero, return all ones
@@ -280,13 +280,19 @@ def grating(barsize=(5, 0), phase=(0., 0.), nx=50, intensity=(1., 1.), us_factor
     blur : float
         Amount of blur to applied to the upsampled image (before downsampling), (default: 0.)
     """
-
     # generate a square wave along each axis
-    x = square(barsize[0], nx * us_factor, phase[0], intensity[0])
-    y = square(barsize[1], nx * us_factor, phase[1], intensity[1])
+    x = square(barsize[0], nx * us_factor, phase[0] % 1., intensity[0])
+    y = square(barsize[1], nx * us_factor, phase[1] % 1, intensity[1])
 
     # generate the grating frame and downsample
     return downsample(np.outer(y, x), us_factor, blur)
+
+
+def jittered_grating(nsamples, sigma=0.1, size=3):
+    """Creates a grating that jitters over time according to a random walk"""
+    phases = np.cumsum(sigma * np.random.randn(nsamples)) % 1.0
+    frames = np.stack([grating(barsize=(size, 0), phase=(p, 0.)) for p in phases])
+    return frames
 
 
 def drifting_grating(nsamples, dt, barsize, us_factor=1, blur=0.):

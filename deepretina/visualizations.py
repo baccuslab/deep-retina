@@ -10,6 +10,143 @@ import theano
 import os
 import h5py
 from matplotlib import animation, gridspec
+from scipy.interpolate import interp1d
+
+
+def roc_curve(fpr, tpr, name='', auc=None, fmt='-', color='navy', ax=None):
+    """Plots an ROC curve"""
+    labelstr = '{} (AUC={:0.3f})'.format(name, auc) if auc is not None else name
+
+    if ax is None:
+        fig = plt.figure(figsize=(8, 8))
+        ax = fig.add_subplot(111)
+        ax.plot([0., 1.], [0., 1.], '--', color='lightgrey', lw=4)
+
+    if fmt == '-':
+        x = np.linspace(0, 1, 1e3)
+        f = interp1d(fpr, tpr, kind='nearest', fill_value='extrapolate')
+        ax.plot(x, f(x), '-', color=color, label=labelstr)
+
+    elif fmt == '.':
+        ax.plot(fpr, tpr, '.', color=color, label=labelstr)
+
+    plt.legend(loc=4, fancybox=True, frameon=True)
+    ax.set_xlabel('False positive rate', fontsize=20)
+    ax.set_xlim(-0.05, 1.05)
+    ax.set_ylabel('True positive rate', fontsize=20)
+    ax.set_ylim(-0.05, 1.05)
+    ax.set_aspect('equal')
+    adjust_spines(ax)
+
+    return ax
+
+
+def gif(filename, array, fps=10, scale=1.0):
+    """Creates a gif given a stack of images using moviepy
+
+    Notes
+    -----
+    works with the bleeding edge version of moviepy (not the pip version)
+
+    Usage
+    -----
+    >>> X = randn(100, 64, 64)
+    >>> gif('test.gif', X)
+
+    Parameters
+    ----------
+    filename : string
+        The filename of the gif to write to
+
+    array : array_like
+        A numpy array that contains a sequence of images
+
+    fps : int
+        frames per second (default: 10)
+
+    scale : float
+        how much to rescale each image by (default: 1.0)
+    """
+    from moviepy.editor import ImageSequenceClip
+
+    # ensure that the file has the .gif extension
+    fname, _ = os.path.splitext(filename)
+    filename = fname + '.gif'
+
+    # broadcast along the color dimension if the images are black and white
+    if array.ndim == 3:
+        array = array[..., np.newaxis] * np.ones(3)
+
+    # make the moviepy clip
+    clip = ImageSequenceClip(list(array), fps=fps).resize(scale)
+    clip.write_gif(filename, fps=fps)
+    return clip
+
+
+def response1D(x, r, dt=0.01, us_factor=50, figsize=(16, 10), name='Cell'):
+    """Plots a response given a 1D (temporal) representation of the stimulus
+
+    Parameters
+    ----------
+    x : array_like
+        A 1-D representation of the stimulus
+
+    x : array_like
+        A (t, n) array of the response of n cells to the t time points in the stimulus
+
+    dt : float
+        The temporal sampling period, in seconds (default: 0.01)
+
+    us_factor : int
+        How much to upsample the stimulus by before plotting it (used to get a cleaner picture)
+
+    figsize : tuple
+        The figure dimensions. (default: (16, 10))
+    """
+    assert x.size == r.shape[0], "Dimensions do not agree"
+    time = np.arange(x.size) * dt
+    nrows = 8
+    nspan = 6
+
+    # upsample the stimulus
+    time_us = np.linspace(0, time[-1], us_factor * time.size)
+    x = interp1d(time, x, kind='nearest')(time_us)
+    maxval = abs(x).max()
+    maxrate = r.max()
+
+    # helper function
+    def mkplot(rate, title=''):
+        fig = plt.figure(figsize=figsize)
+        ax0 = plt.subplot2grid((nrows, 1), (0, 0))
+        ax1 = plt.subplot2grid((nrows, 1), (nrows - nspan, 0), rowspan=nspan)
+
+        # 1D stimulus trace
+        ax0.fill_between(time_us, np.zeros_like(x), x, color='lightgrey', interpolate=True)
+        ax0.plot(time_us, x, '-', color='gray')
+        ax0.set_xlim(0, time_us[-1] + dt)
+        ax0.set_yticks([-maxval, maxval])
+        ax0.set_yticklabels([-maxval, maxval], fontsize=22)
+        ax0.set_title(title)
+        adjust_spines(ax0, spines=('left'))
+
+        # neural responses
+        ax1.plot(time, rate, '-', color='firebrick')
+        ax1.set_xlim(0, time[-1] + dt)
+        ax1.set_ylim(0, maxrate)
+        ax1.set_ylabel('Firing rate (Hz)')
+        ax1.set_xlabel('Time (s)')
+        adjust_spines(ax1)
+
+        return fig
+
+    figures = list()
+    figures.append(mkplot(r.mean(axis=1), title='{} population response'.format(name)))
+
+    # loop over cells
+    for ci in range(r.shape[1]):
+        figures.append(mkplot(r[:, ci], title='{} {}'.format(name, ci + 1)))
+
+    return figures
 
 
 def plot_traces_grid(weights, tax=None, color='k', lw=3):
@@ -165,7 +302,7 @@ def plot_spatial_grid(weights, cmap='seismic', normalize=True):
     """
 
     # create the figure
-    fig = plt.figure(figsize=(12, 8))
+    fig = plt.figure(figsize=(16, 12))
 
     # number of convolutional filters and number of affine filters
     nrows = weights.shape[0]
@@ -282,6 +419,21 @@ def visualize_glm(h5file):
     return [fig1, fig2]
 
 
+def visualize_ln(h5file):
+    """Visualize the parameters of an LN model"""
+
+    # roll the number of cells to be the first dimension
+    W = np.rollaxis(np.array(h5file['layer_1/param_0']), 1)
+
+    # reshape the filters
+    filtersize = np.sqrt(W.shape[1] / 40)
+    filters = np.stack([w.reshape(40, filtersize, filtersize) for w in W])
+
+    # make the plot
+    fig = plot_filters(filters)
+    return [fig]
+
+
 def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
         fig_dir=None, fig_size=(8,10), dpi=300, space=True, time=True, display=True,
         save=False, cmap='seismic', normalize=True):
@@ -346,6 +498,7 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
                         ax.imshow(spatial, interpolation='nearest', cmap=cmap, clim=colorlimit)
                     else:
                         ax.imshow(spatial, interpolation='nearest', cmap=cmap)
+                    plt.title('Subunit %i' %plt_idx)
                     plt.grid('off')
                     plt.axis('off')
 
@@ -717,12 +870,12 @@ def visualize_sta(sta, fig_size=(8, 10), display=True, save=False, normalize=Tru
         plt.show()
 
 
-# add some handy style for keeping matplotlib axes
-# on the left and bottom
-def adjust_spines(ax, spines):
-    """Example usage:
+def adjust_spines(ax, spines=('left', 'bottom')):
+    """Modify the spines of a matplotlib axes handle
 
-    adjust_spines(plt.gca(), ['left', 'bottom'])
+    Usage
+    -----
+    >>> adjust_spines(plt.gca(), spines=['left', 'bottom'])
     """
     for loc, spine in ax.spines.items():
         if loc in spines:

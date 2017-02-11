@@ -1,7 +1,6 @@
 future
 numpy
 scipy
-theano
-keras
-h5py
-matplotlib
+keras==0.3.2
+tqdm
+tableprint

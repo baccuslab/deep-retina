@@ -5,37 +5,72 @@ import matplotlib.pyplot as plt
 import numpy as np
 from itertools import repeat
 from . import stimuli as stim
-from tqdm import tqdm
+from . import visualizations as viz
+from tqdm import tqdm, trange
 
 
-def two_flashes(model):
-    """Generates responses to a pair of neighboring flashes"""
+def step_response(model, duration=100, delay=50, nsamples=200, intensity=-1.):
+    """Step response"""
+    X = stim.concat(stim.flash(duration, delay, nsamples, intensity=intensity))
+    resp = model(X)
+    figs = viz.response1D(X[:, -1, 0, 0].copy(), resp)
+    return figs, X, resp
+
+
+def paired_flash(model, ifi=5, duration=1, intensity=-2.0, padding=50):
+    """Generates responses to a pair of neighboring flashes
+
+    Parameters
+    ----------
+    ifi : int
+        inter-flash interval, in samples (default: 5)
+
+    duration : int
+        the duration of each flash in frames (default: 1)
+
+    intensity : float
+        the flash intensity (default: -2.0)
+
+    padding : int
+        how much padding in frames to put on either side of the flash (default: 50)
+    """
     # get the paired flash stimulus
-    X = stim.paired_flashes(ifi=2, duration=1, intensity=-1., padding=45)
+    X = stim.paired_flashes(ifi, duration, intensity, padding)
 
     # pass it through the model
-    resp = model.predict(X)
+    resp = model(X)
 
-    # get a 1-D trace of the stimulus
-    stim_trace = X[:, -1, 0, 0].copy()
-    time = np.arange(stim_trace.size) * 0.01
-
-    # plot the stimulus and responses
-    fig = plt.figure(figsize=(8, 6))
-    ax0 = plt.subplot2grid((5, 1), (0, 0))
-    ax1 = plt.subplot2grid((5, 1), (1, 0), rowspan=4)
-    ax0.plot(time, stim_trace, 'k-')
-    ax0.set_ylabel('Stimulus')
-    ax0.set_xlim(0, 0.5)
-    ax0.set_xticks([])
-    ax1.plot(time, resp, '-')
-    ax1.set_ylabel('Firing rate (Hz)')
-    ax1.set_xlabel('Time (s)')
-    ax1.set_xlim(0, 0.5)
+    # visualize
+    figs = viz.response1D(X[:, -1, 0, 0].copy(), resp)
     plt.show()
     plt.draw()
 
-    return fig, ax0, ax1
+    return figs, X, resp
+
+
+def reversing_grating(model, size=5, phase=0.):
+    """A reversing grating stimulus"""
+    grating = stim.grating(barsize=(size, 0), phase=(phase, 0.0), intensity=(1.0, 1.0), us_factor=1, blur=0)
+    X = stim.concat(stim.reverse(grating, halfperiod=50, nsamples=300))
+    resp = model(X)
+    figs = viz.response1D(X[:, -1, 0, 0].copy(), resp)
+    return figs, X, resp
+
+
+def contrast_adaptation(model, c0, c1, duration=50, delay=50, nsamples=140, nrepeats=10):
+    """Step change in contrast"""
+
+    # the contrast envelope
+    envelope = stim.flash(duration, delay, nsamples, intensity=(c1 - c0))
+    envelope += c0
+
+    # generate a bunch of responses to random noise with the given contrast envelope
+    responses = np.stack([model(stim.concat(np.random.randn(*envelope.shape) * envelope))
+                          for _ in trange(nrepeats)])
+
+    figs = viz.response1D(envelope[40:, 0, 0], responses.mean(axis=0))
+
+    return figs, envelope, responses
 
 
 def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=0.93,
@@ -115,34 +150,37 @@ def oms(duration=4, sample_rate=0.01, transition_duration=0.07, silent_duration=
         return movie
 
 
-def osr(km):
-    """Omitted stimulus response"""
-    duration = 2
-    interval = 10
-    nflashes = 5
-    intensity = -1.0
+def osr(model, duration=2, interval=10, nflashes=3, intensity=-2.0):
+    """Omitted stimulus response
 
-    # generate the OSR stimulus
+    Parameters
+    ----------
+    duration : int
+        Length of each flash in samples (default: 2)
+
+    interval : int
+        Number of frames between each flash (default: 10)
+
+    nflashes : int
+        Number of flashes to show before the omitted flash (default: 5)
+
+    intensity : float
+        The intensity (luminance) of each flash (default: -2.0)
+    """
+
+    # generate the stimulus
     single_flash = stim.flash(duration, interval, interval * 2, intensity=intensity)
     omitted_flash = stim.flash(duration, interval, interval * 2, intensity=0.0)
     flash_group = list(repeat(single_flash, nflashes))
     zero_pad = np.zeros((interval, 1, 1))
     X = stim.concat(zero_pad, *flash_group, omitted_flash, *flash_group, nx=50, nh=40)
 
-    # feed it to the model
-    resp = km.predict(X)
-
-    # generate the figure
-    fig = plt.figure(figsize=(4, 8))
-    ax0 = plt.subplot(211)
-    ax0.plot(X[:, -1, 0, 0])
-    ax1 = plt.subplot(212)
-    ax1.plot(resp)
-
-    return (fig, ax0, ax1), X, resp
+    resp = model(X)
+    figs = viz.response1D(X[:, -1, 0, 0].copy(), resp, figsize=(20, 8))
+    return figs, X, resp
 
 
-def motion_anticipation(km):
+def motion_anticipation(model):
     """Generates the Berry motion anticipation stimulus
 
     Stimulus from the paper:
@@ -151,7 +189,7 @@ def motion_anticipation(km):
 
     Parameters
     ----------
-    km : keras.Model
+    model : keras.Model
 
     Returns
     -------
@@ -165,10 +203,10 @@ def motion_anticipation(km):
 
     # moving bar stimulus and responses
     c_right, stim_right = stim.driftingbar(velocity, width)
-    resp_right = km.predict(stim_right)
+    resp_right = model(stim_right)
 
     c_left, stim_left = stim.driftingbar(-velocity, 2)
-    resp_left = km.predict(stim_left)
+    resp_left = model(stim_left)
     max_drift = resp_left.max()
 
     # flashed bar stimulus
@@ -177,7 +215,7 @@ def motion_anticipation(km):
                for x in flash_centers)
 
     # flash responses are a 3-D array with dimensions (centers, stimulus time, cell)
-    flash_responses = np.stack([km.predict(stim.concat(f)) for f in tqdm(flashes)])
+    flash_responses = np.stack([model(stim.concat(f)) for f in tqdm(flashes)])
 
     # pick off the flash responses at a particular time point
     resp_flash = flash_responses.mean(axis=2)[:, 8]

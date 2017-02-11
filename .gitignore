@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 
-# Distribution / packaging
+# distribution / packaging
 .Python
 env/
 build/
@@ -19,10 +19,10 @@ var/
 .installed.cfg
 *.egg
 
-# Temporary data
+# temporary data
 .ipynb_checkpoints/
 
-# hide images
+# images
 *.png
 *.pdf
 *.jpg

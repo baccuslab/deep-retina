@@ -5,12 +5,11 @@ Deepretina example script
 from __future__ import absolute_import
 from deepretina.models import convnet, ln
 from deepretina.core import train
-from deepretina.experiments import Experiment, _loadexpt_h5
+from deepretina.experiments import Experiment
 from deepretina.io import KerasMonitor, Monitor, main_wrapper
 from deepretina.utils import cutout_indices
 import numpy as np
 from keras.optimizers import RMSprop
-from pyret import filtertools as ft
 
 
 @main_wrapper
@@ -73,4 +72,9 @@ def fit_convnet(cells, train_stimuli, exptdate, nclip=0, readme=None):
 
 
 if __name__ == '__main__':
-    pass
+    print("deep-retina")
+    print("See models.py for examples of how to build models")
+    print("The Experiment class in experiments.py specifies how experimental data should be loaded")
+    print("The core.py file has a function that can be used to train a deep-retina model")
+    print("The io.py module contains tools for saving models and metadata to disk")
+    print("see README.md for more information")

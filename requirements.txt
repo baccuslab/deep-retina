@@ -5,3 +5,5 @@ keras==0.3.2
 tqdm
 tableprint
 scikit-learn
+h5py
+descent

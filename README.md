@@ -3,6 +3,8 @@ Deep retina is a project to test to what degree artificial neural networks can p
 
 Please see our [NIPS paper](https://arxiv.org/abs/1702.01825) for more details.
 
+Note that deepretina requires python 3.5 or higher.
+
 ### Usage
 To install the dependencies, run `pip install -r requirements.txt`. If you run the `runme.py` script, it will print out a brief overview of the different modules in deepretina (assuming it is able to import everything correctly).
 

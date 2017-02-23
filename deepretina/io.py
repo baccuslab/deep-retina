@@ -10,7 +10,6 @@ from itertools import product
 from functools import wraps
 from .utils import notify, allmetrics
 from warnings import warn
-from cycler import cycler
 import numpy as np
 import inspect
 import subprocess
@@ -362,8 +361,6 @@ def plot_performance(metrics, results, batches_per_epoch, plottype='summary'):
 
             # plot the performance traces (one curve for each cell)
             elif plottype == 'traces':
-                color_cycler = cycler('color', [plt.cm.viridis(i) for i in np.linspace(0, 1, res.shape[1])])
-                ax.set_prop_cycle(color_cycler)
                 ax.plot(x, res, fmt, alpha=0.5)
 
         # hard-coded y-scale for certain metrics

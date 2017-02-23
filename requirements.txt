@@ -1,9 +1,11 @@
 future
 numpy
 scipy
+matplotlib
 keras==0.3.2
 tqdm
 tableprint
 scikit-learn
+scikit-image
 h5py
 descent

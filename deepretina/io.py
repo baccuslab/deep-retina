@@ -15,7 +15,6 @@ import inspect
 import subprocess
 import shutil
 import time
-import theano
 import keras
 import deepretina
 import hashlib
@@ -70,7 +69,6 @@ class Monitor:
             'time': time.strftime("%H:%M:%S"),
             'keras': keras.__version__,
             'deep-retina': deepretina.__version__,
-            'theano': theano.__version__,
         }
 
         # generate a hash key for this model

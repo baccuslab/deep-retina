@@ -353,6 +353,7 @@ def deprecated_loadexpt(cellidx, filename, method, history, fraction=1., cutout=
 
     return Exptdata(stim_reshaped, resp)
 
+
 def _loadexpt_h5(expt, filename):
     """Loads an h5py reference to an experiment on disk"""
     filepath = os.path.join(os.path.expanduser('~/experiments/data'),
@@ -361,9 +362,11 @@ def _loadexpt_h5(expt, filename):
 
     return h5py.File(filepath, mode='r')
 
+
 def cutout(ex, xi, yi):
     """Cuts out a slice from the exptdata tuple"""
     return Exptdata(ex.X[:, :, xi, yi], ex.y)
+
 
 def _train_val_split(length, batchsize, holdout):
     """Returns a set of training and a set of validation indices
@@ -393,6 +396,7 @@ def _train_val_split(length, batchsize, holdout):
     num_holdout = int(np.round(holdout * num_batches))
 
     return batch_indices[num_holdout:].copy(), batch_indices[:num_holdout].copy()
+
 
 def rolling_window(array, window, time_axis=0):
     """

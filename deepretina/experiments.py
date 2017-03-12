@@ -132,7 +132,7 @@ class Experiment(object):
         r = self._train_data[expt].y[inds]
 
         # make predictions
-        rhat = modelrate({'stim':X})
+        rhat = modelrate({'stim': X})
 
         # evaluate using the given metrics
         return allmetrics(r, rhat, metrics), r, rhat
@@ -151,7 +151,7 @@ class Experiment(object):
 
             # get data and model firing rates
             r = exptdata.y
-            rhat = modelrate({'stim':exptdata.X})
+            rhat = modelrate({'stim': exptdata.X})
 
             # evaluate
             avg_scores[fname], all_scores[fname] = allmetrics(r, rhat, metrics)
@@ -280,3 +280,33 @@ def rolling_window(array, window, time_axis=0):
         return np.rollaxis(arr.T, 1, 0)
     else:
         return arr
+
+
+def _train_val_split(length, batchsize, holdout):
+    """Returns a set of training and a set of validation indices
+
+    Parameters
+    ----------
+    length : int
+        The total number of samples of data
+
+    batchsize : int
+        The number of samples to include in each batch
+
+    holdout : float
+        The fraction of batches to hold out for validation
+    """
+    # compute the number of available batches, given the fixed batch size
+    num_batches = int(np.floor(length / batchsize))
+
+    # the total number of samples for training
+    total = int(num_batches * batchsize)
+
+    # generate batch indices, and shuffle the deck of batches
+    batch_indices = np.arange(total).reshape(num_batches, batchsize)
+    np.random.shuffle(batch_indices)
+
+    # compute the held out (validation) batches
+    num_holdout = int(np.round(holdout * num_batches))
+
+    return batch_indices[num_holdout:].copy(), batch_indices[:num_holdout].copy()

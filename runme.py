@@ -3,12 +3,10 @@ Deepretina example script
 """
 
 from __future__ import absolute_import
-from deepretina.models import convnet, ln
+from deepretina.models import convnet, ln, sequential
 from deepretina.core import train
 from deepretina.experiments import Experiment
-from deepretina.io import KerasMonitor, Monitor, main_wrapper
-from deepretina.utils import cutout_indices
-import numpy as np
+from deepretina.io import KerasMonitor, main_wrapper
 from keras.optimizers import RMSprop
 
 

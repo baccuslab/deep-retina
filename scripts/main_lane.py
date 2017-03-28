@@ -53,12 +53,12 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
 
     stim_shape = (40, 50, 50)
     ncells = len(cells)
-    batchsize = 8000
+    batchsize = 5000
 
     # get the convnet layers
     #### BEST CONV-CONV-AFFINE ARCHITECTURE ####
     layers = generalizedconvnet(stim_shape, ncells,
-            architecture=('noise', 'conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine', 'noise', 'param_softplus'),
+            architecture=('noise', 'conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine', 'noise', 'softplus'),
             num_filters=[-1, num_filters[0], -1, -1, num_filters[1], -1, -1, -1, len(cells)], filter_sizes=[-1, 15, -1, -1, 7], weight_init='normal',
             l2_reg=0.02, dropout=0.25, sigma=sigma)
     

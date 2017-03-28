@@ -4,7 +4,6 @@ Toolbox with helpful utilities for exploring Keras models
 
 from __future__ import absolute_import, division, print_function
 import numpy as np
-import theano
 import h5py
 import os
 import sys
@@ -387,6 +386,9 @@ def load_partial_model(model, stop_layer=None, start_layer=0):
     OUTPUT:
         a theano function representing the partial model
     """
+    # import theano here so it doesn't clash with tensorflow
+    import theano
+    
     if start_layer == 0:
         if stop_layer is None:
             return model.predict

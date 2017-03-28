@@ -6,7 +6,6 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import matplotlib.pyplot as plt
 import pyret.filtertools as ft
-import theano
 import os
 import h5py
 from matplotlib import animation, gridspec
@@ -649,9 +648,8 @@ def singular_values(weights):
 
 # - function that plots distribution of linear projections on threshold
 def activations(model, layer_id, stimulus):
-    '''
-    Returns the activations of a specified layer.
-    '''
+    """Returns the activations of a specified layer."""
+    import theano
     # create theano function to generate activations of desired layer
     get_activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
 

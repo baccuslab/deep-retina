@@ -783,8 +783,6 @@ def get_stc(stimulus, response):
     sta /= len(nonzero_inds)
     return sta
 
-
-
     # get the blas function for computing the outer product
     assert stimulus.dtype == 'float64', 'Stimulus must be double precision'
     outer = get_blas_funcs('syr', dtype='d')
@@ -840,15 +838,14 @@ def visualize_sta(sta, fig_size=(8, 10), display=True, save=False, normalize=Tru
     plt.title('STA', fontsize=20)
     num_cols = int(np.sqrt(num_units))
     num_rows = int(np.ceil(num_units/num_cols))
-    idxs = range(num_cols)
     for x in range(num_cols):
         for y in range(num_rows):
             plt_idx = y * num_cols + x + 1
             if num_units > 1:
-                spatial,temporal = ft.decompose(sta[plt_idx-1])
+                spatial, temporal = ft.decompose(sta[plt_idx-1])
             else:
-                spatial,temporal = ft.decompose(sta)
-            #plt.subplot(num_rows, num_cols, plt_idx)
+                spatial, temporal = ft.decompose(sta)
+
             ax = plt.subplot2grid((num_rows*4, num_cols), (4*y, x), rowspan=3)
             if not normalize:
                 ax.imshow(spatial, interpolation='nearest', cmap='seismic')
@@ -858,7 +855,7 @@ def visualize_sta(sta, fig_size=(8, 10), display=True, save=False, normalize=Tru
             plt.axis('off')
 
             ax = plt.subplot2grid((num_rows*4, num_cols), (4*y+3, x), rowspan=1)
-            ax.plot(np.linspace(0,len(temporal)*10,len(temporal)), temporal, 'k', linewidth=2)
+            ax.plot(np.linspace(0, len(temporal) * 10, len(temporal)), temporal, 'k', linewidth=2)
             plt.grid('off')
             plt.axis('off')
     if save:

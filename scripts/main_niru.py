@@ -296,8 +296,8 @@ if __name__ == '__main__':
     # ========
     # 15-10-07
     # ========
-    mdl = fit_generalizedconvnet([0, 1, 2, 3, 4], ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')
-    # mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=6000)
+    # mdl = fit_generalizedconvnet([0, 1, 2, 3, 4], ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')
+    mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=6000)
     # mdl = fit_convconv([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', description='2-layer convnet on whitenoise (with gaussian noise)')
     # mdl = fit_convconv([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', description='2-layer convnet on naturalscenes (with gaussian noise)')
     # mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07')

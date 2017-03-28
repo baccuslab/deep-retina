@@ -7,10 +7,9 @@ from keras.models import Sequential
 from keras.layers.core import Dropout, Dense, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
-from keras.layers.advanced_activations import ParametricSoftplus
 from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise, GaussianDropout
-from keras.regularizers import l1l2, activity_l1l2, l2
+from keras.regularizers import l1_l2, l2
 from .utils import notify
 
 __all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet', 'nips_conv']
@@ -62,8 +61,8 @@ def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
     """
     layers = list()
     layers.append(Flatten(input_shape=input_shape))
-    layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg)))
-    layers.append(ParametricSoftplus())
+    layers.append(Dense(nout, init=weight_init, kernel_regularizer=l2(l2_reg)))
+    layers.append(Activation('softplus'))
     return layers
 
 
@@ -92,8 +91,8 @@ def nips_conv(num_cells):
             'border_mode': 'valid',
             'subsample': (1, 1),
             'init': 'normal',
-            'W_regularizer': l1l2(*w_args),
-            'activity_regularizer': activity_l1l2(*act_args),
+            'kernel_regularizer': l1_l2(*w_args),
+            'activity_regularizer': l1_l2(*act_args),
         }
         if len(layers) == 0:
             kwargs['input_shape'] = input_shape
@@ -112,11 +111,11 @@ def nips_conv(num_cells):
 
     # Add a final dense (affine) layer
     layers.append(Dense(num_cells, init='normal',
-                        W_regularizer=l1l2(0., l2_weight),
-                        activity_regularizer=activity_l1l2(1e-3, 0.)))
+                        kernel_regularizer=l1_l2(0., l2_weight),
+                        activity_regularizer=l1_l2(1e-3, 0.)))
 
     # Finish it off with a parameterized softplus
-    layers.append(ParametricSoftplus())
+    layers.append(Activation('softplus'))
 
     return layers
 
@@ -162,8 +161,8 @@ def convnet(input_shape, nout,
     def _regularize(layer_idx):
         """Small helper function to define per layer regularization"""
         return {
-            'W_regularizer': l1l2(l1_reg_weights[layer_idx], l2_reg_weights[layer_idx]),
-            'activity_regularizer': activity_l1l2(l1_reg_activity[layer_idx], l2_reg_activity[layer_idx]),
+            'kernel_regularizer': l1_l2(l1_reg_weights[layer_idx], l2_reg_weights[layer_idx]),
+            'activity_regularizer': l1_l2(l1_reg_activity[layer_idx], l2_reg_activity[layer_idx]),
         }
 
     # first convolutional layer
@@ -197,7 +196,7 @@ def convnet(input_shape, nout,
     layers.append(Dense(nout, init=weight_init, **_regularize(2)))
 
     # Finish it off with a parameterized softplus
-    layers.append(ParametricSoftplus())
+    layers.append(Activation('softplus'))
 
     return layers
 
@@ -239,7 +238,7 @@ def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='he_normal', l2_re
     # Add a final dense (affine) layer with softplus activation
     layers.append(Dense(nout,
                         init=weight_init,
-                        W_regularizer=l2(l2_reg),
+                        kernel_regularizer=l2(l2_reg),
                         activation='softplus'))
 
     return layers
@@ -302,11 +301,11 @@ def generalizedconvnet(input_shape, nout,
                 # initial convolutional layer
                 layers.append(Convolution2D(num_filters[0], filter_sizes[0], filter_sizes[0],
                                             input_shape=input_shape, init=weight_init,
-                                            border_mode='valid', subsample=(1, 1), W_regularizer=l2(l2_reg)))
+                                            border_mode='valid', subsample=(1, 1), kernel_regularizer=l2(l2_reg)))
             else:
                 layers.append(Convolution2D(num_filters[layer_id], filter_sizes[layer_id],
                                             filter_sizes[layer_id], init=weight_init, border_mode='valid',
-                                            subsample=(1, 1), W_regularizer=l2(l2_reg)))
+                                            subsample=(1, 1), kernel_regularizer=l2(l2_reg)))
 
         # Add relu activation
         if layer_type == 'relu':
@@ -344,7 +343,7 @@ def generalizedconvnet(input_shape, nout,
             num_hidden = 100
             layers.append(SimpleRNN(num_hidden, return_sequences=False, go_backwards=False, 
                         init='glorot_uniform', inner_init='orthogonal', activation='tanh',
-                        W_regularizer=l2(l2_reg), U_regularizer=l2(l2_reg), dropout_W=0.1,
+                        kernel_regularizer=l2(l2_reg), U_regularizer=l2(l2_reg), dropout_W=0.1,
                         dropout_U=0.1))
 
         # noise layer
@@ -359,15 +358,12 @@ def generalizedconvnet(input_shape, nout,
             # second to last layer, since assuming there is an activation after
             if layer_id > len(architecture) - 3:
                 # add final affine layer
-                layers.append(Dense(nout, init=weight_init, W_regularizer=l2(l2_reg), 
-                            activity_regularizer=activity_l1l2(activityl1, activityl2)))
+                layers.append(Dense(nout, init=weight_init, kernel_regularizer=l2(l2_reg), 
+                            activity_regularizer=l1_l2(activityl1, activityl2)))
             else:
-                layers.append(Dense(num_filters[layer_id], init=weight_init, W_regularizer=l2(l2_reg)))
+                layers.append(Dense(num_filters[layer_id], init=weight_init, kernel_regularizer=l2(l2_reg)))
 
         if layer_type == 'softplus':
             layers.append(Activation('softplus'))
-
-        if layer_type == 'param_softplus':
-            layers.append(ParametricSoftplus())
 
     return layers

@@ -80,8 +80,8 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip, zscore_flag=True)
 
     # create a monitor to track progress
-    #monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
-    monitor = None
+    monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
+    #monitor = None
 
     # train
     train(model, data, monitor, num_epochs=100)

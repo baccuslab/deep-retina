@@ -11,6 +11,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise, GaussianDropout
 from keras.regularizers import l1_l2, l2
 from .utils import notify
+from .activations import ParametricSoftplus
 
 __all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet', 'nips_conv']
 
@@ -365,5 +366,8 @@ def generalizedconvnet(input_shape, nout,
 
         if layer_type == 'softplus':
             layers.append(Activation('softplus'))
+
+        if layer_type == 'parametric_softplus':
+            layers.append(ParametricSoftplus)
 
     return layers

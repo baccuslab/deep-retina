@@ -24,16 +24,27 @@ class ParametricSoftplus(Layer):
     # References:
         - [Inferring Nonlinear Neuronal Computation Based on Physiologically Plausible Inputs](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1003143)
     '''
-    def __init__(self, alpha_init=0.2, 
+    def __init__(self, input_shape,
+                 alpha_init=0.2, 
                  beta_init=5.0,
                  weights=None, 
                  shared_axes=None,
                  **kwargs):
-        self.alpha = K.cast_to_floatx(alpha_init)
-        self.beta = K.cast_to_floatx(beta_init)
+        try:
+            self.alpha = K.cast_to_floatx(alpha_init)
+            self.beta = K.cast_to_floatx(beta_init)
+        except:
+            import pdb
+            pdb.set_trace()
+
         self.initial_weights = weights
         super(ParametricSoftplus, self).__init__(**kwargs)
         self.supports_masking = True
+        try:
+            self._keras_shape = input_shape.shape
+        except:
+            import pdb
+            pdb.set_trace()
 
         #self.alpha_init = initializers.get(alpha_init)
         #self.beta_init = initializers.get(beta_init)

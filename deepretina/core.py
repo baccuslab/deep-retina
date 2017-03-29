@@ -1,8 +1,6 @@
 """
 Core tools for training models
 """
-from keras.models import Model
-from .glms import GLM
 from time import time
 import tableprint as tp
 
@@ -33,8 +31,6 @@ def train(model, experiment, monitor, num_epochs, augment=False):
         A fraction (constant) to multiply the learning rate by
 
     """
-    assert isinstance(model, (Model, GLM)), "'model' must be a GLM or Keras model"
-
     # initialize training iteration
     iteration = 0
     train_start = time()

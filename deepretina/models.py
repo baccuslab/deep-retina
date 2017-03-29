@@ -368,6 +368,6 @@ def generalizedconvnet(input_shape, nout,
             layers.append(Activation('softplus'))
 
         if layer_type == 'parametric_softplus':
-            layers.append(ParametricSoftplus)
+            layers.append(ParametricSoftplus())
 
     return layers

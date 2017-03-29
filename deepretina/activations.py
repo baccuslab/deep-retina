@@ -19,6 +19,9 @@ class ParametricSoftplus(Layer):
         beta_init : float
             Initial values for the betas (default: 5.0)
         """
+        super().__init__(**kwargs)
+        self.alpha = K.cast_to_floatx(alpha_init)
+        self.beta = K.cast_to_floatx(beta_init)
 
     def call(self, inputs):
         return K.softplus(self.beta * inputs) * self.alpha

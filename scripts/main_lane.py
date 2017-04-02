@@ -45,12 +45,13 @@ def fit_convnet(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     return model
 
 @main_wrapper
-def fit_conv_rgcs(cells, train_stimuli, test_stimuli, exptdate, readme=None):
+def fit_conv_rgcs(cells, train_stimuli, test_stimuli, exptdate, nclip=0, readme=None):
     """Main script for fitting a convnet
 
     author: Lane McIntosh
     """
 
+    stim_shape = (40, 50, 50)
     ncells = len(cells)
     batchsize = 5000
 
@@ -61,7 +62,7 @@ def fit_conv_rgcs(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     model = sequential(layers, 'adam', loss='poisson')
 
     # load experiment data
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip, zscore_flag=True)
 
     # create a monitor to track progress
     monitor = KerasMonitor('convnet', model, data, readme, save_every=10)

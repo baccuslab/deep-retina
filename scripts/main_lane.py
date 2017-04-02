@@ -44,6 +44,33 @@ def fit_convnet(cells, train_stimuli, test_stimuli, exptdate, readme=None):
 
     return model
 
+@main_wrapper
+def fit_conv_rgcs(cells, train_stimuli, test_stimuli, exptdate, readme=None):
+    """Main script for fitting a convnet
+
+    author: Lane McIntosh
+    """
+
+    ncells = len(cells)
+    batchsize = 5000
+
+    # get the convnet layers
+    layers = conv_rgcs(ncells)
+
+    # compile the keras model
+    model = sequential(layers, 'adam', loss='poisson')
+
+    # load experiment data
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
+
+    # create a monitor to track progress
+    monitor = KerasMonitor('convnet', model, data, readme, save_every=10)
+
+    # train
+    train(model, data, monitor, num_epochs=100)
+
+    return model
+
 
 @main_wrapper
 def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0, readme=None, sigma=0.001, num_filters=(8,16)):
@@ -217,4 +244,5 @@ if __name__ == '__main__':
 
     #mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine on 15-11-21a naturalscene with activity reg, parametric softplus, and injected noise')
     #mdl = fit_generalizedconvnet(gc_16_05_31, ['naturalscene'], ['naturalscene'], '16-05-31', nclip=0, description='conv-conv-affine on 16-05-31 naturalscene', num_filters=(8,16))
-    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='4 layer convnet', sigma=0.05)
+    #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='4 layer convnet', sigma=0.05)
+    mdl = fit_conv_rgcs(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='convolutional RGC layer')

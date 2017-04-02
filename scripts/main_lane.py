@@ -4,7 +4,7 @@ Main script for training deep retinal models
 """
 
 from __future__ import absolute_import
-from deepretina.models import sequential, convnet, generalizedconvnet, fixedlstm
+from deepretina.models import sequential, convnet, generalizedconvnet, fixedlstm, conv_rgcs
 from deepretina.core import train
 from deepretina.experiments import Experiment
 from deepretina.io import KerasMonitor, main_wrapper
@@ -64,9 +64,30 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
     #        l2_reg=0.02, dropout=0.25, sigma=sigma)
 
     # trying 4 layer network
+    #layers = generalizedconvnet(stim_shape, ncells,
+    #        architecture=('noise', 'conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine', 'noise', 'parametric_softplus'),
+    #        num_filters=[-1, num_filters[0], -1, -1, num_filters[1], -1, -1, 16, -1, -1, -1, len(cells)], filter_sizes=[-1, 15, -1, -1, 7, -1, -1, 7], weight_init='normal',
+    #        l2_reg=0.04, dropout=0.25, sigma=sigma)
+
+    # trying 6 layer network
     layers = generalizedconvnet(stim_shape, ncells,
-            architecture=('noise', 'conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine', 'noise', 'parametric_softplus'),
-            num_filters=[-1, num_filters[0], -1, -1, num_filters[1], -1, -1, 16, -1, -1, -1, len(cells)], filter_sizes=[-1, 15, -1, -1, 7, -1, -1, 7], weight_init='normal',
+            architecture=('noise', 'conv', 'noise', 'relu',
+                          'conv', 'noise', 'relu',
+                          'conv', 'noise', 'relu',
+                          'conv', 'noise', 'relu',
+                          'conv', 'noise', 'relu',
+                          'flatten', 'affine', 'noise', 'parametric_softplus'),
+            num_filters=[-1, num_filters[0], -1, -1, 
+                         num_filters[1], -1, -1,
+                         16, -1, -1,
+                         16, -1, -1,
+                         16, -1, -1,
+                         -1, len(cells)], 
+            filter_sizes=[-1, 15, -1, -1,
+                          7, -1, -1,
+                          7, -1, -1,
+                          7, -1, -1,
+                          7, -1, -1], weight_init='normal',
             l2_reg=0.04, dropout=0.25, sigma=sigma)
     
     #### BEST CONV-AFFINE-AFFINE ARCHITECTURE ####
@@ -217,4 +238,4 @@ if __name__ == '__main__':
 
     #mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene'], ['whitenoise', 'naturalscene'], '15-11-21a', nclip=6000, description='conv-affine-affine on 15-11-21a naturalscene with activity reg, parametric softplus, and injected noise')
     #mdl = fit_generalizedconvnet(gc_16_05_31, ['naturalscene'], ['naturalscene'], '16-05-31', nclip=0, description='conv-conv-affine on 16-05-31 naturalscene', num_filters=(8,16))
-    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='4 layer convnet', sigma=0.05)
+    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='6 layer convnet with lower regularization', sigma=0.05)

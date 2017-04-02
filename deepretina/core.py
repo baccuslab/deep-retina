@@ -1,15 +1,13 @@
 """
 Core tools for training models
 """
-from keras.models import Model
-from .glms import GLM
 from time import time
 import tableprint as tp
 
 __all__ = ['train']
 
 
-def train(model, experiment, monitor, num_epochs, augment=False):
+def train(model, experiment, monitor, num_epochs):
     """Train the given network against the given data
 
     Parameters
@@ -33,8 +31,6 @@ def train(model, experiment, monitor, num_epochs, augment=False):
         A fraction (constant) to multiply the learning rate by
 
     """
-    assert isinstance(model, (Model, GLM)), "'model' must be a GLM or Keras model"
-
     # initialize training iteration
     iteration = 0
     train_start = time()
@@ -56,11 +52,7 @@ def train(model, experiment, monitor, num_epochs, augment=False):
 
                 # train on the batch
                 tstart = time()
-                if augment:
-                    augmented_y = y
-                    loss = model.train_on_batch(X, augmented_y)
-                else:
-                    loss = model.train_on_batch(X, y)
+                loss = model.train_on_batch(X, y)
                 elapsed_time = time() - tstart
 
                 # update

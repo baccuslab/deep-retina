@@ -13,7 +13,7 @@ from keras.regularizers import l1_l2, l2
 from .utils import notify
 from .activations import ParametricSoftplus
 
-__all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet', 'nips_conv']
+__all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet', 'nips_conv', 'conv_rgcs']
 
 
 def sequential(layers, optimizer, loss='poisson'):
@@ -371,3 +371,61 @@ def generalizedconvnet(input_shape, nout,
             layers.append(ParametricSoftplus())
 
     return layers
+
+
+def conv_rgcs(num_cells):
+    """4 layer model with convolutional RGC layer"""
+    layers = list()
+    input_shape = (40, 50, 50)
+
+    # injected noise strength
+    sigma = 0.1
+
+    # convolutional layer sizes
+    convlayers = [(16, 15), (8, 9), (num_cells, 7)]
+
+    # l2_weight_regularization for every layer
+    l2_weight = 1e-3
+
+    # l1_weight_regularization on the last layer
+    l1_weight = 1e-1
+
+    # weight and activity regularization
+    W_reg = [(0., l2_weight), (0., l2_weight)]
+    act_reg = [(0., 0.), (0., 0.)]
+
+    # loop over convolutional layers
+    for (n, size), w_args, act_args in zip(convlayers, W_reg, act_reg):
+        args = (n, size, size)
+        kwargs = {
+            'border_mode': 'valid',
+            'subsample': (1, 1),
+            'init': 'normal',
+            'kernel_regularizer': l1_l2(*w_args),
+            'activity_regularizer': l1_l2(*act_args),
+        }
+        if len(layers) == 0:
+            kwargs['input_shape'] = input_shape
+
+        # add convolutional layer
+        layers.append(Convolution2D(*args, **kwargs))
+
+        # add gaussian noise
+        layers.append(GaussianNoise(sigma))
+
+        # add ReLu
+        layers.append(Activation('relu'))
+
+    # flatten
+    layers.append(Flatten())
+
+    # Add a final dense (affine) layer
+    layers.append(Dense(num_cells, init='normal',
+                        kernel_regularizer=l1_l2(l1_weight, 0.),
+                        activity_regularizer=l1_l2(0., 0.)))
+
+    # Finish it off with a parameterized softplus
+    layers.append(Activation('softplus'))
+
+    return layers
+

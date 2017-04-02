@@ -3,6 +3,7 @@ Custom keras activations
 """
 from keras.engine import Layer
 from keras import backend as K
+from keras.initializers import Constant
 
 
 class ParametricSoftplus(Layer):
@@ -20,13 +21,18 @@ class ParametricSoftplus(Layer):
             Initial values for the betas (default: 5.0)
         """
         super().__init__(**kwargs)
-        self.alpha = K.cast_to_floatx(alpha_init)
-        self.beta = K.cast_to_floatx(beta_init)
+        self.alpha_init = alpha_init
+        self.beta_init = beta_init
+
+    def build(self, input_shape):
+        self.alpha = self.add_weight(shape=input_shape[1:], initializer=Constant(self.alpha_init))
+        self.beta = self.add_weight(shape=input_shape[1:], initializer=Constant(self.beta_init))
+        super().build(input_shape)
 
     def call(self, inputs):
         return K.softplus(self.beta * inputs) * self.alpha
 
     def get_config(self):
-        config = {'alpha': float(self.alpha), 'beta': float(self.beta)}
+        config = {'alpha': self.alpha, 'beta': self.beta}
         base_config = super().get_config()
         return base_config.update(config)

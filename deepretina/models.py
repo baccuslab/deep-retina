@@ -379,13 +379,13 @@ def conv_rgcs(num_cells):
     input_shape = (40, 50, 50)
 
     # injected noise strength
-    sigma = 0.1
+    sigma = 0.01
 
     # convolutional layer sizes
     convlayers = [(16, 15), (8, 9), (num_cells, 7)]
 
     # l2_weight_regularization for every layer
-    l2_weight = 1e-3
+    l2_weight = 1e-2
 
     # l1_weight_regularization on the last layer
     l1_weight = 1e-1

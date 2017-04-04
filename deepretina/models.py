@@ -5,7 +5,7 @@ Construct Keras models
 from __future__ import absolute_import, division, print_function
 from keras.models import Sequential
 from keras.layers.core import Dropout, Dense, Activation, Flatten
-from keras.layers.convolutional import Convolution2D, MaxPooling2D
+from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.layers.recurrent import LSTM
 from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise, GaussianDropout
@@ -37,14 +37,13 @@ def sequential(layers, optimizer, loss='poisson'):
         A compiled Keras model object
     """
     model = Sequential(layers)
-    # [model.add(layer) for layer in layers]
     with notify('Compiling'):
         model.compile(loss=loss, optimizer=optimizer)
     return model
 
 
 def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
-    """A linear-nonlinear stack of layers
+    """A linear-nonlinear model
 
     Parameters
     ----------
@@ -63,7 +62,7 @@ def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
     layers = list()
     layers.append(Flatten(input_shape=input_shape))
     layers.append(Dense(nout, init=weight_init, kernel_regularizer=l2(l2_reg)))
-    layers.append(Activation('softplus'))
+    layers.append(ParametricSoftplus())
     return layers
 
 
@@ -117,6 +116,27 @@ def nips_conv(num_cells):
 
     # Finish it off with a parameterized softplus
     layers.append(Activation('softplus'))
+
+    return layers
+
+
+def bn_cnn(input_shape, nout):
+    layers = []
+
+    layers.append(Conv2D(8, 13, input_shape=input_shape))
+    layers.append(BatchNormalization())
+    layers.append(GaussianNoise(0.1))
+    layers.append(Activation('relu'))
+
+    layers.append(Conv2D(8, 13))
+    layers.append(BatchNormalization())
+    layers.append(GaussianNoise(0.1))
+    layers.append(Activation('relu'))
+
+    layers.append(Flatten())
+    layers.append(Dense(nout))
+    layers.append(BatchNormalization())
+    layers.append(ParametricSoftplus())
 
     return layers
 
@@ -425,7 +445,6 @@ def conv_rgcs(num_cells):
                         activity_regularizer=l1_l2(0., 0.)))
 
     # Finish it off with a parameterized softplus
-    layers.append(Activation('softplus'))
+    layers.append(ParametricSoftplus())
 
     return layers
-

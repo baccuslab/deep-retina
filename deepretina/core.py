@@ -7,7 +7,7 @@ import tableprint as tp
 __all__ = ['train']
 
 
-def train(model, experiment, monitor, num_epochs):
+def train(model, experiment, monitor, num_epochs, reduce_lr_every=None, reduce_rate=None):
     """Train the given network against the given data
 
     Parameters
@@ -40,6 +40,13 @@ def train(model, experiment, monitor, num_epochs):
         for epoch in range(num_epochs):
             tp.banner('Epoch #{} of {}'.format(epoch + 1, num_epochs))
             print(tp.header(["Iteration", "Loss", "Runtime"]), flush=True)
+
+            if reduce_lr_every:
+                if (epoch % reduce_lr_every == 0) and (epoch != 0):
+                    prev_lr = model.optimizer.lr.get_value()
+                    model.optimizer.lr.set_value(prev_lr * reduce_rate)
+                    new_lr = model.optimizer.lr.get_value()
+                    print('Learning rate decreased from %e to %e.' %(prev_lr, new_lr))
 
             # loop over data batches for this epoch
             for X, y in experiment.train(shuffle=True):

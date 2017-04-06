@@ -98,7 +98,7 @@ def nips_conv(num_cells):
             kwargs['input_shape'] = input_shape
 
         # add convolutional layer
-        layers.append(Convolution2D(*args, **kwargs))
+        layers.append(Conv2D(*args, **kwargs))
 
         # add gaussian noise
         layers.append(GaussianNoise(sigma))
@@ -187,7 +187,7 @@ def convnet(input_shape, nout,
         }
 
     # first convolutional layer
-    layers.append(Convolution2D(num_filters[0], filter_size[0], filter_size[1],
+    layers.append(Conv2D(num_filters[0], filter_size[0], filter_size[1],
                                 input_shape=input_shape, init=weight_init,
                                 border_mode='valid', subsample=(1, 1),
                                 **_regularize(0)))
@@ -320,11 +320,11 @@ def generalizedconvnet(input_shape, nout,
         if layer_type == 'conv':
             if layer_id == 0:
                 # initial convolutional layer
-                layers.append(Convolution2D(num_filters[0], filter_sizes[0], filter_sizes[0],
+                layers.append(Conv2D(num_filters[0], filter_sizes[0], filter_sizes[0],
                                             input_shape=input_shape, init=weight_init,
                                             border_mode='valid', subsample=(1, 1), kernel_regularizer=l2(l2_reg)))
             else:
-                layers.append(Convolution2D(num_filters[layer_id], filter_sizes[layer_id],
+                layers.append(Conv2D(num_filters[layer_id], filter_sizes[layer_id],
                                             filter_sizes[layer_id], init=weight_init, border_mode='valid',
                                             subsample=(1, 1), kernel_regularizer=l2(l2_reg)))
 
@@ -428,7 +428,7 @@ def conv_rgcs(num_cells):
             kwargs['input_shape'] = input_shape
 
         # add convolutional layer
-        layers.append(Convolution2D(*args, **kwargs))
+        layers.append(Conv2D(*args, **kwargs))
 
         # add gaussian noise
         layers.append(GaussianNoise(sigma))

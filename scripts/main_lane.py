@@ -88,13 +88,18 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
     #### BEST CONV-CONV-AFFINE ARCHITECTURE ####
     layers = generalizedconvnet(stim_shape, ncells,
             architecture=('noise', 'conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine', 'noise', 'parametric_softplus'),
-            num_filters=[-1, num_filters[0], -1, -1, num_filters[1], -1, -1, -1, len(cells)], filter_sizes=[-1, 15, -1, -1, 7], weight_init='normal',
+            num_filters=[-1, num_filters[0], -1, -1, num_filters[1], -1, -1, -1, len(cells)], filter_sizes=[-1, 15, -1, -1, 7], 
             l2_reg=0.02, dropout=0.25, sigma=sigma)
+
+    #layers = generalizedconvnet(stim_shape, ncells,
+    #        architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine', 'noise', 'parametric_softplus'),
+    #        num_filters=[-1, num_filters[0], -1, -1, num_filters[1], -1, -1, -1, len(cells)], filter_sizes=[-1, 15, -1, -1, 7],
+    #        l2_reg=0.04, dropout=0.25, sigma=sigma)
 
     # trying 4 layer network
     #layers = generalizedconvnet(stim_shape, ncells,
     #        architecture=('noise', 'conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine', 'noise', 'parametric_softplus'),
-    #        num_filters=[-1, num_filters[0], -1, -1, num_filters[1], -1, -1, 16, -1, -1, -1, len(cells)], filter_sizes=[-1, 15, -1, -1, 7, -1, -1, 7], weight_init='normal',
+    #        num_filters=[-1, num_filters[0], -1, -1, num_filters[1], -1, -1, 16, -1, -1, -1, len(cells)], filter_sizes=[-1, 15, -1, -1, 7, -1, -1, 7],
     #        l2_reg=0.04, dropout=0.25, sigma=sigma)
 
     # trying 6 layer network
@@ -115,18 +120,18 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
     #                      7, -1, -1,
     #                      7, -1, -1,
     #                      7, -1, -1,
-    #                      7, -1, -1], weight_init='normal',
+    #                      7, -1, -1],
     #        l2_reg=0.04, dropout=0.25, sigma=sigma)
     
     #### BEST CONV-AFFINE-AFFINE ARCHITECTURE ####
     #layers = generalizedconvnet(stim_shape, ncells, 
     #        architecture=('conv', 'requ', 'batchnorm', 'flatten', 'dropout', 'affine', 'requ', 'batchnorm', 'flatten', 'affine'),
-    #        num_filters=[8, -1, -1, -1, -1, 16], filter_sizes=[15], weight_init='normal',
+    #        num_filters=[8, -1, -1, -1, -1, 16], filter_sizes=[15],
     #        l2_reg=0.01, dropout=0.5)
 
     #layers = generalizedconvnet(stim_shape, ncells, 
     #        architecture=('conv', 'noise', 'relu', 'flatten', 'dropout', 'affine', 'noise', 'relu', 'affine', 'param_softplus'),
-    #        num_filters=[num_filters[0], -1, -1, -1, -1, num_filters[1]], filter_sizes=[17], weight_init='normal',
+    #        num_filters=[num_filters[0], -1, -1, -1, -1, num_filters[1]], filter_sizes=[17],
     #        l2_reg=0.02, dropout=0.25, activityl1=1e-3, sigma=0.01)
 
     # compile the keras model
@@ -269,4 +274,4 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='6 layer convnet with lower regularization', sigma=0.05)
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='4 layer convnet', sigma=0.05)
     #mdl = fit_conv_rgcs(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='convolutional RGC layer with even more increased regularization')
-    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_4_5_2017'], ['whitenoise_4_5_2017', 'naturalscene_4_5_2017'], '15-10-07', nclip=6000, description='training classic conv-conv-affine model on the new fixed stimulus')
+    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_4_5_2017'], ['whitenoise_4_5_2017', 'naturalscene_4_5_2017'], '15-10-07', nclip=6000, description='training classic conv-conv-affine model on the 100ms fixed stimulus but with fixed channel ordering')

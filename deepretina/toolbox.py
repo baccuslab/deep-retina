@@ -30,13 +30,17 @@ def scandb(directory, nmax=-1):
     """
     models = []
 
-    # scan base directory for models folders, only load those with a README
     regex = re.compile(r'^([a-z0-9]){6} ')
-    for folder in tqdm(list(filter(regex.match, os.listdir(directory)))[:nmax]):
+    sorted_files = sorted(filter(regex.match, os.listdir(directory)),
+                          key=lambda f: os.path.getmtime(os.path.join(directory, f)),
+                          reverse=True)[:nmax]
+
+    # scan base directory for models folders, only load those with a README
+    for folder in tqdm(sorted_files):
         if os.path.isdir(os.path.join(directory, folder)):
             models.append(Model(directory, folder))
 
-    return sorted(models, key=attrgetter('timestamp'), reverse=True)
+    return models
 
 
 def select(models, keys):

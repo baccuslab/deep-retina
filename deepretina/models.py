@@ -10,6 +10,7 @@ from keras.layers.recurrent import LSTM
 from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise, GaussianDropout
 from keras.regularizers import l1_l2, l2
+from keras import initializers
 from .utils import notify
 from .activations import ParametricSoftplus
 
@@ -269,7 +270,6 @@ def generalizedconvnet(input_shape, nout,
                        architecture=('conv', 'relu', 'pool', 'flatten', 'affine', 'relu', 'affine', 'softplus'),
                        num_filters=(4, -1, -1, -1, 16),
                        filter_sizes=(9, -1, -1, -1, -1),
-                       weight_init='normal',
                        dropout=0.0,
                        dropout_type='binary',
                        l2_reg=0.0,
@@ -320,14 +320,15 @@ def generalizedconvnet(input_shape, nout,
         if layer_type == 'conv':
             if layer_id == 0:
                 # initial convolutional layer
-                layers.append(Conv2D(num_filters[0], filter_sizes[0], filter_sizes[0],
-                                            input_shape=input_shape, init=weight_init,
-                                            border_mode='valid', subsample=(1, 1), kernel_regularizer=l2(l2_reg),
+                layers.append(Conv2D(filters=num_filters[0], kernel_size=filter_sizes[0],
+                                            strides=1, padding='valid', input_shape=input_shape, kernel_initializer=initializers.RandomNormal(),
+                                            bias_initializer=initializers.Zeros(),
+                                            kernel_regularizer=l2(l2_reg),
                                             data_format="channels_first"))
             else:
-                layers.append(Conv2D(num_filters[layer_id], filter_sizes[layer_id],
-                                            filter_sizes[layer_id], init=weight_init, border_mode='valid',
-                                            subsample=(1, 1), kernel_regularizer=l2(l2_reg),
+                layers.append(Conv2D(filters=num_filters[layer_id], kernel_size=filter_sizes[layer_id], 
+                                            kernel_initializer=initializers.RandomNormal(), bias_initializer=initializers.Zeros(),
+                                            padding='valid', kernel_regularizer=l2(l2_reg),
                                             data_format="channels_first"))
 
         # Add relu activation
@@ -381,10 +382,12 @@ def generalizedconvnet(input_shape, nout,
             # second to last layer, since assuming there is an activation after
             if layer_id > len(architecture) - 3:
                 # add final affine layer
-                layers.append(Dense(nout, init=weight_init, kernel_regularizer=l2(l2_reg), 
+                layers.append(Dense(units=nout, kernel_initializer=initializers.RandomNormal(), kernel_regularizer=l2(l2_reg), 
+                            bias_initializer=initializers.Zeros(), use_bias=True,
                             activity_regularizer=l1_l2(activityl1, activityl2)))
             else:
-                layers.append(Dense(num_filters[layer_id], init=weight_init, kernel_regularizer=l2(l2_reg)))
+                layers.append(Dense(num_filters[layer_id], kernel_initializer=initializers.RandomNormal(), use_bias=True,
+                            bias_initializer=initializers.Zeros(), kernel_regularizer=l2(l2_reg)))
 
         if layer_type == 'softplus':
             layers.append(Activation('softplus'))

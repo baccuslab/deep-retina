@@ -128,7 +128,7 @@ def bn_cnn(input_shape, nout):
     layers.append(GaussianNoise(0.05))
     layers.append(Activation('relu'))
 
-    layers.append(Conv2D(8, 13), data_format="channels_first")
+    layers.append(Conv2D(8, 13, data_format="channels_first"))
     layers.append(BatchNormalization())
     layers.append(GaussianNoise(0.05))
     layers.append(Activation('relu'))

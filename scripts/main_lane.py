@@ -86,10 +86,10 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
 
     # get the convnet layers
     #### BEST CONV-CONV-AFFINE ARCHITECTURE ####
-    #layers = generalizedconvnet(stim_shape, ncells,
-    #        architecture=('noise', 'conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine', 'noise', 'softplus'),
-    #        num_filters=[-1, num_filters[0], -1, -1, num_filters[1], -1, -1, -1, len(cells)], filter_sizes=[-1, 15, -1, -1, 7], weight_init='normal',
-    #        l2_reg=0.02, dropout=0.25, sigma=sigma)
+    layers = generalizedconvnet(stim_shape, ncells,
+            architecture=('noise', 'conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine', 'noise', 'parametric_softplus'),
+            num_filters=[-1, num_filters[0], -1, -1, num_filters[1], -1, -1, -1, len(cells)], filter_sizes=[-1, 15, -1, -1, 7], weight_init='normal',
+            l2_reg=0.02, dropout=0.25, sigma=sigma)
 
     # trying 4 layer network
     #layers = generalizedconvnet(stim_shape, ncells,
@@ -98,25 +98,25 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
     #        l2_reg=0.04, dropout=0.25, sigma=sigma)
 
     # trying 6 layer network
-    layers = generalizedconvnet(stim_shape, ncells,
-            architecture=('noise', 'conv', 'noise', 'relu',
-                          'conv', 'noise', 'relu',
-                          'conv', 'noise', 'relu',
-                          'conv', 'noise', 'relu',
-                          'conv', 'noise', 'relu',
-                          'flatten', 'affine', 'noise', 'parametric_softplus'),
-            num_filters=[-1, num_filters[0], -1, -1, 
-                         num_filters[1], -1, -1,
-                         16, -1, -1,
-                         16, -1, -1,
-                         16, -1, -1,
-                         -1, len(cells)], 
-            filter_sizes=[-1, 15, -1, -1,
-                          7, -1, -1,
-                          7, -1, -1,
-                          7, -1, -1,
-                          7, -1, -1], weight_init='normal',
-            l2_reg=0.04, dropout=0.25, sigma=sigma)
+    #layers = generalizedconvnet(stim_shape, ncells,
+    #        architecture=('noise', 'conv', 'noise', 'relu',
+    #                      'conv', 'noise', 'relu',
+    #                      'conv', 'noise', 'relu',
+    #                      'conv', 'noise', 'relu',
+    #                      'conv', 'noise', 'relu',
+    #                      'flatten', 'affine', 'noise', 'parametric_softplus'),
+    #        num_filters=[-1, num_filters[0], -1, -1, 
+    #                     num_filters[1], -1, -1,
+    #                     16, -1, -1,
+    #                     16, -1, -1,
+    #                     16, -1, -1,
+    #                     -1, len(cells)], 
+    #        filter_sizes=[-1, 15, -1, -1,
+    #                      7, -1, -1,
+    #                      7, -1, -1,
+    #                      7, -1, -1,
+    #                      7, -1, -1], weight_init='normal',
+    #        l2_reg=0.04, dropout=0.25, sigma=sigma)
     
     #### BEST CONV-AFFINE-AFFINE ARCHITECTURE ####
     #layers = generalizedconvnet(stim_shape, ncells, 
@@ -268,4 +268,5 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_16_05_31, ['naturalscene'], ['naturalscene'], '16-05-31', nclip=0, description='conv-conv-affine on 16-05-31 naturalscene', num_filters=(8,16))
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='6 layer convnet with lower regularization', sigma=0.05)
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='4 layer convnet', sigma=0.05)
-    mdl = fit_conv_rgcs(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='convolutional RGC layer')
+    #mdl = fit_conv_rgcs(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='convolutional RGC layer with even more increased regularization')
+    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_4_5_2017'], ['whitenoise_4_5_2017', 'naturalscene_4_5_2017'], '15-10-07', nclip=6000, description='training classic conv-conv-affine model on the new fixed stimulus')

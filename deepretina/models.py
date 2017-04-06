@@ -5,7 +5,7 @@ Construct Keras models
 from __future__ import absolute_import, division, print_function
 from keras.models import Sequential
 from keras.layers.core import Dropout, Dense, Activation, Flatten
-from keras.layers.convolutional import Conv2D, MaxPooling2D
+from keras.layers.convolutional import Conv2D, MaxPooling2D, Convolution2D
 from keras.layers.recurrent import LSTM
 from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise, GaussianDropout
@@ -399,13 +399,13 @@ def conv_rgcs(num_cells):
     input_shape = (40, 50, 50)
 
     # injected noise strength
-    sigma = 0.1
+    sigma = 0.01
 
     # convolutional layer sizes
     convlayers = [(16, 15), (8, 9), (num_cells, 7)]
 
     # l2_weight_regularization for every layer
-    l2_weight = 1e-3
+    l2_weight = 0.04
 
     # l1_weight_regularization on the last layer
     l1_weight = 1e-1

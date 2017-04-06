@@ -3,7 +3,7 @@ Niru main script
 """
 
 from __future__ import absolute_import
-from deepretina.models import sequential, convnet, ln, generalizedconvnet
+from deepretina.models import sequential, convnet, ln, generalizedconvnet, bn_cnn
 from deepretina.core import train
 from deepretina.experiments import Experiment, _loadexpt_h5
 from deepretina.io import KerasMonitor, Monitor, main_wrapper
@@ -124,6 +124,27 @@ def fit_ln(cells, train_stimuli, exptdate, l2=1e-3, readme=None):
 
 
 @main_wrapper
+def fit_bncnn(cells, train_stimuli, exptdate, readme=None):
+    stim_shape = (40, 50, 50)
+    ncells = len(cells)
+    bs = 1000
+
+    layers = bn_cnn(stim_shape, ncells)
+    model = sequential(layers, 'adam', loss='poisson')
+
+    test_stimuli = ['whitenoise', 'naturalscene']
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], bs)
+
+    # create a monitor to track progress
+    monitor = KerasMonitor('bn_cnn', model, data, readme, save_every=20)
+    # monitor = None
+
+    # train
+    train(model, data, monitor, num_epochs=50)
+    return model
+
+
+@main_wrapper
 def fit_convnet(cells, train_stimuli, exptdate, nclip=0, readme=None):
     """Main script for fitting a convnet
 
@@ -149,7 +170,8 @@ def fit_convnet(cells, train_stimuli, exptdate, nclip=0, readme=None):
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=nclip)
 
     # create a monitor to track progress
-    monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
+    # monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
+    monitor = None
 
     # train
     train(model, data, monitor, num_epochs=50)
@@ -267,84 +289,21 @@ def fit_glm(cell, train_stimuli, exptdate, filtersize, l2, load_fraction=1.0, re
     return model
 
 if __name__ == '__main__':
-    # ===
-    # GLM
-    # ===
-    # l2a = 0.1
-    # l2b = 0.0
-    # filtersize = 5
-    # gc_151121a = [6, 10, 12, 13]
-    #for ci in gc_151121a:
-    #    fit_glm(ci, ['whitenoise'], '15-11-21a', filtersize, (l2a, l2b), description='Cutout GLM 15-11-21a, whitenoise, cell {}'.format(ci))
-    #    fit_cutout(ci, ['whitenoise'], '15-11-21a', filtersize=filtersize, l2=1e-3, description='LN cutout 15-11-21a, whitenoise, cell {}'.format(ci))
-    #    fit_glm(ci, ['naturalscene'], '15-11-21a', filtersize, (l2a, l2b), description='Cutout GLM 15-11-21a, naturalscene, cell {}'.format(ci))
-    #    fit_cutout(ci, ['naturalscene'], '15-11-21a', filtersize=filtersize, l2=1e-3, description='LN cutout 15-11-21a, naturalscene, cell {}'.format(ci))
-
-    # gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16] #, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    # for ci in gc_151121b:
-        # fit_glm(ci, ['whitenoise'], '15-11-21b', filtersize, (l2a, l2b), description='v3 Cutout GLM 15-11-21b, whitenoise, cell {}'.format(ci))
-        # fit_cutout(ci, ['whitenoise'], '15-11-21b', filtersize=filtersize, l2=1e-3, description='v3 Cutout LN 15-11-21b, whitenoise, cell {}'.format(ci))
-        # fit_glm(ci, ['naturalscene'], '15-11-21b', filtersize, (l2a, l2b), description='v3 Cutout GLM 15-11-21b, naturalscene, cell {}'.format(ci))
-        # fit_cutout(ci, ['naturalscene'], '15-11-21b', filtersize=filtersize, l2=1e-3, description='v3 Cutout LN 15-11-21b, naturalscene, cell {}'.format(ci))
-
-    # ==========
-    # Medium OFF
-    # ==========
-    # cells = [4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 34, 35, 36]
-    # mdl = fit_convnet(cells, ['whitenoise'], 'all-cells', nclip=6000)
-
-    # ========
     # 15-10-07
-    # ========
-    # mdl = fit_generalizedconvnet([0, 1, 2, 3, 4], ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07')
-    mdl = fit_convnet([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', nclip=6000)
-    # mdl = fit_convconv([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', description='2-layer convnet on whitenoise (with gaussian noise)')
-    # mdl = fit_convconv([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07', description='2-layer convnet on naturalscenes (with gaussian noise)')
-    # mdl = fit_convnet([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07')
+    mdl = fit_bncnn([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07')
 
-    # LN
-    # cells = range(1, 5)
-    # stimtypes = ('whitenoise')
-    # filtersizes = [1, 3, 5, 9, 11, 13, 15]
-    # for ci, stimtype, fs in product(cells, stimtypes, filtersizes):
-        # fit_cutout(ci, [stimtype], '15-10-07', filtersize=fs, l2=1e-3, description='LN cutout 15-10-07, {}, cell {}, filtersize={}'.format(stimtype, ci, fs))
-    # fit_cutout(0, ['whitenoise'], '15-10-07', filtersize=13, l2=1e-3, description='LN cutout 15-10-07, whitenoise, cell 0, filtersize=13')
-    # for fs in filtersizes:
-        # fit_cutout(0, ['naturalscene'], '15-10-07', filtersize=13, l2=1e-3, description='LN cutout 15-10-07, naturalscene, cell 0, filtersize={}'.format(fs))
-    # for st in stimtypes:
-        # fit_ln([0, 1, 2, 3, 4], [st], '15-10-07', l2=1e-3, description='LN on {} with BatchNormalization, 15-10-07'.format(st))
-
-    # load fraction LN
-    # lf = 1.0
-    #for lf in [0.1, 0.2, 0.4, 0.6]:
-    # for ci in range(5):
-        # fit_glm(ci, ['whitenoise'], '15-10-07', filtersize=5, l2=(0.1, 0.0), load_fraction=lf, description='load_fraction={}, GLM cutout, cell {}'.format(lf, ci))
-        # fit_cutout(ci, ['whitenoise'], '15-10-07', filtersize=5, l2=1e-3, load_fraction=lf, description='load_fraction={}, LN cutout, cell {}'.format(lf, ci))
-
-	# load fraction CNN
-	# for lf in [0.1, 0.2, 0.4, 0.6]:
-		# fit_genconv([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', load_fraction=lf, description='whitenoise CNN with load_fraction={}'.format(lf))
-
-    # =========
     # 15-11-21a
-    # =========
     # gc_151121a = [6, 10, 12, 13]
     # mdl = fit_convnet(gc_151121a, ['whitenoise'], '15-11-21a', nclip=6000)
 
-    # =========
     # 15-11-21b
-    # =========
     # gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
     # mdl = fit_convnet(gc_151121b, ['naturalscene'], '15-11-21b', nclip=6000)
 
-    # ========
     # 16-01-07
-    # ========
     # gc_160107 = [0, 2, 7, 10, 11, 12, 31]
     # mdl = fit_convnet(gc_160107, ['naturalscene'], '16-01-07', nclip=6000, description='16-10-07 naturalscene model (goodcells)')
 
-    # ========
     # 16-01-08
-    # ========
     # gc_160108 = [0, 3, 7, 9, 11]
     # mdl = fit_convnet(gc_160108, ['naturalscene'], '16-01-08', nclip=6000, description='16-10-08 naturalscene model (goodcells)')

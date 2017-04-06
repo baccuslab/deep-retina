@@ -137,7 +137,7 @@ def bn_cnn(input_shape, nout):
     layers.append(Flatten())
     layers.append(Dense(nout))
     layers.append(BatchNormalization())
-    layers.append(ParametricSoftplus())
+    layers.append(Activation('softplus'))
 
     return layers
 

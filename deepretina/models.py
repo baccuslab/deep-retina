@@ -123,14 +123,14 @@ def nips_conv(num_cells):
 def bn_cnn(input_shape, nout):
     layers = []
 
-    layers.append(Conv2D(8, 13, input_shape=input_shape))
+    layers.append(Conv2D(8, 13, input_shape=input_shape, data_format="channels_first"))
     layers.append(BatchNormalization())
-    layers.append(GaussianNoise(0.1))
+    layers.append(GaussianNoise(0.05))
     layers.append(Activation('relu'))
 
-    layers.append(Conv2D(8, 13))
+    layers.append(Conv2D(8, 13), data_format="channels_first")
     layers.append(BatchNormalization())
-    layers.append(GaussianNoise(0.1))
+    layers.append(GaussianNoise(0.05))
     layers.append(Activation('relu'))
 
     layers.append(Flatten())

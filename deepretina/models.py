@@ -322,11 +322,13 @@ def generalizedconvnet(input_shape, nout,
                 # initial convolutional layer
                 layers.append(Conv2D(num_filters[0], filter_sizes[0], filter_sizes[0],
                                             input_shape=input_shape, init=weight_init,
-                                            border_mode='valid', subsample=(1, 1), kernel_regularizer=l2(l2_reg)))
+                                            border_mode='valid', subsample=(1, 1), kernel_regularizer=l2(l2_reg),
+                                            data_format="channels_first"))
             else:
                 layers.append(Conv2D(num_filters[layer_id], filter_sizes[layer_id],
                                             filter_sizes[layer_id], init=weight_init, border_mode='valid',
-                                            subsample=(1, 1), kernel_regularizer=l2(l2_reg)))
+                                            subsample=(1, 1), kernel_regularizer=l2(l2_reg),
+                                            data_format="channels_first"))
 
         # Add relu activation
         if layer_type == 'relu':

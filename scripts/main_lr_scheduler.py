@@ -146,7 +146,7 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
     #monitor = None
 
     # train
-    train(model, data, monitor, num_epochs=100, reduce_lr_every=1, reduce_rate=0.1)
+    train(model, data, monitor, num_epochs=[1, 35, 35, 30], learning_rates=[0.002, 0.001, 0.0002, 0.00001])
 
     return model
 
@@ -275,4 +275,4 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='6 layer convnet with lower regularization', sigma=0.05)
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='4 layer convnet', sigma=0.05)
     #mdl = fit_conv_rgcs(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='convolutional RGC layer with even more increased regularization')
-    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_4_5_2017'], ['whitenoise_4_5_2017', 'naturalscene_4_5_2017'], '15-10-07', nclip=6000, description='experimenting with learning rate scheduling')
+    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_4_5_2017'], ['whitenoise_4_5_2017', 'naturalscene_4_5_2017'], '15-10-07', nclip=6000, description='testing learning rate scheduling [1, 35, 35, 30]')

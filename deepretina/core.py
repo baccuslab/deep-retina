@@ -3,11 +3,12 @@ Core tools for training models
 """
 from time import time
 import tableprint as tp
+import keras.backend as K
 
 __all__ = ['train']
 
 
-def train(model, experiment, monitor, num_epochs, reduce_lr_every=None, reduce_rate=None):
+def train(model, experiment, monitor, num_epochs, learning_rates=None):
     """Train the given network against the given data
 
     Parameters
@@ -21,32 +22,44 @@ def train(model, experiment, monitor, num_epochs, reduce_lr_every=None, reduce_r
     monitor : io.Monitor
         Saves the model parameters and plots of performance progress
 
-    num_epochs : int
-        Number of epochs to train for
+    num_epochs : int or iterable
+        Number of epochs to train for, or a list of same length as learning_rates
+        specifying the number of epochs to train at each learning rate
 
-    reduce_lr_every : int
-        How often to reduce the learning rate
-
-    reduce_rate : float
-        A fraction (constant) to multiply the learning rate by
+    learning_rates : iterable
+        A list of learning rates learning_rates[i] to apply for num_epochs[i]
+        e.g. [0.02, 0.002, 0.0001].
 
     """
     # initialize training iteration
     iteration = 0
     train_start = time()
+    if isinstance(num_epochs, int):
+        nepochs = num_epochs
+    else:
+        nepochs = sum(num_epochs)
 
     # loop over epochs
     try:
-        for epoch in range(num_epochs):
+        for epoch in range(nepochs):
             tp.banner('Epoch #{} of {}'.format(epoch + 1, num_epochs))
             print(tp.header(["Iteration", "Loss", "Runtime"]), flush=True)
 
-            if reduce_lr_every:
-                if (epoch % reduce_lr_every == 0) and (epoch != 0):
-                    prev_lr = model.optimizer.lr.get_value()
-                    model.optimizer.lr.set_value(prev_lr * reduce_rate)
-                    new_lr = model.optimizer.lr.get_value()
-                    print('Learning rate decreased from %e to %e.' %(prev_lr, new_lr))
+            if learning_rates:
+                assert len(num_epochs) == len(learning_rates), 'Must have same number of epoch batches and learning rates.'
+                cumulative_epochs = [sum(num_epochs[:i]) for i in range(len(num_epochs))]
+                moduli = [abs(epoch - c) for c in cumulative_epochs]
+                which_rate = [i for i,m in enumerate(moduli) if m == 0]
+
+                if epoch == 0:
+                    K.set_value(model.optimizer.lr, learning_rates[0])
+                    print('Set learning rate to %e.' %(learning_rates[0]))
+
+                elif min(moduli) == 0:
+                    prev_lr = K.get_value(model.optimizer.lr)
+                    K.set_value(model.optimizer.lr, learning_rates[which_rate[0]])
+                    new_lr = K.get_value(model.optimizer.lr)
+                    print('Learning rate changed from %e to %e.' %(prev_lr, new_lr))
 
             # loop over data batches for this epoch
             for X, y in experiment.train(shuffle=True):

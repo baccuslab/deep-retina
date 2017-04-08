@@ -3,9 +3,11 @@ Construct Keras models
 """
 
 from __future__ import absolute_import, division, print_function
-from keras.models import Sequential
+from keras.models import Sequential, Model
+from keras.layers import Input
 from keras.layers.core import Dropout, Dense, Activation, Flatten
-from keras.layers.convolutional import Conv2D, MaxPooling2D, Convolution2D
+from keras.layers.convolutional import Conv2D, MaxPooling2D
+from keras.layers.merge import Concatenate
 from keras.layers.recurrent import LSTM
 from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise, GaussianDropout
@@ -38,6 +40,22 @@ def sequential(layers, optimizer, loss='poisson'):
         A compiled Keras model object
     """
     model = Sequential(layers)
+    with notify('Compiling'):
+        model.compile(loss=loss, optimizer=optimizer)
+    return model
+
+
+def functional(inputs, outputs, optimizer, loss='poisson'):
+    """Compiles a keras functional model
+
+    Parameters
+    ----------
+    inputs: keras tensor
+    outputs: keras tensor
+    optimizer: Keras optimizer name or object
+    loss: string, optional (default: poisson)
+    """
+    model = Model(inputs=inputs, outputs=outputs)
     with notify('Compiling'):
         model.compile(loss=loss, optimizer=optimizer)
     return model
@@ -122,24 +140,25 @@ def nips_conv(num_cells):
 
 
 def bn_cnn(input_shape, nout):
-    layers = []
 
-    layers.append(Conv2D(8, 13, input_shape=input_shape, data_format="channels_first"))
-    layers.append(BatchNormalization())
-    layers.append(GaussianNoise(0.05))
-    layers.append(Activation('relu'))
+    x = Input(shape=input_shape)
 
-    layers.append(Conv2D(8, 13, data_format="channels_first"))
-    layers.append(BatchNormalization())
-    layers.append(GaussianNoise(0.05))
-    layers.append(Activation('relu'))
+    l1 = Conv2D(8, 13, strides=(2, 2), input_shape=input_shape, data_format="channels_first")(x)
+    l1 = BatchNormalization()(l1)
+    l1 = GaussianNoise(0.05)(l1)
+    l1 = Activation('relu')(l1)
 
-    layers.append(Flatten())
-    layers.append(Dense(nout))
-    layers.append(BatchNormalization())
-    layers.append(Activation('softplus'))
+    l2 = Conv2D(8, 13, strides=(2, 2), data_format="channels_first")(l1)
+    l2 = BatchNormalization()(l2)
+    l2 = GaussianNoise(0.05)(l2)
+    l2 = Activation('relu')(l2)
 
-    return layers
+    y = Concatenate()([Flatten()(l2), Flatten()(l1)])
+    y = Dense(nout)(y)
+    y = BatchNormalization()(y)
+    y = Activation('softplus')(y)
+
+    return x, y
 
 
 def convnet(input_shape, nout,

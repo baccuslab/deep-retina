@@ -35,17 +35,23 @@ def paired_flash(model, ifi=5, duration=1, intensity=-2.0, padding=50):
         how much padding in frames to put on either side of the flash (default: 50)
     """
     # get the paired flash stimulus
-    X = stim.paired_flashes(ifi, duration, intensity, padding)
+    xa = stim.paired_flashes(ifi, duration, (intensity, 0.0), padding)
+    xb = stim.paired_flashes(ifi, duration, (0.0, intensity), padding)
+    xc = stim.paired_flashes(ifi, duration, intensity, padding)
 
     # pass it through the model
-    resp = model(X)
+    ra = model.predict(xa)
+    rb = model.predict(xb)
+    rc = model.predict(xc)
 
     # visualize
-    figs = viz.response1D(X[:, -1, 0, 0].copy(), resp)
-    plt.show()
-    plt.draw()
-
-    return figs, X, resp
+    # figs = viz.response1D(xa[:, -1, 0, 0].copy(), ra)
+    # figs = viz.response1D(xb[:, -1, 0, 0].copy(), rb)
+    # figs = viz.response1D(xc[:, -1, 0, 0].copy(), rc)
+    # plt.show()
+    # plt.draw()
+    #
+    return (xa, xb, xc), (ra, rb, rc)
 
 
 def reversing_grating(model, size=5, phase=0.):

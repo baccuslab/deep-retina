@@ -3,7 +3,7 @@ Niru main script
 """
 
 from __future__ import absolute_import
-from deepretina.models import sequential, convnet, ln, generalizedconvnet, bn_cnn
+from deepretina.models import functional, sequential, convnet, ln, generalizedconvnet, bn_cnn
 from deepretina.core import train
 from deepretina.experiments import Experiment, _loadexpt_h5
 from deepretina.io import KerasMonitor, Monitor, main_wrapper
@@ -127,10 +127,9 @@ def fit_ln(cells, train_stimuli, exptdate, l2=1e-3, readme=None):
 def fit_bncnn(cells, train_stimuli, exptdate, readme=None):
     stim_shape = (40, 50, 50)
     ncells = len(cells)
-    bs = 1000
+    bs = 5000
 
-    layers = bn_cnn(stim_shape, ncells)
-    model = sequential(layers, 'adam', loss='poisson')
+    model = functional(*bn_cnn(stim_shape, ncells), 'adam', loss='poisson')
 
     test_stimuli = ['whitenoise', 'naturalscene']
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], bs)
@@ -140,7 +139,7 @@ def fit_bncnn(cells, train_stimuli, exptdate, readme=None):
     # monitor = None
 
     # train
-    train(model, data, monitor, num_epochs=50)
+    train(model, data, monitor, num_epochs=100)
     return model
 
 

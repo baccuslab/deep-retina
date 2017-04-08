@@ -32,7 +32,7 @@ def scandb(directory, nmax=-1):
 
     regex = re.compile(r'^([a-z0-9]){6} ')
     sorted_files = sorted(filter(regex.match, os.listdir(directory)),
-                          key=lambda f: os.path.getmtime(os.path.join(directory, f)),
+                          key=lambda f: os.path.getctime(os.path.join(directory, f)),
                           reverse=True)[:nmax]
 
     # scan base directory for models folders, only load those with a README

@@ -78,5 +78,3 @@ fig_filename = 'differentiated_stimuli.png'
 plt.imshow(spatial_profile, interpolation='nearest')
 plt.grid('off')
 plt.savefig(join(save_dir, fig_filename))
-
-

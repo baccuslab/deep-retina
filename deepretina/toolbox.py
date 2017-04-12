@@ -12,7 +12,6 @@ import time
 import tableprint
 from keras.models import model_from_json, model_from_config
 from .experiments import loadexpt, rolling_window
-from .models import sequential
 from . import metrics
 from .visualizations import visualize_convnet, visualize_glm, visualize_ln
 import pandas as pd

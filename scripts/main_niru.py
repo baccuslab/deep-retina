@@ -54,38 +54,6 @@ def fit_cutout(cell, train_stimuli, exptdate, filtersize, l2=1e-3, load_fraction
 
 
 @main_wrapper
-def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, readme=None):
-    """Main script for fitting a convnet
-
-    author: Lane McIntosh
-    """
-
-    stim_shape = (40, 50, 50)
-    ncells = len(cells)
-    batchsize = 5000
-
-    # get the convnet layers
-    layers = generalizedconvnet(stim_shape, ncells, 
-            architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine'),
-            num_filters=[8, -1, -1, 16], filter_sizes=[15, -1, -1, 7], weight_init='normal',
-            l2_reg=0.05, dropout=0.25, sigma=0.1)
-
-    # compile the keras model
-    model = sequential(layers, 'adam', loss='poisson')
-
-    # load experiment data
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize)
-
-    # create a monitor to track progress
-    monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
-
-    # train
-    train(model, data, monitor, num_epochs=100)
-
-    return model
-
-
-@main_wrapper
 def fit_ln(cells, train_stimuli, exptdate, l2=1e-3, readme=None):
     """Fits an LN model using keras"""
     stim_shape = (40, 50, 50)

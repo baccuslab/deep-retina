@@ -8,7 +8,7 @@ import keras.backend as K
 __all__ = ['train']
 
 
-def train(model, experiment, monitor, num_epochs, learning_rates=None):
+def train(model, experiment, monitor, num_epochs):
     """Train the given network against the given data
 
     Parameters
@@ -23,13 +23,7 @@ def train(model, experiment, monitor, num_epochs, learning_rates=None):
         Saves the model parameters and plots of performance progress
 
     num_epochs : int or iterable
-        Number of epochs to train for, or a list of same length as learning_rates
-        specifying the number of epochs to train at each learning rate
-
-    learning_rates : iterable
-        A list of learning rates learning_rates[i] to apply for num_epochs[i]
-        e.g. [0.02, 0.002, 0.0001].
-
+        Number of epochs to train for
     """
     # initialize training iteration
     iteration = 0
@@ -45,22 +39,6 @@ def train(model, experiment, monitor, num_epochs, learning_rates=None):
             tp.banner('Epoch #{} of {}'.format(epoch + 1, num_epochs))
             print(tp.header(["Iteration", "Loss", "Runtime"]), flush=True)
 
-            if learning_rates:
-                assert len(num_epochs) == len(learning_rates), 'Must have same number of epoch batches and learning rates.'
-                cumulative_epochs = [sum(num_epochs[:i]) for i in range(len(num_epochs))]
-                moduli = [abs(epoch - c) for c in cumulative_epochs]
-                which_rate = [i for i,m in enumerate(moduli) if m == 0]
-
-                if epoch == 0:
-                    K.set_value(model.optimizer.lr, learning_rates[0])
-                    print('Set learning rate to %e.' %(learning_rates[0]))
-
-                elif min(moduli) == 0:
-                    prev_lr = K.get_value(model.optimizer.lr)
-                    K.set_value(model.optimizer.lr, learning_rates[which_rate[0]])
-                    new_lr = K.get_value(model.optimizer.lr)
-                    print('Learning rate changed from %e to %e.' %(prev_lr, new_lr))
-
             # loop over data batches for this epoch
             for X, y in experiment.train(shuffle=True):
 
@@ -72,7 +50,7 @@ def train(model, experiment, monitor, num_epochs, learning_rates=None):
 
                 # train on the batch
                 tstart = time()
-                loss = model.train_on_batch(X, y)
+                loss = model.train_on_batch(X[np.newaxis], y[np.newaxis])
                 elapsed_time = time() - tstart
 
                 # update

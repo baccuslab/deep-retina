@@ -130,9 +130,8 @@ def rgc_cnn(x):
     return Model(inputs=x, outputs=Flatten(conv(conv(x))))
 
 
-def rgc_rnn(xt, nout, rgc_cnn, state_size):
-    x = Input(shape=xt.shape[2:])
-    rnn = LSTM(state_size, stateful=True, return_sequences=True)(TimeDistributed(rgc_cnn(x))(xt))
+def rgc_rnn(xt, nout, u, state_size):
+    rnn = LSTM(state_size, stateful=True, return_sequences=True)(TimeDistributed(u)(xt))
     return TimeDistributed(Dense(nout))(rnn)
 
 

@@ -289,11 +289,13 @@ def fit_glm(cell, train_stimuli, exptdate, filtersize, l2, load_fraction=1.0, re
 
 if __name__ == '__main__':
     # 15-10-07
-    mdl = fit_bncnn([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07')
+    # mdl = fit_bncnn([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07')
 
     # 15-11-21a
-    # gc_151121a = [6, 10, 12, 13]
+    gc_151121a = [6, 10, 12, 13]
     # mdl = fit_convnet(gc_151121a, ['whitenoise'], '15-11-21a', nclip=6000)
+    mdl = fit_bncnn(gc_151121a, ['naturalscene'], '15-11-21a', description='naturalscene bn_cnn')
+    mdl = fit_bncnn(gc_151121a, ['whitenoise'], '15-11-21a', description='whitenoise bn_cnn')
 
     # 15-11-21b
     # gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]

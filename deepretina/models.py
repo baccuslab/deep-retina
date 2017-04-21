@@ -143,18 +143,18 @@ def bn_cnn(input_shape, nout):
 
     x = Input(shape=input_shape)
 
-    l1 = Conv2D(8, 13, strides=(2, 2), input_shape=input_shape, data_format="channels_first")(x)
+    l1 = Conv2D(8, 13, strides=(1, 1), input_shape=input_shape, data_format="channels_first")(x)
     l1 = BatchNormalization()(l1)
     l1 = GaussianNoise(0.05)(l1)
     l1 = Activation('relu')(l1)
 
-    l2 = Conv2D(8, 13, strides=(2, 2), data_format="channels_first")(l1)
+    l2 = Conv2D(8, 13, strides=(1, 1), data_format="channels_first")(l1)
     l2 = BatchNormalization()(l2)
     l2 = GaussianNoise(0.05)(l2)
     l2 = Activation('relu')(l2)
 
-    y = Concatenate()([Flatten()(l2), Flatten()(l1)])
-    y = Dense(nout)(y)
+    # y = Concatenate()([Flatten()(l2), Flatten()(l1)])
+    y = Dense(nout)(Flatten()(l2))
     y = BatchNormalization()(y)
     y = Activation('softplus')(y)
 

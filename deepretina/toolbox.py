@@ -14,6 +14,7 @@ from keras.models import model_from_json, model_from_config
 from keras.models import Model as KerasModel
 from .experiments import loadexpt, rolling_window
 from .models import sequential
+from .activations import *
 from . import metrics
 from .visualizations import visualize_convnet, visualize_glm, visualize_ln
 import pandas as pd
@@ -245,11 +246,17 @@ class Model:
             raise ValueError('Architecture not found. Is this a Keras model?')
 
         # Load model architecture
-        mdl = model_from_config(self.architecture)
+        try:
+            mdl = model_from_config(self.architecture)
+        except:
+            print('Custom architecture detected. Loading custom deepretina.activations.')
+            with open(self.filepath('architecture.json'), 'r') as f:
+                json_string = list(f)[0]
+                mdl = model_from_json(json_string, {'ParametricSoftplus': ParametricSoftplus})
 
         # load the weights
-        if weights is not None:
-            mdl.load_weights(self.filepath(weights))
+        # using weights function complained about wanting path and not a bytes object
+        mdl.load_weights(self.filepath('best_weights.h5'))
 
         return mdl
 

@@ -6,7 +6,6 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import matplotlib.pyplot as plt
 import pyret.filtertools as ft
-import theano
 import os
 import h5py
 from matplotlib import animation, gridspec
@@ -653,11 +652,12 @@ def activations(model, layer_id, stimulus):
     Returns the activations of a specified layer.
     '''
     # create theano function to generate activations of desired layer
-    get_activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
+    #get_activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
 
     # get intermediate unit response to stimulus
-    response = get_activations(stimulus)
-    return response
+    #response = get_activations(stimulus)
+    #return response
+    pass
 
 
 def response_before_threshold(weights, model, layer_id, stimulus):

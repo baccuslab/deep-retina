@@ -11,6 +11,7 @@ import re
 import time
 import tableprint
 from keras.models import model_from_json, model_from_config
+from keras.models import Model as KerasModel
 from .experiments import loadexpt, rolling_window
 from .models import sequential
 from . import metrics
@@ -379,40 +380,12 @@ def load_model(model_path, weight_filename):
 
 
 def load_partial_model(model, stop_layer=None, start_layer=0):
-    """
-    Returns the model up to a specified layer.
 
-    INPUT:
-        model           a keras model
-        stop_layer      index of the final layer
-        start_layer     index of the start layer
+    if stop_layer is None:
+        stop_layer = len(model.layers) - 1
 
-    OUTPUT:
-        a theano function representing the partial model
-    """
-    # wait to import theano here so it doesn't break
-    # the tensorflow import during training
-    import theano
-
-    if start_layer == 0:
-        if stop_layer is None:
-            return model.predict
-        else:
-            # create theano function to generate activations of desired layer
-            start = model.layers[start_layer].input
-            stop = model.layers[stop_layer].get_output(train=False)
-            return theano.function([start], stop)
-    else:
-        # to have the partial model start at an arbitrary layer
-        # we need to redefine the model
-        layers = model.layers
-        new_layers = layers[start_layer:stop_layer]
-        new_model = sequential(new_layers, 'adam', loss='poisson')
-        new_model.compile(optimizer='adam', loss='poisson')
-        for idl, l in enumerate(new_model.layers):
-            l.set_weights(new_layers[idl].get_weights())
-
-        return new_model.predict
+    return KerasModel(inputs=model.get_layer(index=start_layer).input,
+                      outputs=model.get_layer(index=stop_layer).output).predict
 
 
 class CompositeModel(object):

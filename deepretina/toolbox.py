@@ -252,7 +252,7 @@ class Model:
             print('Custom architecture detected. Loading custom deepretina.activations.')
             with open(self.filepath('architecture.json'), 'r') as f:
                 json_string = list(f)[0]
-                mdl = model_from_json(json_string, {'ParametricSoftplus': ParametricSoftplus})
+                mdl = model_from_json(json_string, {'ParametricSoftplus': ParametricSoftplus, 'ReQU': ReQU})
 
         # load the weights
         # using weights function complained about wanting path and not a bytes object

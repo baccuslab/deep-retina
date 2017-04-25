@@ -379,7 +379,8 @@ def generalizedconvnet(input_shape, nout,
 
         # batch normalization
         if layer_type == 'batchnorm':
-            layers.append(BatchNormalization(epsilon=1e-06, mode=0, axis=-1, momentum=0.9, weights=None))
+            #layers.append(BatchNormalization(epsilon=1e-06, mode=0, axis=-1, momentum=0.9, weights=None))
+            layers.append(BatchNormalization())
 
         # rnn
         if layer_type == 'rnn':

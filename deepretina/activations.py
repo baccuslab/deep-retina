@@ -37,3 +37,31 @@ class ParametricSoftplus(Layer):
         config = {}
         base_config = Layer.get_config(self)
         return dict(list(base_config.items()) + list(config.items()))
+
+
+class ReQU(Layer):
+    def __init__(self, **kwargs):
+        """Rectified quadratic nonlinearity
+
+        Has the form: f(x) = alpha * log(1 + exp(beta * x))
+
+        Parameters
+        ----------
+        alpha_init : array_like
+            Initial values for the alphas (default: 0.2)
+
+        beta_init : float
+            Initial values for the betas (default: 5.0)
+        """
+        super().__init__(**kwargs)
+
+    def build(self, input_shape):
+        super().build(input_shape)
+
+    def call(self, inputs):
+        return K.square(K.relu(inputs))
+
+    def get_config(self):
+        config = {}
+        base_config = Layer.get_config(self)
+        return dict(list(base_config.items()) + list(config.items()))

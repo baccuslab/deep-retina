@@ -139,17 +139,17 @@ def nips_conv(num_cells):
     return layers
 
 
-def bn_cnn(input_shape, nout):
+def bn_cnn(input_shape, nout, l2_reg=0.05):
 
     x = Input(shape=input_shape)
 
     y = Conv2D(8, 13, strides=(1, 1), input_shape=input_shape,
-                data_format="channels_first", kernel_regularizer=l2(0.005))(x)
+                data_format="channels_first", kernel_regularizer=l2(l2_reg))(x)
     y = BatchNormalization()(y)
     y = GaussianNoise(0.05)(y)
     y = Activation('relu')(y)
 
-    y = Conv2D(8, 13, strides=(1, 1), data_format="channels_first", kernel_regularizer=l2(0.005))(y)
+    y = Conv2D(8, 13, strides=(1, 1), data_format="channels_first", kernel_regularizer=l2(l2_reg))(y)
     y = BatchNormalization()(y)
     y = GaussianNoise(0.05)(y)
     y = Activation('relu')(y)
@@ -379,7 +379,8 @@ def generalizedconvnet(input_shape, nout,
 
         # batch normalization
         if layer_type == 'batchnorm':
-            layers.append(BatchNormalization(epsilon=1e-06, mode=0, axis=-1, momentum=0.9, weights=None))
+            #layers.append(BatchNormalization(epsilon=1e-06, mode=0, axis=-1, momentum=0.9, weights=None))
+            layers.append(BatchNormalization())
 
         # rnn
         if layer_type == 'rnn':

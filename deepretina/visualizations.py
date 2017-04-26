@@ -677,13 +677,6 @@ def activations(model, layer_id, stimulus):
     '''
     raise NotImplementedError
 
-    # create function to generate activations of desired layer
-    # get_activations = thean.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
-
-    # get intermediate unit response to stimulus
-    # response = get_activations(stimulus)
-    return None
-
 
 def response_before_threshold(weights, model, layer_id, stimulus):
     '''

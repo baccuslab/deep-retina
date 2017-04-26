@@ -17,4 +17,4 @@ The following is a high level description of the different modules:
 A more comprehensive tutorial is in the works.
 
 ### Contact
-Lane McIntosh (lmcintosh@gmail.com) and Niru Maheswaranathan (nirum@stanford.edu)
+Lane McIntosh (lmcintosh@stanford.edu) and Niru Maheswaranathan (nirum@stanford.edu)

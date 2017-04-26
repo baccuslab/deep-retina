@@ -294,8 +294,8 @@ if __name__ == '__main__':
     # 15-11-21a
     gc_151121a = [6, 10, 12, 13]
     # mdl = fit_convnet(gc_151121a, ['whitenoise'], '15-11-21a', nclip=6000)
-    mdl = fit_bncnn(gc_151121a, ['naturalscene'], '15-11-21a', description='naturalscene bn_cnn')
-    mdl = fit_bncnn(gc_151121a, ['whitenoise'], '15-11-21a', description='whitenoise bn_cnn')
+    mdl = fit_bncnn(gc_151121a, ['naturalscene'], '15-11-21a', description='naturalscene bn_cnn with l2reg=0.02')
+    mdl = fit_bncnn(gc_151121a, ['whitenoise'], '15-11-21a', description='whitenoise bn_cnn with l2reg=0.02')
 
     # 15-11-21b
     # gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]

@@ -6,11 +6,34 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import matplotlib.pyplot as plt
 import pyret.filtertools as ft
-import theano
 import os
 import h5py
 from matplotlib import animation, gridspec
 from scipy.interpolate import interp1d
+from moviepy.editor import VideoClip
+
+
+def animate(frames, filename, dt=0.01, fps=24):
+
+    # time array
+    time = np.arange(frames.shape[0]) * dt
+
+    # frames
+    x = frames.copy()
+    x -= x.min()
+    x /= x.max()
+    x *= 255
+    x = np.round(x).astype('int')
+
+
+    def make_frame(t):
+        idx = int(t / dt)
+        return np.atleast_3d(x[idx]) * np.ones((1, 1, 3))
+
+
+    # write the video to disk
+    anim = VideoClip(make_frame, duration=time[-1])
+    anim.write_videofile(filename, fps=fps)
 
 
 def roc_curve(fpr, tpr, name='', auc=None, fmt='-', color='navy', ax=None):
@@ -652,12 +675,14 @@ def activations(model, layer_id, stimulus):
     '''
     Returns the activations of a specified layer.
     '''
-    # create theano function to generate activations of desired layer
-    get_activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
+    raise NotImplementedError
+
+    # create function to generate activations of desired layer
+    # get_activations = thean.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
 
     # get intermediate unit response to stimulus
-    response = get_activations(stimulus)
-    return response
+    # response = get_activations(stimulus)
+    return None
 
 
 def response_before_threshold(weights, model, layer_id, stimulus):
@@ -696,68 +721,7 @@ def get_sta(model, layer_id, samples=50000, batch_size=50, print_every=None, sub
     White noise STA of an intermedate unit.
     If subunit_id is specified, it's a tuple of (x,y) locations for picking out one subunit in a conv layer
     '''
-    # Get function for generating responses of intermediate unit.
-    if subunit_id is not None:
-        activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
-        def get_activations(stim):
-            activity = activations(stim)
-            # first dimension is batch size
-            return activity[:, :, subunit_id[0], subunit_id[1]]
-    else:
-        get_activations = theano.function([model.layers[0].input], model.layers[layer_id].get_output(train=False))
-
-    impulse = np.random.randn(2, 40, 50, 50).astype('uint8')
-    impulse_response = get_activations(impulse)
-    impulse_response_flat = impulse_response.reshape(2, -1).T
-    impulse_flat = impulse.reshape(2, -1)
-    #num_filter_types = impulse_response.shape[1]
-    sta = np.zeros_like(np.dot(impulse_response_flat, impulse_flat))
-
-    # Initialize STA
-    #stas = [np.zeros((40, 50, 50), dtype='float') for _ in range(num_stas)]
-    stas = {}
-
-    # Generate white noise and map STA
-    for batch in range(int(np.ceil(samples/batch_size))):
-        whitenoise = np.random.randn(batch_size, 40, 50, 50).astype('float32')
-        response = get_activations(whitenoise)
-        true_response_shape = response.shape[1:]
-
-        response_flat = response.reshape(batch_size, -1).T
-        whitenoise_flat = whitenoise.reshape(batch_size, -1)
-        # sta will be matrix of units x sta dims
-        sta += np.dot(response_flat, whitenoise_flat)
-        #sta = sta.reshape((*true_response_shape, -1))
-
-        #for dim in true_response_shape:
-
-
-        #for filt_type in range(num_stas):
-        #    nonzero_inds = np.where(response
-
-        #nonzero_inds = np.where(response > 0)[0]
-        #for idx in nonzero_inds:
-        #    sta += response[idx] * whitenoise[idx]
-
-        if print_every:
-            if batch % print_every == 0:
-                print('On batch %i of %i...' %(batch, samples/batch_size))
-
-    sta /= samples
-    #sta = sta.reshape((*(list(true_response_shape) + [-1])))
-    #sta = sta.reshape((*true_response_shape, -1))
-
-    # when the sta is of a conv layer
-    if len(true_response_shape) == 3:
-        sta = sta.reshape(true_response_shape[0], true_response_shape[1], true_response_shape[2], -1)
-        return sta
-    # when the sta is of an affine layer
-    elif len(true_response_shape) == 1:
-        sta = sta.reshape(true_response_shape[0], 40, 50, 50)
-        return sta
-    else:
-        print('STA shape not recognized. Returning [sta, shape of response].')
-        return [sta, true_response_shape]
+    raise NotImplementedError
 
 
 # a useful visualization of intermediate units may be its STC

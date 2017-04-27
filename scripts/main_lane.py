@@ -4,7 +4,7 @@ Main script for training deep retinal models
 """
 
 from __future__ import absolute_import
-from deepretina.models import sequential, convnet, generalizedconvnet, fixedlstm, conv_rgcs, functional, bn_cnn, bn_cnn_requ
+from deepretina.models import sequential, convnet, generalizedconvnet, fixedlstm, conv_rgcs, functional, bn_cnn, bn_cnn_requ, cnn_bn_requ
 from deepretina.core import train
 from deepretina.experiments import Experiment
 from deepretina.io import KerasMonitor, main_wrapper
@@ -237,12 +237,13 @@ def fit_bncnn(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     
     opt = Adam(lr=2e-3, decay=0.)
     
-    model = functional(*bn_cnn_requ(stim_shape, ncells), 'adam', loss='poisson')
+    #model = functional(*bn_cnn_requ(stim_shape, ncells), 'adam', loss='poisson')
+    model = functional(*cnn_bn_requ(stim_shape, ncells), 'adam', loss='poisson')
     
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], bs)
     
     # create a monitor to track progress
-    monitor = KerasMonitor('bn_cnn_requ', model, data, readme, save_every=40)
+    monitor = KerasMonitor('cnn_bn_requ', model, data, readme, save_every=40)
     #monitor = None
     
     # train
@@ -299,4 +300,4 @@ if __name__ == '__main__':
     #mdl = fit_conv_rgcs(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='convolutional RGC layer with even more increased regularization')
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_4_5_2017'], ['whitenoise_4_5_2017', 'naturalscene_4_5_2017'], '15-10-07', nclip=6000, description='verify that parametric softplus works before working on requ')
     #mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-11-21a', nclip=6000, description='requ batchnorm on naturalscenes 15-11-21a')
-    mdl = fit_bncnn(gc_15_11_21a, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-11-21a', description='naturalscene requ with learning rate 2e-3')
+    mdl = fit_bncnn(gc_15_11_21a, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-11-21a', description='fitting flipped batchnorm and conv requ model')

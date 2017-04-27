@@ -92,22 +92,22 @@ def fit_ln(cells, train_stimuli, exptdate, l2=1e-3, readme=None):
 
 
 @main_wrapper
-def fit_bncnn(cells, train_stimuli, exptdate, readme=None):
+def fit_bncnn(cells, train_stimuli, exptdate, l2_reg=0.0, readme=None):
     stim_shape = (40, 50, 50)
     ncells = len(cells)
     bs = 5000
 
-    model = functional(*bn_cnn(stim_shape, ncells), 'adam', loss='poisson')
+    model = functional(*bn_cnn(stim_shape, ncells, l2_reg=l2_reg), 'adam', loss='poisson')
 
     test_stimuli = ['whitenoise', 'naturalscene']
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], bs)
 
     # create a monitor to track progress
-    monitor = KerasMonitor('bn_cnn', model, data, readme, save_every=20)
+    monitor = KerasMonitor('bn_cnn', model, data, readme, save_every=25)
     # monitor = None
 
     # train
-    train(model, data, monitor, num_epochs=100)
+    train(model, data, monitor, num_epochs=75)
     return model
 
 
@@ -257,11 +257,15 @@ def fit_glm(cell, train_stimuli, exptdate, filtersize, l2, load_fraction=1.0, re
 
 if __name__ == '__main__':
     # 15-10-07
-    mdl = fit_bncnn([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07')
+    # mdl = fit_bncnn([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07')
 
     # 15-11-21a
-    # gc_151121a = [6, 10, 12, 13]
+    gc_151121a = [6, 10, 12, 13]
     # mdl = fit_convnet(gc_151121a, ['whitenoise'], '15-11-21a', nclip=6000)
+    # mdl = fit_bncnn(gc_151121a, ['naturalscene'], '15-11-21a', description='naturalscene bn_cnn with l2reg')
+    mdl = fit_bncnn(gc_151121a, ['whitenoise'], '15-11-21a', l2_reg=0.1, description='whitenoise bn_cnn with l2reg=0.1')
+    mdl = fit_bncnn(gc_151121a, ['whitenoise'], '15-11-21a', l2_reg=0.5, description='whitenoise bn_cnn with l2reg=0.5')
+    mdl = fit_bncnn(gc_151121a, ['whitenoise'], '15-11-21a', l2_reg=0.02, description='whitenoise bn_cnn with l2reg=0.02')
 
     # 15-11-21b
     # gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]

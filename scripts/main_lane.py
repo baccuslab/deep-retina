@@ -80,7 +80,7 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
     author: Lane McIntosh
     """
 
-    stim_shape = (40, 50, 50)
+    stim_shape = (55, 50, 50)
     ncells = len(cells)
     batchsize = 5000
 
@@ -274,4 +274,4 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='6 layer convnet with lower regularization', sigma=0.05)
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='4 layer convnet', sigma=0.05)
     #mdl = fit_conv_rgcs(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='convolutional RGC layer with even more increased regularization')
-    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_4_5_2017'], ['whitenoise_4_5_2017', 'naturalscene_4_5_2017'], '15-10-07', nclip=6000, description='trying to fix parametric softplus config')
+    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_4_5_2017'], ['whitenoise_4_5_2017', 'naturalscene_4_5_2017'], '15-10-07', nclip=6000, description='verify that parametric softplus works before working on requ')

@@ -14,7 +14,7 @@ from keras.layers.noise import GaussianNoise, GaussianDropout
 from keras.regularizers import l1_l2, l2
 from keras import initializers
 from .utils import notify
-from .activations import ParametricSoftplus
+from .activations import ParametricSoftplus, ReQU
 
 __all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet', 'nips_conv', 'conv_rgcs']
 
@@ -157,6 +157,27 @@ def bn_cnn(input_shape, nout):
     y = Dense(nout)(Flatten()(l2))
     y = BatchNormalization()(y)
     y = Activation('softplus')(y)
+
+    return x, y
+
+def bn_cnn_requ(input_shape, nout):
+
+    x = Input(shape=input_shape)
+
+    l1 = Conv2D(8, 15, strides=(1, 1), input_shape=input_shape, data_format="channels_first")(x)
+    l1 = BatchNormalization()(l1)
+    l1 = GaussianNoise(0.05)(l1)
+    l1 = Activation('relu')(l1)
+
+    l2 = Conv2D(8, 7, strides=(1, 1), data_format="channels_first")(l1)
+    l2 = BatchNormalization()(l2)
+    l2 = GaussianNoise(0.05)(l2)
+    l2 = Activation('relu')(l2)
+
+    # y = Concatenate()([Flatten()(l2), Flatten()(l1)])
+    y = Dense(nout)(Flatten()(l2))
+    y = BatchNormalization()(y)
+    y = ReQU()(y)
 
     return x, y
 
@@ -356,7 +377,7 @@ def generalizedconvnet(input_shape, nout,
 
         # Add requ activation
         if layer_type == 'requ':
-            layers.append(Activation('requ'))
+            layers.append(Activation(ReQU()))
 
         # Add exp activation
         if layer_type == 'exp':
@@ -379,7 +400,8 @@ def generalizedconvnet(input_shape, nout,
 
         # batch normalization
         if layer_type == 'batchnorm':
-            layers.append(BatchNormalization(epsilon=1e-06, mode=0, axis=-1, momentum=0.9, weights=None))
+            #layers.append(BatchNormalization(epsilon=1e-06, mode=0, axis=-1, momentum=0.9, weights=None))
+            layers.append(BatchNormalization())
 
         # rnn
         if layer_type == 'rnn':

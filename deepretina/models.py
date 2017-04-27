@@ -182,6 +182,31 @@ def bn_cnn_requ(input_shape, nout):
     return x, y
 
 
+def cnn_bn_requ(input_shape, nout):
+
+    x = Input(shape=input_shape)
+
+    l1 = BatchNormalization(input_shape=input_shape)(x)
+    l1 = Conv2D(8, 15, strides=(1, 1), data_format="channels_first")(l1)
+    l1 = GaussianNoise(0.05)(l1)
+    l1 = Activation('relu')(l1)
+
+    l2 = BatchNormalization()(l1)
+    l2 = Conv2D(8, 7, strides=(1, 1), data_format="channels_first")(l2)
+    l2 = GaussianNoise(0.05)(l2)
+    l2 = Activation('relu')(l2)
+
+    # y = Concatenate()([Flatten()(l2), Flatten()(l1)])
+    y = BatchNormalization()(l2)
+    y = Dense(nout)(Flatten()(y))
+    y = ReQU()(y)
+
+    return x, y
+
+
+def convnet(input_shape, nout,
+            num_filters=(8, 16), filter_size=(13, 13),
+            weight_init='normal',
 def convnet(input_shape, nout,
             num_filters=(8, 16), filter_size=(13, 13),
             weight_init='normal',

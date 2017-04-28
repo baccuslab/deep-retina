@@ -135,11 +135,11 @@ def fit_bncnn(cells, train_stimuli, exptdate, l2_reg=0.0, readme=None):
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], bs)
 
     # create a monitor to track progress
-    monitor = KerasMonitor('bn_cnn', model, data, readme, save_every=25)
+    monitor = KerasMonitor('bn_cnn', model, data, readme, save_every=20)
     # monitor = None
 
     # train
-    train(model, data, monitor, num_epochs=75)
+    train(model, data, monitor, num_epochs=50)
     return model
 
 

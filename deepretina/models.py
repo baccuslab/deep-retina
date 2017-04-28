@@ -154,7 +154,7 @@ def bn_cnn(input_shape, nout, l2_reg=0.05):
     y = bn_layer(y, 8, 11, l2_reg)
 
     y = Dense(nout, use_bias=False)(Flatten()(y))
-    y = BatchNormalization(axis=-1)(y)
+    # y = BatchNormalization(axis=-1)(y)
     y = Activation('softplus')(y)
     # y = ReQU()(y)
 

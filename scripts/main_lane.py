@@ -233,7 +233,7 @@ def fit_fixedrnn(cells, train_stimuli, test_stimuli, exptdate, readme=None, num_
 def fit_bncnn(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     stim_shape = (40, 50, 50)
     ncells = len(cells)
-    bs = 5000
+    bs = 4500
     
     opt = Adam(lr=2e-3, decay=0.)
     
@@ -300,4 +300,4 @@ if __name__ == '__main__':
     #mdl = fit_conv_rgcs(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='convolutional RGC layer with even more increased regularization')
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_4_5_2017'], ['whitenoise_4_5_2017', 'naturalscene_4_5_2017'], '15-10-07', nclip=6000, description='verify that parametric softplus works before working on requ')
     #mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-11-21a', nclip=6000, description='requ batchnorm on naturalscenes 15-11-21a')
-    mdl = fit_bncnn(gc_15_11_21a, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-11-21a', description='fitting flipped batchnorm and conv requ model')
+    mdl = fit_bncnn(gc_15_11_21a, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-11-21a', description='fitting flipped batchnorm and conv requ model with 13 and 13 filter sizes')

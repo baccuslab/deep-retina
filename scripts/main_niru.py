@@ -139,7 +139,7 @@ def fit_bncnn(cells, train_stimuli, exptdate, l2_reg=0.0, readme=None):
     # monitor = None
 
     # train
-    train(model, data, monitor, num_epochs=75)
+    train(model, data, monitor, num_epochs=100)
     return model
 
 
@@ -288,20 +288,31 @@ def fit_glm(cell, train_stimuli, exptdate, filtersize, l2, load_fraction=1.0, re
     return model
 
 if __name__ == '__main__':
+
+    train_stimuli = ['whitenoise', 'naturalscene']
+    l2_reg = 0.1
+
     # 15-10-07
-    # mdl = fit_bncnn([0, 1, 2, 3, 4], ['naturalscene'], '15-10-07')
+    gc_151007 = [0, 1, 2, 3, 4]
+    _ = fit_bncnn(gc_151007, train_stimuli, '15-10-07', l2_reg=l2_reg, description='bn_cnn layer norm v3 (both wn and ns)')
+    # mdl = fit_bncnn([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', l2_reg=0.05)
 
     # 15-11-21a
     gc_151121a = [6, 10, 12, 13]
     # mdl = fit_convnet(gc_151121a, ['whitenoise'], '15-11-21a', nclip=6000)
-    # mdl = fit_bncnn(gc_151121a, ['naturalscene'], '15-11-21a', description='naturalscene bn_cnn with l2reg')
-    mdl = fit_bncnn(gc_151121a, ['whitenoise'], '15-11-21a', l2_reg=0.1, description='whitenoise bn_cnn with l2reg=0.1')
-    mdl = fit_bncnn(gc_151121a, ['whitenoise'], '15-11-21a', l2_reg=0.5, description='whitenoise bn_cnn with l2reg=0.5')
-    mdl = fit_bncnn(gc_151121a, ['whitenoise'], '15-11-21a', l2_reg=0.02, description='whitenoise bn_cnn with l2reg=0.02')
+    _ = fit_bncnn(gc_151121a, train_stimuli, '15-11-21a', l2_reg=l2_reg, description='bn_cnn layer norm v3 (both wn and ns)')
+    # mdl = fit_bncnn(gc_151121a, ['whitenoise'], '15-11-21a', l2_reg=0.1, description='whitenoise bn_cnn with l2reg=0.1')
 
     # 15-11-21b
-    # gc_151121b = [0, 1, 3, 4, 5, 8, 9, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    # mdl = fit_convnet(gc_151121b, ['naturalscene'], '15-11-21b', nclip=6000)
+    gc_151121b = [0, 1, 3, 5, 8, 9, 13, 14, 16, 17, 18, 20, 21, 22, 23, 24, 25]
+    _ = fit_bncnn(gc_151121b, train_stimuli, '15-11-21b', l2_reg=l2_reg, description='bn_cnn layer norm v3 (both wn and ns)')
+
+    _ = fit_bncnn(gc_151121a, ['whitenoise'], '15-11-21a', l2_reg=0.5, description='whitenoise bn_cnn v3 with l2reg=0.5')
+    _ = fit_bncnn(gc_151121a, ['naturalscene'], '15-11-21a', l2_reg=0.05, description='naturalscene bn_cnn v3 with l2reg=0.05')
+    _ = fit_bncnn(gc_151121b, ['whitenoise'], '15-11-21b', l2_reg=0.5, description='whitenoise bn_cnn v3 with l2_reg=0.5')
+    _ = fit_bncnn(gc_151121b, ['naturalscene'], '15-11-21b', l2_reg=0.05, description='naturalscene bn_cnn v3 with l2_reg=0.05')
+    _ = fit_bncnn(gc_151007, ['whitenoise'], '15-10-07', l2_reg=0.5, description='whitenoise bn_cnn v3 with l2_reg=0.5')
+    _ = fit_bncnn(gc_151007, ['naturalscene'], '15-10-07', l2_reg=0.05, description='naturalscene bn_cnn v3 with l2_reg=0.05')
 
     # 16-01-07
     # gc_160107 = [0, 2, 7, 10, 11, 12, 31]

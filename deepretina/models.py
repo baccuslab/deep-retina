@@ -5,7 +5,7 @@ Construct Keras models
 from __future__ import absolute_import, division, print_function
 from keras.models import Sequential, Model
 from keras.layers import Input
-from keras.layers.core import Dropout, Dense, Activation, Flatten
+from keras.layers.core import Dropout, Dense, Activation, Flatten, Reshape
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.layers.merge import Concatenate
 from keras.layers.recurrent import LSTM
@@ -139,26 +139,27 @@ def nips_conv(num_cells):
     return layers
 
 
+def bn_layer(x, nchan, size, l2_reg, sigma=0.05, **kwargs):
+    n = int(x.shape[-1]) - size + 1
+    y = Conv2D(nchan, size, data_format="channels_first", kernel_regularizer=l2(l2_reg), **kwargs)(x)
+    y = Reshape((8, n, n))(BatchNormalization(axis=-1)(Reshape((8, n ** 2))(y)))
+    return Activation('relu')(GaussianNoise(sigma)(y))
+
+
 def bn_cnn(input_shape, nout, l2_reg=0.05):
 
     x = Input(shape=input_shape)
 
-    y = Conv2D(8, 13, strides=(1, 1), input_shape=input_shape,
-                data_format="channels_first", kernel_regularizer=l2(l2_reg))(x)
-    y = BatchNormalization()(y)
-    y = GaussianNoise(0.05)(y)
-    y = Activation('relu')(y)
+    y = bn_layer(x, 8, 15, l2_reg, input_shape=input_shape)
+    y = bn_layer(y, 8, 11, l2_reg)
 
-    y = Conv2D(8, 13, strides=(1, 1), data_format="channels_first", kernel_regularizer=l2(l2_reg))(y)
-    y = BatchNormalization()(y)
-    y = GaussianNoise(0.05)(y)
-    y = Activation('relu')(y)
-
-    y = Dense(nout)(Flatten()(y))
-    y = BatchNormalization()(y)
+    y = Dense(nout, use_bias=False)(Flatten()(y))
+    y = BatchNormalization(axis=-1)(y)
     y = Activation('softplus')(y)
+    # y = ReQU()(y)
 
     return x, y
+
 
 def bn_cnn_requ(input_shape, nout):
 

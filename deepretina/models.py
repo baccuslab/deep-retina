@@ -317,8 +317,14 @@ def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='he_normal', l2_re
     # Optional: Add relu activation separately
     # layers.append(Activation('relu', input_shape=input_shape))
 
-    # add the LSTM layer
-    layers.append(LSTM(num_hidden, return_sequences=False, input_shape=input_shape))
+    if len(input_shape) > 3:
+        # flatten the conv input first
+        layers.append(Flatten(input_shape=input_shape))
+        # add the LSTM layer
+        layers.append(LSTM(num_hidden, return_sequences=False, input_shape=input_shape))
+    else:
+        # add the LSTM layer
+        layers.append(LSTM(num_hidden, return_sequences=False, input_shape=input_shape))
 
     # Add a final dense (affine) layer with softplus activation
     layers.append(Dense(nout,

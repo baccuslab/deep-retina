@@ -8,7 +8,7 @@ import keras.backend as K
 __all__ = ['train']
 
 
-def train(model, experiment, monitor, num_epochs, learning_rates=None):
+def train(model, experiment, monitor, num_epochs, shuffle=True, learning_rates=None):
     """Train the given network against the given data
 
     Parameters
@@ -62,7 +62,7 @@ def train(model, experiment, monitor, num_epochs, learning_rates=None):
                     print('Learning rate changed from %e to %e.' %(prev_lr, new_lr))
 
             # loop over data batches for this epoch
-            for X, y in experiment.train(shuffle=True):
+            for X, y in experiment.train(shuffle=shuffle):
 
                 # update on save_every, assuming it is positive
                 if (monitor is not None) and (iteration % monitor.save_every == 0):

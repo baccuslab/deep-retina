@@ -181,7 +181,7 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, hidden_units, re
     #monitor = None
 
     # train
-    train(model, data, monitor, num_epochs=100)
+    train(model, data, monitor, num_epochs=100, shuffle=True)
 
     return model
 

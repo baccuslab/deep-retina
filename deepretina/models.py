@@ -161,22 +161,22 @@ def bn_cnn(input_shape, nout, l2_reg=0.05):
     return x, y
 
 
-def bn_cnn_requ(input_shape, nout):
+def bn_cnn_requ(input_shape, nout, l2_reg):
 
     x = Input(shape=input_shape)
 
-    l1 = Conv2D(8, 15, strides=(1, 1), input_shape=input_shape, data_format="channels_first")(x)
-    l1 = BatchNormalization()(l1)
-    l1 = GaussianNoise(0.05)(l1)
-    l1 = Activation('relu')(l1)
+    y1 = Conv2D(8, 15, strides=(1, 1), input_shape=input_shape, data_format="channels_first", kernel_regularizer=l2(l2_reg))(x)
+    y1 = BatchNormalization()(y1)
+    y1 = GaussianNoise(0.05)(y1)
+    y1 = Activation('relu')(y1)
 
-    l2 = Conv2D(8, 7, strides=(1, 1), data_format="channels_first")(l1)
-    l2 = BatchNormalization()(l2)
-    l2 = GaussianNoise(0.05)(l2)
-    l2 = Activation('relu')(l2)
+    y2 = Conv2D(8, 11, strides=(1, 1), data_format="channels_first", kernel_regularizer=l2(l2_reg))(y1)
+    y2 = BatchNormalization()(y2)
+    y2 = GaussianNoise(0.05)(y2)
+    y2 = Activation('relu')(y2)
 
     # y = Concatenate()([Flatten()(l2), Flatten()(l1)])
-    y = Dense(nout)(Flatten()(l2))
+    y = Dense(nout)(Flatten()(y2))
     y = BatchNormalization()(y)
     y = ReQU()(y)
 

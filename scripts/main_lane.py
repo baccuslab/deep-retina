@@ -177,8 +177,8 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, hidden_units, re
     # would have to then reshape data to be appropriate shape with 8 as history and 1000 to be batchsize
 
     # create a monitor to track progress
-    #monitor = KerasMonitor('fixedlstm', model, data, readme, save_every=20)
-    monitor = None
+    monitor = KerasMonitor('fixedlstm', model, data, readme, save_every=20)
+    #monitor = None
 
     # train
     train(model, data, monitor, num_epochs=100)
@@ -309,4 +309,4 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-11-21a', nclip=6000, description='requ batchnorm on naturalscenes 15-11-21a')
     #mdl = fit_bncnn(gc_15_11_21a, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-11-21a', description='l2_reg=0.01 and 15, 11 filter sizes for requ network')
     with tf.device('/gpu:0'):
-        mdl = fit_fixedlstm(range(4), ['naturalscene_ganglions_7fc87c'], ['naturalscene_ganglions_7fc87c'], '15-11-21a', 500, description='fixedlstm on ganglion predictions of 7fc87c bn_cnn naturalscene')
+        mdl = fit_fixedlstm(list(range(len(gc_15_11_21a))), ['naturalscene_ganglions_7fc87c'], ['naturalscene_ganglions_7fc87c'], '15-11-21a', 500, description='fixedlstm on ganglion predictions of 7fc87c bn_cnn naturalscene')

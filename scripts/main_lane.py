@@ -12,6 +12,7 @@ from keras.layers.recurrent import SimpleRNN
 from keras.layers.core import Dense
 from keras.regularizers import l2
 from keras.optimizers import Adam
+from deepretina.optimizers import NadamAccum
 from deepretina.activations import ParametricSoftplus, ReQU
 import tensorflow as tf
 
@@ -168,7 +169,8 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, hidden_units, re
     layers = fixedlstm(input_shape, len(cells), num_hidden=hidden_units, weight_init='normal', l2_reg=0.01)
 
     # compile the keras model
-    opt = Adam(lr=1e-3, decay=0.)
+    #opt = Adam(lr=1e-3, decay=0.)
+    opt = NadamAccum(lr=1e-3, schedule_decay=0.003, accum_iters=10)
     model = sequential(layers, opt, loss='poisson')
 
     # load experiment data
@@ -309,4 +311,4 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-11-21a', nclip=6000, description='requ batchnorm on naturalscenes 15-11-21a')
     #mdl = fit_bncnn(gc_15_11_21a, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-11-21a', description='l2_reg=0.01 and 15, 11 filter sizes for requ network')
     with tf.device('/gpu:0'):
-        mdl = fit_fixedlstm(list(range(len(gc_15_11_21a))), ['naturalscene_ganglions_7fc87c'], ['naturalscene_ganglions_7fc87c'], '15-11-21a', 500, description='fixedlstm on ganglion predictions of 7fc87c bn_cnn naturalscene')
+        mdl = fit_fixedlstm(list(range(len(gc_15_11_21a))), ['naturalscene_ganglions_7fc87c'], ['naturalscene_ganglions_7fc87c'], '15-11-21a', 500, description='fixedlstm on ganglion predictions of 7fc87c bn_cnn naturalscene with accumulating mini-batch Nadam updates')

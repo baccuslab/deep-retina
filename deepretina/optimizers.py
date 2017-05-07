@@ -5,6 +5,7 @@ from six.moves import zip
 from keras import backend as K
 from keras.utils.generic_utils import serialize_keras_object
 from keras.utils.generic_utils import deserialize_keras_object
+from keras.optimizers import Optimizer
 
 if K.backend() == 'tensorflow':
     import tensorflow as tf
@@ -50,7 +51,7 @@ class NadamAccum(Optimizer):
         self.updates = [K.update_add(self.iterations, 1)]
 
         t = (self.iterations + 1.)/self.accum_iters
-        accum_switch = K.floor((self.accum_iters - K.mod(self.iterations + 1., self.accum_iters))/self.accum_iters)
+        accum_switch = tf.floor((self.accum_iters - tf.mod(self.iterations + 1., self.accum_iters))/self.accum_iters)
         # Due to the recommendations in [2], i.e. warming momentum schedule
         momentum_cache_t = self.beta_1 * (1. - 0.5 * (K.pow(0.96, t * self.schedule_decay)))
         momentum_cache_t_1 = self.beta_1 * (1. - 0.5 * (K.pow(0.96, (t + 1) * self.schedule_decay)))

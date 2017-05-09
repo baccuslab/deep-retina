@@ -12,6 +12,7 @@ from keras.layers.recurrent import SimpleRNN
 from keras.layers.core import Dense
 from keras.regularizers import l2
 from keras.optimizers import Adam
+from deepretina.optimizers import NadamAccum
 from deepretina.activations import ParametricSoftplus, ReQU
 import tensorflow as tf
 
@@ -35,6 +36,7 @@ def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, hidden_units, re
 
         # compile the keras model
         opt = Adam(lr=1e-3, decay=0.)
+        opt = NadamAccum(lr=1e-3, schedule_decay=0.003, accum_iters=20)
         model = sequential(layers, opt, loss='poisson')
 
     # load experiment data
@@ -70,4 +72,4 @@ if __name__ == '__main__':
     #gc_16_05_31 = [2,3,4,9,10,11,12,14,16,17,18,20,25,27]
     gc_16_05_31 = [2,3,4,14,16,18,20,25,27]
     with tf.device('/gpu:1'):
-        mdl = fit_fixedlstm(list(range(len(gc_15_11_21a))), ['naturalscene_flat_second_layer_7fc87c'], ['naturalscene_flat_second_layer_7fc87c'], '15-11-21a', 500, description='fixedlstm on conv activities of 7fc87c bn_cnn naturalscene')
+        mdl = fit_fixedlstm(list(range(len(gc_15_11_21a))), ['naturalscene_flat_second_layer_7fc87c'], ['naturalscene_flat_second_layer_7fc87c'], '15-11-21a', 500, description='fixedlstm on conv activities of 7fc87c bn_cnn naturalscene with accumulated Nadam optimizer')

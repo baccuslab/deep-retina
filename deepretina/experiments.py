@@ -23,6 +23,7 @@ Exptdata = namedtuple('Exptdata', ['X', 'y'])
 dt = 1e-2
 __all__ = ['Experiment', 'loadexpt']
 
+
 class Experiment(object):
     """Class to keep track of loaded experiment data"""
 

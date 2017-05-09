@@ -53,9 +53,7 @@ def notify(title):
     >>>    # do long running task
     >>>    time.sleep(0.5)
     >>> Loading... Done.
-
     """
-
     print(title + '... ', end='')
     sys.stdout.flush()
     try:

@@ -4,7 +4,7 @@ Metrics comparing predicted and recorded firing rates
 
 from __future__ import absolute_import, division, print_function
 import numpy as np
-import sklearn
+from sklearn.metrics import auc
 from scipy.stats import pearsonr
 from functools import wraps
 from tqdm import tqdm
@@ -81,8 +81,7 @@ def roc(r, rhat):
     fpr = data[:, 0]
     tpr = data[:, 1]
     tpr[np.isnan(tpr)] = 0.     # nans should be zero
-    auc = sklearn.metrics.auc(fpr, tpr, reorder=True)
-    return fpr, tpr, auc
+    return fpr, tpr, auc(fpr, tpr, reorder=True)
 
 
 def binarized(r, rhat, threshold):
@@ -98,5 +97,4 @@ def binarized(r, rhat, threshold):
     true_positive_rate = true_positive / (true_positive + false_negative)
     false_positive_rate = false_positive / (false_positive + true_negative)
 
-    # return (true_positive_rate, false_positive_rate), (true_positive, true_negative, false_positive, false_negative)
     return false_positive_rate, true_positive_rate

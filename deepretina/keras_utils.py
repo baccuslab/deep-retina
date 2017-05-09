@@ -1,9 +1,12 @@
+"""
+Keras utilities
+"""
 import keras.backend as K
 from collections import OrderedDict
 
 
 def inspect(model, X):
-    """get a stimulus response from all layers of a model"""
+    """Get the response from all layers of a model"""
     all_layers = K.function([model.layers[0].input, K.learning_phase()],
                             [layer.output for layer in model.layers])
     outputs = all_layers([X, 0])

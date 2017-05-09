@@ -5,7 +5,7 @@ Construct Keras models
 from __future__ import absolute_import, division, print_function
 from keras.models import Sequential, Model
 from keras.layers import Input
-from keras.layers.core import Dropout, Dense, Activation, Flatten
+from keras.layers.core import Dropout, Dense, Activation, Flatten, Reshape
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.layers.merge import Concatenate
 from keras.layers.recurrent import LSTM
@@ -14,7 +14,7 @@ from keras.layers.noise import GaussianNoise, GaussianDropout
 from keras.regularizers import l1_l2, l2
 from keras import initializers
 from .utils import notify
-from .activations import ParametricSoftplus
+from .activations import ParametricSoftplus, ReQU
 
 __all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet', 'nips_conv', 'conv_rgcs']
 
@@ -139,24 +139,68 @@ def nips_conv(num_cells):
     return layers
 
 
+def bn_layer(x, nchan, size, l2_reg, sigma=0.05, **kwargs):
+    n = int(x.shape[-1]) - size + 1
+    y = Conv2D(nchan, size, data_format="channels_first", kernel_regularizer=l2(l2_reg), **kwargs)(x)
+    y = Reshape((8, n, n))(BatchNormalization(axis=-1)(Reshape((8, n ** 2))(y)))
+    return Activation('relu')(GaussianNoise(sigma)(y))
+
+
 def bn_cnn(input_shape, nout, l2_reg=0.05):
 
     x = Input(shape=input_shape)
 
-    y = Conv2D(8, 13, strides=(1, 1), input_shape=input_shape,
-                data_format="channels_first", kernel_regularizer=l2(l2_reg))(x)
-    y = BatchNormalization()(y)
-    y = GaussianNoise(0.05)(y)
-    y = Activation('relu')(y)
+    y = bn_layer(x, 8, 15, l2_reg, input_shape=input_shape)
+    y = bn_layer(y, 8, 11, l2_reg)
 
-    y = Conv2D(8, 13, strides=(1, 1), data_format="channels_first", kernel_regularizer=l2(l2_reg))(y)
-    y = BatchNormalization()(y)
-    y = GaussianNoise(0.05)(y)
-    y = Activation('relu')(y)
-
-    y = Dense(nout)(Flatten()(y))
-    y = BatchNormalization()(y)
+    y = Dense(nout, use_bias=False)(Flatten()(y))
+    y = BatchNormalization(axis=-1)(y)
     y = Activation('softplus')(y)
+    # y = ReQU()(y)
+
+    return x, y
+
+
+def bn_cnn_requ(input_shape, nout, l2_reg):
+
+    x = Input(shape=input_shape)
+
+    y1 = Conv2D(8, 15, strides=(1, 1), input_shape=input_shape, data_format="channels_first", kernel_regularizer=l2(l2_reg))(x)
+    y1 = BatchNormalization()(y1)
+    y1 = GaussianNoise(0.05)(y1)
+    y1 = Activation('relu')(y1)
+
+    y2 = Conv2D(8, 11, strides=(1, 1), data_format="channels_first", kernel_regularizer=l2(l2_reg))(y1)
+    y2 = BatchNormalization()(y2)
+    y2 = GaussianNoise(0.05)(y2)
+    y2 = Activation('relu')(y2)
+
+    # y = Concatenate()([Flatten()(l2), Flatten()(l1)])
+    y = Dense(nout)(Flatten()(y2))
+    y = BatchNormalization()(y)
+    y = ReQU()(y)
+
+    return x, y
+
+
+def cnn_bn_requ(input_shape, nout):
+
+    x = Input(shape=input_shape)
+
+    l1 = BatchNormalization(input_shape=input_shape)(x)
+    l1 = Conv2D(8, 15, strides=(1, 1), data_format="channels_first")(l1)
+    l1 = GaussianNoise(0.05)(l1)
+    l1 = Activation('relu')(l1)
+
+    l2 = BatchNormalization()(l1)
+    l2 = Conv2D(8, 7, strides=(1, 1), data_format="channels_first")(l2)
+    l2 = GaussianNoise(0.05)(l2)
+    l2 = Activation('relu')(l2)
+
+    # y = Concatenate()([Flatten()(l2), Flatten()(l1)])
+    y = BatchNormalization()(l2)
+    y = Dense(nout)(Flatten()(y))
+    y = ReQU()(y)
 
     return x, y
 
@@ -273,8 +317,14 @@ def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='he_normal', l2_re
     # Optional: Add relu activation separately
     # layers.append(Activation('relu', input_shape=input_shape))
 
-    # add the LSTM layer
-    layers.append(LSTM(num_hidden, return_sequences=False, input_shape=input_shape))
+    if len(input_shape) > 3:
+        # flatten the conv input first
+        layers.append(Flatten(input_shape=input_shape))
+        # add the LSTM layer
+        layers.append(LSTM(num_hidden, return_sequences=False, input_shape=input_shape))
+    else:
+        # add the LSTM layer
+        layers.append(LSTM(num_hidden, return_sequences=False, input_shape=input_shape))
 
     # Add a final dense (affine) layer with softplus activation
     layers.append(Dense(nout,
@@ -356,7 +406,7 @@ def generalizedconvnet(input_shape, nout,
 
         # Add requ activation
         if layer_type == 'requ':
-            layers.append(Activation('requ'))
+            layers.append(Activation(ReQU()))
 
         # Add exp activation
         if layer_type == 'exp':

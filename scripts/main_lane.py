@@ -4,14 +4,17 @@ Main script for training deep retinal models
 """
 
 from __future__ import absolute_import
-from deepretina.models import sequential, convnet, generalizedconvnet, fixedlstm, conv_rgcs
+from deepretina.models import sequential, convnet, generalizedconvnet, fixedlstm, conv_rgcs, functional, bn_cnn, bn_cnn_requ, cnn_bn_requ
 from deepretina.core import train
 from deepretina.experiments import Experiment
 from deepretina.io import KerasMonitor, main_wrapper
 from keras.layers.recurrent import SimpleRNN
 from keras.layers.core import Dense
 from keras.regularizers import l2
-from deepretina.activations import ParametricSoftplus
+from keras.optimizers import Adam
+from deepretina.optimizers import NadamAccum
+from deepretina.activations import ParametricSoftplus, ReQU
+import tensorflow as tf
 
 
 @main_wrapper
@@ -74,22 +77,22 @@ def fit_conv_rgcs(cells, train_stimuli, test_stimuli, exptdate, nclip=0, readme=
 
 
 @main_wrapper
-def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0, readme=None, sigma=0.001, num_filters=(8,16)):
+def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0, readme=None, sigma=0.05, num_filters=(8,8)):
     """Main script for fitting a convnet
 
     author: Lane McIntosh
     """
 
-    stim_shape = (55, 50, 50)
+    stim_shape = (40, 50, 50)
     ncells = len(cells)
     batchsize = 5000
 
     # get the convnet layers
     #### BEST CONV-CONV-AFFINE ARCHITECTURE ####
     layers = generalizedconvnet(stim_shape, ncells,
-            architecture=('noise', 'conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine', 'noise', 'parametric_softplus'),
-            num_filters=[-1, num_filters[0], -1, -1, num_filters[1], -1, -1, -1, len(cells)], filter_sizes=[-1, 15, -1, -1, 7], 
-            l2_reg=0.02, dropout=0.25, sigma=sigma)
+            architecture=('noise', 'conv', 'batchnorm', 'noise', 'relu', 'conv', 'batchnorm', 'noise', 'relu', 'flatten', 'affine', 'batchnorm', 'ReQU'),
+            num_filters=[-1, num_filters[0], -1, -1, -1, num_filters[1], -1, -1, -1, -1, -1, -1, len(cells)], filter_sizes=[-1, 13, -1, -1, -1, 13], 
+            l2_reg=0.01, sigma=sigma)
 
     #layers = generalizedconvnet(stim_shape, ncells,
     #        architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine', 'noise', 'parametric_softplus'),
@@ -151,30 +154,36 @@ def fit_generalizedconvnet(cells, train_stimuli, test_stimuli, exptdate, nclip=0
 
 
 @main_wrapper
-def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, readme=None):
+def fit_fixedlstm(cells, train_stimuli, test_stimuli, exptdate, hidden_units, readme=None):
     """Main script for fitting a convnet
 
     author: Lane McIntosh
     """
 
-    input_shape = (1000,32)
     ncells = len(cells)
-    batchsize = 250
+    #input_shape = (1000,8,30,30)
+    input_shape = (1000,ncells)
+    batchsize = 200
 
     # get the convnet layers
-    layers = fixedlstm(input_shape, len(cells), num_hidden=200, weight_init='normal', l2_reg=0.01)
+    layers = fixedlstm(input_shape, len(cells), num_hidden=hidden_units, weight_init='normal', l2_reg=0.01)
 
     # compile the keras model
-    model = sequential(layers, 'adam', loss='poisson')
+    #opt = Adam(lr=1e-3, decay=0.)
+    opt = NadamAccum(lr=1e-3, schedule_decay=0.003, accum_iters=10)
+    model = sequential(layers, opt, loss='poisson')
 
     # load experiment data
     data = Experiment(exptdate, cells, train_stimuli, test_stimuli, input_shape[0], batchsize, nskip=0, zscore_flag=False)
+    #data = Experiment(exptdate, cells, train_stimuli, test_stimuli, 1, 1, nskip=0, zscore_flag=False)
+    # would have to then reshape data to be appropriate shape with 8 as history and 1000 to be batchsize
 
     # create a monitor to track progress
     monitor = KerasMonitor('fixedlstm', model, data, readme, save_every=20)
+    #monitor = None
 
     # train
-    train(model, data, monitor, num_epochs=100)
+    train(model, data, monitor, num_epochs=100, shuffle=True)
 
     return model
 
@@ -228,6 +237,30 @@ def fit_fixedrnn(cells, train_stimuli, test_stimuli, exptdate, readme=None, num_
     return model
 
 
+@main_wrapper
+def fit_bncnn(cells, train_stimuli, test_stimuli, exptdate, readme=None):
+    stim_shape = (40, 50, 50)
+    ncells = len(cells)
+    bs = 9500
+    l2_reg = 0.01
+    
+    opt = Adam(lr=2e-3, decay=0.)
+    
+    #model = functional(*bn_cnn_requ(stim_shape, ncells), 'adam', loss='poisson')
+    model = functional(*bn_cnn_requ(stim_shape, ncells, l2_reg), opt, loss='poisson')
+    
+    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], bs)
+    
+    # create a monitor to track progress
+    monitor = KerasMonitor('bn_cnn_requ', model, data, readme, save_every=40)
+    #monitor = None
+    
+    # train
+    train(model, data, monitor, num_epochs=300)
+    return model
+
+
+
 if __name__ == '__main__':
     # list(range(37)) for 'all-cells'
     # [6,10,12,13] for '15-11-21a'
@@ -274,4 +307,8 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='6 layer convnet with lower regularization', sigma=0.05)
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='4 layer convnet', sigma=0.05)
     #mdl = fit_conv_rgcs(gc_15_10_07, ['whitenoise'], ['whitenoise', 'naturalscene'], '15-10-07', nclip=6000, description='convolutional RGC layer with even more increased regularization')
-    mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_4_5_2017'], ['whitenoise_4_5_2017', 'naturalscene_4_5_2017'], '15-10-07', nclip=6000, description='verify that parametric softplus works before working on requ')
+    #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_4_5_2017'], ['whitenoise_4_5_2017', 'naturalscene_4_5_2017'], '15-10-07', nclip=6000, description='verify that parametric softplus works before working on requ')
+    #mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-11-21a', nclip=6000, description='requ batchnorm on naturalscenes 15-11-21a')
+    #mdl = fit_bncnn(gc_15_11_21a, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-11-21a', description='l2_reg=0.01 and 15, 11 filter sizes for requ network')
+    with tf.device('/gpu:0'):
+        mdl = fit_fixedlstm(list(range(len(gc_15_11_21a))), ['naturalscene_ganglions_7fc87c'], ['naturalscene_ganglions_7fc87c'], '15-11-21a', 500, description='fixedlstm on ganglion predictions of 7fc87c bn_cnn naturalscene with accumulating mini-batch Nadam updates')

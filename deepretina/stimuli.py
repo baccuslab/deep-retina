@@ -187,14 +187,14 @@ def driftingbar(velocity, width, intensity=-1., x=(-30, 30)):
     """
     npts = 1 + int(x[1] - x[0] / np.abs(velocity))
     centers = np.sign(velocity) * np.linspace(x[0], x[1], npts)
-    return centers, concat(np.stack(map(lambda x: bar((x, 0), width, np.Inf, us_factor=5, blur=2.), centers)))
+    return centers, concat(np.stack(map(lambda x: bar((x, 0), width, np.Inf, us_factor=5, blur=0.), centers)))
 
 
 def cmask(center, radius, array):
     """Generates a mask covering a central circular region"""
     a, b = center
     nx, ny = array.shape
-    y, x = np.ogrid[-a:nx-a, -b:ny-b]
+    y, x = np.ogrid[-a:nx - a, -b:ny - b]
     return x ** 2 + y ** 2 <= radius ** 2
 
 
@@ -370,7 +370,7 @@ def get_grating_movie(grating_width=1, switch_every=10, movie_duration=100, mask
     polarity_count = 0
     for frame in range(movie_duration):
         polarity_count += 1
-        if int(polarity_count/switch_every) % 2 == 0:
+        if int(polarity_count / switch_every) % 2 == 0:
             grating_movie[frame] = grating_frame
         else:
             grating_movie[frame] = -1 * grating_frame

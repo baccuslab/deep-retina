@@ -8,7 +8,7 @@ import keras.backend as K
 __all__ = ['train']
 
 
-def train(model, experiment, monitor, num_epochs):
+def train(model, experiment, monitor, num_epochs, shuffle=True):
     """Train the given network against the given data
 
     Parameters
@@ -28,19 +28,15 @@ def train(model, experiment, monitor, num_epochs):
     # initialize training iteration
     iteration = 0
     train_start = time()
-    if isinstance(num_epochs, int):
-        nepochs = num_epochs
-    else:
-        nepochs = sum(num_epochs)
 
     # loop over epochs
     try:
-        for epoch in range(nepochs):
+        for epoch in range(num_epochs):
             tp.banner('Epoch #{} of {}'.format(epoch + 1, num_epochs))
             print(tp.header(["Iteration", "Loss", "Runtime"]), flush=True)
 
             # loop over data batches for this epoch
-            for X, y in experiment.train(shuffle=True):
+            for X, y in experiment.train(shuffle=shuffle):
 
                 # update on save_every, assuming it is positive
                 if (monitor is not None) and (iteration % monitor.save_every == 0):
@@ -50,7 +46,7 @@ def train(model, experiment, monitor, num_epochs):
 
                 # train on the batch
                 tstart = time()
-                loss = model.train_on_batch(X[np.newaxis], y[np.newaxis])
+                loss = model.train_on_batch(X, y)
                 elapsed_time = time() - tstart
 
                 # update

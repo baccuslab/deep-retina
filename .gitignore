@@ -28,5 +28,6 @@ var/
 *.jpg
 *.svg
 
-# ctags
+# other
 tags
+.mypy_cache

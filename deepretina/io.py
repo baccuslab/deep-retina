@@ -174,8 +174,8 @@ class Monitor:
             # for one cell
             filename = 'cell{}'.format(cells)
             plot_rates(iteration, self.experiment.dt,
-                       train=(r_train, rhat_train),
-                       validation=(r_val, rhat_val))
+                       train=(np.squeeze(r_train), np.squeeze(rhat_train)),
+                       validation=(np.squeeze(r_val), np.squeeze(rhat_val)))
             self._save_figure(filename)
 
         else:
@@ -183,8 +183,8 @@ class Monitor:
             for ix, cell in enumerate(cells):
                 filename = 'cell{}'.format(cell)
                 plot_rates(iteration, self.experiment.dt,
-                           train=(r_train[:, ix], rhat_train[:, ix]),
-                           validation=(r_val[:, ix], rhat_val[:, ix]))
+                           train=(np.squeeze(r_train)[:, ix], np.squeeze(rhat_train)[:, ix]),
+                           validation=(np.squeeze(r_val)[:, ix], np.squeeze(rhat_val)[:, ix]))
                 self._save_figure(filename)
 
         # plot the performance curves

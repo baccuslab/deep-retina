@@ -170,9 +170,9 @@ class Experiment(object):
             # get data and model firing rates
             if self.info['expand_dims']:
                 rhat_list = []
-                for i in np.arange(0, exptdata.X.shape[0], 100):
+                for i in np.arange(0, exptdata.X.shape[0], self.info['batchsize']):
                     try:
-                        rhat_list.append(modelrate(np.expand_dims(exptdata.X[i:i+100], 0)))
+                        rhat_list.append(modelrate(np.expand_dims(exptdata.X[i:i+self.info['batchsize']], 0)))
                     except:
                         pass
                 rhat = np.hstack(rhat_list)

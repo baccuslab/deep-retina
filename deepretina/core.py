@@ -4,11 +4,13 @@ Core tools for training models
 from time import time
 import tableprint as tp
 import keras.backend as K
+import numpy as np
 
 __all__ = ['train']
 
 
-def train(model, experiment, monitor, num_epochs, shuffle=True, learning_rates=None):
+
+def train(model, experiment, monitor, num_epochs, shuffle=True, learning_rates=None, expand_dims=False):
     """Train the given network against the given data
 
     Parameters
@@ -63,6 +65,11 @@ def train(model, experiment, monitor, num_epochs, shuffle=True, learning_rates=N
 
             # loop over data batches for this epoch
             for X, y in experiment.train(shuffle=shuffle):
+
+                # for time distributed RNNs that need an extra batchsize of 1
+                if expand_dims:
+                    X = np.expand_dims(X, 0)
+                    y = np.expand_dims(y, 0)
 
                 # update on save_every, assuming it is positive
                 if (monitor is not None) and (iteration % monitor.save_every == 0):

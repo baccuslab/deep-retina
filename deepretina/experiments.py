@@ -27,7 +27,7 @@ __all__ = ['Experiment', 'loadexpt']
 class Experiment(object):
     """Class to keep track of loaded experiment data"""
 
-    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, nskip=6000, zscore_flag=True, augment_flag=False):
+    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, nskip=6000, zscore_flag=True, augment_flag=False, expand_dims=False):
         """Keeps track of experimental data
 
         Parameters
@@ -73,6 +73,7 @@ class Experiment(object):
             'history': history,
             'batchsize': batchsize,
             'clipped': nskip * dt,
+            'expand_dims': expand_dims
         }
 
         assert holdout >= 0 and holdout < 1, "holdout must be between 0 and 1"
@@ -144,6 +145,10 @@ class Experiment(object):
         X = self._train_data[expt].X[inds]
         r = self._train_data[expt].y[inds]
 
+        if self.info['expand_dims']:
+            X = np.expand_dims(X, 0)
+            r = np.expand_dims(r, 0)
+
         # make predictions
         rhat = modelrate(X)
 
@@ -163,8 +168,19 @@ class Experiment(object):
         for fname, exptdata in self._test_data.items():
 
             # get data and model firing rates
-            r = exptdata.y
-            rhat = modelrate(exptdata.X)
+            if self.info['expand_dims']:
+                rhat_list = []
+                for i in np.arange(0, exptdata.X.shape[0], 100):
+                    try:
+                        rhat_list.append(modelrate(np.expand_dims(exptdata.X[i:i+100], 0)))
+                    except:
+                        pass
+                rhat = np.hstack(rhat_list)
+                r = np.expand_dims(exptdata.y[:rhat.shape[1]], 0)
+
+            else:
+                r = exptdata.y
+                rhat = modelrate(exptdata.X)
 
             # evaluate
             avg_scores[fname], all_scores[fname] = allmetrics(r, rhat, metrics)

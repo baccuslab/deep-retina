@@ -321,10 +321,12 @@ def fixedlstm(input_shape, nout, num_hidden=1600, weight_init='he_normal', l2_re
         # flatten the conv input first
         layers.append(Flatten(input_shape=input_shape))
         # add the LSTM layer
-        layers.append(LSTM(num_hidden, return_sequences=False, input_shape=input_shape))
+        layers.append(LSTM(num_hidden, return_sequences=False, input_shape=input_shape, kernel_initializer='glorot_uniform',
+                    recurrent_initializer='orthogonal'))
     else:
         # add the LSTM layer
-        layers.append(LSTM(num_hidden, return_sequences=False, input_shape=input_shape))
+        layers.append(LSTM(num_hidden, return_sequences=False, input_shape=input_shape, kernel_initializer='glorot_uniform', 
+                    recurrent_initializer='orthogonal'))
 
     # Add a final dense (affine) layer with softplus activation
     layers.append(Dense(nout,

@@ -31,7 +31,7 @@ def allmetrics(r, rhat, functions):
     avg_scores = {}
     all_scores = {}
     for function in functions:
-        avg, cells = getattr(metrics, function)(r.T, rhat.T)
+        avg, cells = getattr(metrics, function)(np.squeeze(r).T, np.squeeze(rhat).T)
         avg_scores[function] = avg
         all_scores[function] = cells
 

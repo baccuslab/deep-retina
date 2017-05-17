@@ -24,12 +24,15 @@ for dirs, subdirs, files in walker:
     #files = path[-1]
     #subdirs = subpaths[-2]
     #dirs = subpaths[-3]
-    if (architecture_name in files) and (weight_name in files):
+    if (architecture_name in files) and (weight_name in files) and (('bn' in dirs) or ('dsrnn' in dirs)):
         with open(dirs + '/' + architecture_name, 'r') as f:
             arch = json.load(f)
 
         # save layers of model
-        layers = arch['config']['layers']
+        try:
+            layers = arch['config']['layers']
+        except:
+            layers = []
 
         j = 1
         k = 1
@@ -43,20 +46,26 @@ for dirs, subdirs, files in walker:
                 fig_dir = dirs + ' ' #+ '/'
 
                 if j == 1:
-                    # rank 1 visualizations
-                    visualize_convnet_weights(weights, title=plt_title, layer_name=layer_name,
-                        fig_dir=fig_dir, fig_size=(8,10), dpi=100, space=True, time=True, display=False,
-                        save=True, cmap='seismic', normalize=True)
+                    try:
+                        # rank 1 visualizations
+                        visualize_convnet_weights(weights, title=plt_title, layer_name=layer_name,
+                            fig_dir=fig_dir, fig_size=(8,10), dpi=100, space=True, time=True, display=False,
+                            save=True, cmap='seismic', normalize=True)
 
-                    # movies of weights
-                    animate_convnet_weights(weights, title=plt_title, layer_name=layer_name,
-                        fig_dir=fig_dir, fig_size=(6,6), dpi=100, display=False,
-                        save=True, cmap='seismic', normalize=True)
+                        # movies of weights
+                        animate_convnet_weights(weights, title=plt_title, layer_name=layer_name,
+                            fig_dir=fig_dir, fig_size=(6,6), dpi=100, display=False,
+                            save=True, cmap='seismic', normalize=True)
+                    except:
+                        print('Failed to retrieve conv weights on %s' %dirs)
                 else:
-                    # rank 1 visualizations
-                    visualize_convnet_weights(weights, title=plt_title, layer_name=layer_name,
-                        fig_dir=fig_dir, fig_size=(8,10), dpi=100, space=True, time=True, display=False,
-                        save=True, cmap='seismic', normalize=True, lowrank=False)
+                    try:
+                        # rank 1 visualizations
+                        visualize_convnet_weights(weights, title=plt_title, layer_name=layer_name,
+                            fig_dir=fig_dir, fig_size=(8,10), dpi=100, space=True, time=True, display=False,
+                            save=True, cmap='seismic', normalize=True, lowrank=False)
+                    except:
+                        print('Failed to retrieve conv weights on %s' %dirs)
                 j += 1
 
 

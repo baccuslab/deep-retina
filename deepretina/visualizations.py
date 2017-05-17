@@ -493,9 +493,11 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
     # if user supplied path instead of array of weights
     if type(weights) is str:
         weight_file = h5py.File(weights, 'r')
-        weights = weight_file[layer_name]['param_0']
+        weights = np.array(weight_file[layer_name]['kernel:0'])
 
-    num_filters = weights.shape[0]
+    num_filters = weights.shape[-1]
+    weights = np.rollaxis(weights, 2)
+    weights = np.rollaxis(weights, 3)
 
     if normalize:
         max_val = np.max(abs(weights[:]))
@@ -527,6 +529,7 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
 
                     ax = plt.subplot2grid((num_rows*4, num_cols), (4*y+3, x), rowspan=1)
                     ax.plot(np.linspace(0,len(temporal)*10,len(temporal)), temporal, 'k', linewidth=2)
+                    ax.plot(np.linspace(0,len(temporal)*10,len(temporal)), np.zeros((len(temporal),)), 'k--', linewidth=1)
                     plt.grid('off')
                     plt.axis('off')
         if save:
@@ -888,9 +891,11 @@ def animate_convnet_weights(weights, title='convnet', layer_name='layer_0',
     # if user supplied path instead of array of weights
     if type(weights) is str:
         weight_file = h5py.File(weights, 'r')
-        weights = weight_file[layer_name]['param_0']
+        weights = np.array(weight_file[layer_name]['kernel:0'])
 
-    num_filters = weights.shape[0]
+    num_filters = weights.shape[-1]
+    weights = np.rollaxis(weights, 2)
+    weights = np.rollaxis(weights, 3)
 
     if normalize:
         max_val = np.max(abs(weights[:]))

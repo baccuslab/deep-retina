@@ -29,16 +29,18 @@ for dirs, subdirs, files in walker:
             arch = json.load(f)
 
         # save layers of model
-        layers = arch['layers']
+        layers = arch['config']['layers']
 
+        j = 1
         for idl, l in enumerate(layers):
-            if l['name'] == 'Convolution2D':
-                num_filters = l['nb_filter']
-                filter_shape = (l['nb_row'], l['nb_col'])
+            if l['class_name'] == 'Conv2D':
+                num_filters = l['config']['filters']
+                filter_shape = l['config']['kernel_size']
                 plt_title = '%02i conv layer' %(idl)
                 weights = dirs + '/' + weight_name
-                layer_name = 'layer_%i' %(idl)
+                layer_name = 'conv2d_%d/conv2d_%d' %(j,j)
                 fig_dir = dirs + ' ' #+ '/'
+                j += 1
 
                 # rank 1 visualizations
                 visualize_convnet_weights(weights, title=plt_title, layer_name=layer_name,
@@ -51,8 +53,8 @@ for dirs, subdirs, files in walker:
                     save=True, cmap='seismic', normalize=True)
 
 
-            elif l['name'] == 'Dense':
-                output_dim = l['output_dim']
+            elif l['class_name'] == 'Dense':
+                output_dim = l['config']['units']
                 plt_title = '%02i affine layer' %(idl)
                 weights = dirs + '/' + weight_name
                 layer_name = 'layer_%i' %(idl)
@@ -65,6 +67,27 @@ for dirs, subdirs, files in walker:
                     print('Failed for {} model, {} filters, layer {}.'.format(dirs, num_filters, idl))
 
                 num_filters = output_dim
+
+            elif l['class_name'] == 'TimeDistributed':
+                if l['config']['layer']['class_name'] == 'Conv2D':
+                    l = l['config']['layer']
+                    num_filters = l['config']['filters']
+                    filter_shape = l['config']['kernel_size']
+                    plt_title = '%02i conv layer' %(idl)
+                    weights = dirs + '/' + weight_name
+                    layer_name = 'time_distributed_%d/time_distributed_%d' %(j,j)
+                    fig_dir = dirs + ' ' #+ '/'
+
+                    # rank 1 visualizations
+                    visualize_convnet_weights(weights, title=plt_title, layer_name=layer_name,
+                        fig_dir=fig_dir, fig_size=(8,10), dpi=100, space=True, time=True, display=False,
+                        save=True, cmap='seismic', normalize=True)
+
+                    # movies of weights
+                    animate_convnet_weights(weights, title=plt_title, layer_name=layer_name,
+                        fig_dir=fig_dir, fig_size=(6,6), dpi=100, display=False,
+                        save=True, cmap='seismic', normalize=True)
+                j += 1
         
         models_parsed += 1
         print('Visualized model %i' %(models_parsed))

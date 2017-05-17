@@ -459,7 +459,7 @@ def visualize_ln(h5file):
 
 def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
         fig_dir=None, fig_size=(8,10), dpi=300, space=True, time=True, display=True,
-        save=False, cmap='seismic', normalize=True):
+        save=False, cmap='seismic', normalize=True, lowrank=True):
     '''
     Visualize convolutional spatiotemporal filters in a convolutional neural
     network.
@@ -505,38 +505,68 @@ def visualize_convnet_weights(weights, title='convnet', layer_name='layer_0',
 
     # plot space and time profiles together
     if space and time:
-        fig = plt.gcf()
-        fig.set_size_inches(fig_size)
-        plt.title(title, fontsize=20)
-        num_rows = int(np.sqrt(num_filters))
-        num_cols = int(np.ceil(num_filters/num_rows))
-        idxs = range(num_cols)
-        for x in range(num_cols):
-            for y in range(num_rows):
-                plt_idx = y * num_cols + x + 1
-                # in case fewer weights than fit neatly in rows and cols
-                if plt_idx <= len(weights):
-                    spatial,temporal = ft.decompose(weights[plt_idx-1])
-                    #plt.subplot(num_rows, num_cols, plt_idx)
-                    ax = plt.subplot2grid((num_rows*4, num_cols), (4*y, x), rowspan=3)
-                    if normalize:
-                        ax.imshow(spatial, interpolation='nearest', cmap=cmap, clim=colorlimit)
-                    else:
-                        ax.imshow(spatial, interpolation='nearest', cmap=cmap)
-                    plt.title('Subunit %i' %plt_idx)
-                    plt.grid('off')
-                    plt.axis('off')
+        if lowrank:
+            fig = plt.gcf()
+            fig.set_size_inches(fig_size)
+            plt.title(title, fontsize=20)
+            num_rows = int(np.sqrt(num_filters))
+            num_cols = int(np.ceil(num_filters/num_rows))
+            idxs = range(num_cols)
+            for x in range(num_cols):
+                for y in range(num_rows):
+                    plt_idx = y * num_cols + x + 1
+                    # in case fewer weights than fit neatly in rows and cols
+                    if plt_idx <= len(weights):
+                        spatial,temporal = ft.decompose(weights[plt_idx-1])
+                        #plt.subplot(num_rows, num_cols, plt_idx)
+                        ax = plt.subplot2grid((num_rows*4, num_cols), (4*y, x), rowspan=3)
+                        if normalize:
+                            ax.imshow(spatial, interpolation='nearest', cmap=cmap, clim=colorlimit)
+                        else:
+                            ax.imshow(spatial, interpolation='nearest', cmap=cmap)
+                        plt.title('Subunit %i' %plt_idx)
+                        plt.grid('off')
+                        plt.axis('off')
 
-                    ax = plt.subplot2grid((num_rows*4, num_cols), (4*y+3, x), rowspan=1)
-                    ax.plot(np.linspace(0,len(temporal)*10,len(temporal)), temporal, 'k', linewidth=2)
-                    ax.plot(np.linspace(0,len(temporal)*10,len(temporal)), np.zeros((len(temporal),)), 'k--', linewidth=1)
+                        ax = plt.subplot2grid((num_rows*4, num_cols), (4*y+3, x), rowspan=1)
+                        ax.plot(np.linspace(0,len(temporal)*10,len(temporal)), temporal, 'k', linewidth=2)
+                        ax.plot(np.linspace(0,len(temporal)*10,len(temporal)), np.zeros((len(temporal),)), 'k--', linewidth=1)
+                        plt.grid('off')
+                        plt.axis('off')
+            if save:
+                plt.savefig(fig_dir + title + '_spatiotemporal_profiles.png', dpi=dpi)
+                plt.close()
+            if display:
+                plt.show()
+        elif not lowrank:
+            # if not low rank, just plot each spatial frame
+            fig = plt.gcf()
+            fig.set_size_inches(fig_size)
+            plt.title(title, fontsize=20)
+            num_rows = int(num_filters)
+            num_cols = int(weights.shape[1])
+            idxs = range(num_cols)
+            for x in range(num_cols):
+                for y in range(num_rows):
+                    plt_idx = y * num_cols + x + 1
+                    # in case fewer weights than fit neatly in rows and cols
+                    ax = plt.subplot(num_rows, num_cols, plt_idx)
+                    if normalize:
+                        ax.imshow(weights[y,x], interpolation='nearest', cmap=cmap, clim=[-np.max(abs(weights[y])),
+                                                                                    np.max(abs(weights[y]))])
+                    else:
+                        ax.imshow(weights[y,x], interpolation='nearest', cmap=cmap)
+                    if x == 0:
+                        plt.title('Subunit %i' %y)
                     plt.grid('off')
                     plt.axis('off')
-        if save:
-            plt.savefig(fig_dir + title + '_spatiotemporal_profiles.png', dpi=dpi)
-            plt.close()
-        if display:
-            plt.show()
+            if save:
+                plt.savefig(fig_dir + title + '_spatiotemporal_profiles.png', dpi=dpi)
+                plt.close()
+            if display:
+                plt.show()
+
+            
 
     # plot just spatial profile
     elif space and not time:

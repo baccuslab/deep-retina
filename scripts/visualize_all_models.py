@@ -32,6 +32,7 @@ for dirs, subdirs, files in walker:
         layers = arch['config']['layers']
 
         j = 1
+        k = 1
         for idl, l in enumerate(layers):
             if l['class_name'] == 'Conv2D':
                 num_filters = l['config']['filters']
@@ -40,17 +41,23 @@ for dirs, subdirs, files in walker:
                 weights = dirs + '/' + weight_name
                 layer_name = 'conv2d_%d/conv2d_%d' %(j,j)
                 fig_dir = dirs + ' ' #+ '/'
+
+                if j == 1:
+                    # rank 1 visualizations
+                    visualize_convnet_weights(weights, title=plt_title, layer_name=layer_name,
+                        fig_dir=fig_dir, fig_size=(8,10), dpi=100, space=True, time=True, display=False,
+                        save=True, cmap='seismic', normalize=True)
+
+                    # movies of weights
+                    animate_convnet_weights(weights, title=plt_title, layer_name=layer_name,
+                        fig_dir=fig_dir, fig_size=(6,6), dpi=100, display=False,
+                        save=True, cmap='seismic', normalize=True)
+                else:
+                    # rank 1 visualizations
+                    visualize_convnet_weights(weights, title=plt_title, layer_name=layer_name,
+                        fig_dir=fig_dir, fig_size=(8,10), dpi=100, space=True, time=True, display=False,
+                        save=True, cmap='seismic', normalize=True, lowrank=False)
                 j += 1
-
-                # rank 1 visualizations
-                visualize_convnet_weights(weights, title=plt_title, layer_name=layer_name,
-                    fig_dir=fig_dir, fig_size=(8,10), dpi=100, space=True, time=True, display=False,
-                    save=True, cmap='seismic', normalize=True)
-
-                # movies of weights
-                animate_convnet_weights(weights, title=plt_title, layer_name=layer_name,
-                    fig_dir=fig_dir, fig_size=(6,6), dpi=100, display=False,
-                    save=True, cmap='seismic', normalize=True)
 
 
             elif l['class_name'] == 'Dense':
@@ -78,15 +85,22 @@ for dirs, subdirs, files in walker:
                     layer_name = 'time_distributed_%d/time_distributed_%d' %(j,j)
                     fig_dir = dirs + ' ' #+ '/'
 
-                    # rank 1 visualizations
-                    visualize_convnet_weights(weights, title=plt_title, layer_name=layer_name,
-                        fig_dir=fig_dir, fig_size=(8,10), dpi=100, space=True, time=True, display=False,
-                        save=True, cmap='seismic', normalize=True)
+                    if k == 1:
+                        # rank 1 visualizations
+                        visualize_convnet_weights(weights, title=plt_title, layer_name=layer_name,
+                            fig_dir=fig_dir, fig_size=(8,10), dpi=100, space=True, time=True, display=False,
+                            save=True, cmap='seismic', normalize=True)
 
-                    # movies of weights
-                    animate_convnet_weights(weights, title=plt_title, layer_name=layer_name,
-                        fig_dir=fig_dir, fig_size=(6,6), dpi=100, display=False,
-                        save=True, cmap='seismic', normalize=True)
+                        # movies of weights
+                        animate_convnet_weights(weights, title=plt_title, layer_name=layer_name,
+                            fig_dir=fig_dir, fig_size=(6,6), dpi=100, display=False,
+                            save=True, cmap='seismic', normalize=True)
+                    else:
+                        # rank 1 visualizations
+                        visualize_convnet_weights(weights, title=plt_title, layer_name=layer_name,
+                            fig_dir=fig_dir, fig_size=(8,10), dpi=100, space=True, time=True, display=False,
+                            save=True, cmap='seismic', normalize=True, lowrank=False)
+                    k += 1
                 j += 1
         
         models_parsed += 1

@@ -94,14 +94,18 @@ if __name__ == '__main__':
 
     # load model
     mdl = Model(os.path.expanduser('~/deep-retina-results/database'), '7fc87c bn_cnn_requ')
-    keras_mdl = mdl.keras()
+    #keras_mdl = mdl.keras()
     
     # load data
     # load experiment data
     data = Experiment('15-10-07', cells, [], ['naturalscene_4_6_2017'], 40, timesteps, nskip=6000)
     X = data._test_data['naturalscene_4_6_2017'][0][:timesteps]
 
+    init_op = tf.global_variables_initializer()
     with tf.Session() as sess:
-        init_op = tf.global_variables_initializer()
         sess.run(init_op)
+        keras_mdl = mdl.keras()
         g = gradient(keras_mdl, X, 0, sess)
+
+    plt.imshow(g[50,0], cmap='seismic')
+    plt.savefig('temp.png')

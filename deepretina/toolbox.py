@@ -222,7 +222,8 @@ class Model:
 
     def bestiter(self, on='validation', metric='lli'):
         if self.results is not None:
-            return np.array(self.results[on][metric]).mean(axis=1).argmax()
+            scores = np.array(self.results[on][metric]).mean(axis=1)
+            return np.nanargmax(scores)
 
     def performance(self, idx, stimulus, on='test', metric='lli'):
         return np.array(self.results[on][stimulus][metric][idx])

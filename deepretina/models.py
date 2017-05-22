@@ -142,7 +142,7 @@ def nips_conv(num_cells):
 def bn_layer(x, nchan, size, l2_reg, sigma=0.05, **kwargs):
     n = int(x.shape[-1]) - size + 1
     y = Conv2D(nchan, size, data_format="channels_first", kernel_regularizer=l2(l2_reg), **kwargs)(x)
-    y = Reshape((8, n, n))(BatchNormalization(axis=-1)(Reshape((8, n ** 2))(y)))
+    y = Reshape((nchan, n, n))(BatchNormalization(axis=-1)(Reshape((nchan, n ** 2))(y)))
     return Activation('relu')(GaussianNoise(sigma)(y))
 
 

@@ -59,7 +59,13 @@ def linear_nonlinear(x, nout, nln='softplus', weight_init='he_normal', l2_reg=0.
     l2_reg : float, optional
         l2 regularization on the weights (default: 0.01)
     """
-    return Dense(nout, activation=nln, init=weight_init, kernel_regularizer=l2(l2_reg))(x)
+    assert nln in ('softplus', 'exp', 'sigmoid', 'relu')
+
+    if nln == 'exp':
+        nln = K.exp
+
+    u = Dense(nout, init=weight_init, kernel_regularizer=l2(l2_reg))(x)
+    return Activation(nln)(u)
 
 
 def nips_conv(num_cells):

@@ -3,7 +3,7 @@ Niru main script
 """
 
 from __future__ import absolute_import
-from deepretina.models import functional, sequential, convnet, ln, generalizedconvnet, bn_cnn
+from deepretina.models import functional, sequential, convnet, linear_nonlinear, bn_cnn
 from deepretina.core import train
 from deepretina.experiments import Experiment, _loadexpt_h5
 from deepretina.io import KerasMonitor, Monitor, main_wrapper
@@ -11,11 +11,12 @@ from deepretina.glms import GLM
 from deepretina.utils import cutout_indices
 import numpy as np
 from keras.optimizers import RMSprop
+from keras.layers import Input
 from pyret import filtertools as ft
 
 
 @main_wrapper
-def fit_cutout(cell, train_stimuli, exptdate, filtersize, l2=1e-3, load_fraction=1.0, readme=None):
+def fit_cutout(cell, train_stimuli, exptdate, filtersize, nln='softplus', l2=1e-3, load_fraction=1.0, readme=None):
     """Fits a LN model on a cutout stimulus using keras"""
 
     history = 40
@@ -39,10 +40,11 @@ def fit_cutout(cell, train_stimuli, exptdate, filtersize, l2=1e-3, load_fraction
     xdim, ydim = data._train_data[train_stimuli[0]].X.shape[2:]
 
     # get the layers
-    layers = ln((history, xdim, ydim), 1, weight_init='glorot_uniform', l2_reg=l2)
+    x = Input(shape=(history, xdim, ydim), name='stimulus')
+    y = linear_nonlinear(x, 1, nln=nln, weight_init='glorot_uniform', l2_reg=l2)
 
     # compile it
-    model = sequential(layers, RMSprop(lr=1e-4), loss='poisson')
+    model = functional(x, y, 'adam', loss='poisson')
 
     # create a monitor
     monitor = KerasMonitor('ln_cutout', model, data, readme, save_every=20)
@@ -61,7 +63,7 @@ def fit_ln(cells, train_stimuli, exptdate, l2=1e-3, readme=None):
     batchsize = 5000
 
     # get the layers
-    layers = ln(stim_shape, ncells, weight_init='normal', l2_reg=l2)
+    layers = linear_nonlinear(stim_shape, ncells, weight_init='normal', l2_reg=l2)
 
     # compile it
     model = sequential(layers, RMSprop(lr=1e-4), loss='poisson')
@@ -183,37 +185,6 @@ def fit_convconv(cells, train_stimuli, exptdate, readme=None):
 
 
 @main_wrapper
-def fit_genconv(cells, train_stimuli, exptdate, load_fraction=1.0, readme=None):
-    """Fits a generalized convnet (based off of Lane's function)"""
-
-    stim_shape = (40, 50, 50)
-    ncells = len(cells)
-    batchsize = 6000
-
-    # get the convnet layers
-    layers = generalizedconvnet(stim_shape, ncells,
-                                architecture=('conv', 'noise', 'relu', 'conv', 'noise', 'relu', 'flatten', 'affine'),
-                                num_filters=[8, -1, -1, 16], filter_sizes=[15, -1, -1, 7], weight_init='normal',
-                                l2_reg=0.01, dropout=0.25, sigma=2.0)
-
-    # compile the keras model
-    model = sequential(layers, 'adam', loss='poisson')
-
-    # load experiment data
-    test_stimuli = ['whitenoise', 'naturalscene']
-    data = Experiment(exptdate, cells, train_stimuli, test_stimuli, stim_shape[0], batchsize, nskip=6000)
-    data.subselect(load_fraction)
-
-    # create a monitor to track progress
-    monitor = KerasMonitor('convnet', model, data, readme, save_every=20)
-
-    # train
-    train(model, data, monitor, num_epochs=100)
-
-    return model
-
-
-@main_wrapper
 def fit_glm(cell, train_stimuli, exptdate, filtersize, l2, load_fraction=1.0, readme=None):
     """Main script for fitting a GLM
 
@@ -257,30 +228,36 @@ def fit_glm(cell, train_stimuli, exptdate, filtersize, l2, load_fraction=1.0, re
 
 if __name__ == '__main__':
 
-    train_stimuli = ['whitenoise', 'naturalscene']
-    l2_reg = 0.1
+    train_stimuli = ['whitenoise']
+    # l2_reg = 0.01
 
     # 15-10-07
     gc_151007 = [0, 1, 2, 3, 4]
-    _ = fit_bncnn(gc_151007, train_stimuli, '15-10-07', l2_reg=l2_reg, description='bn_cnn layer norm v3 (both wn and ns)')
+    for ci in gc_151007:
+        for fs in (3, 5, 7, 9, 11, 13, 15):
+            for l2_reg in (1e-4, 1e-3, 1e-2, 1e-1):
+                desc = f'LN cutout, 15-10-07, Cell #{ci}, l2={l2_reg}, filtersize={fs}, activation=softplus'
+                mdl = fit_cutout(ci, train_stimuli, '15-10-07', fs, nln='softplus', l2=l2_reg, description=desc)
+
+    # _ = fit_bncnn(gc_151007, train_stimuli, '15-10-07', l2_reg=l2_reg, description='bn_cnn layer norm v3 (both wn and ns)')
     # mdl = fit_bncnn([0, 1, 2, 3, 4], ['whitenoise'], '15-10-07', l2_reg=0.05)
 
     # 15-11-21a
     gc_151121a = [6, 10, 12, 13]
     # mdl = fit_convnet(gc_151121a, ['whitenoise'], '15-11-21a', nclip=6000)
-    _ = fit_bncnn(gc_151121a, train_stimuli, '15-11-21a', l2_reg=l2_reg, description='bn_cnn layer norm v3 (both wn and ns)')
+    # _ = fit_bncnn(gc_151121a, train_stimuli, '15-11-21a', l2_reg=l2_reg, description='bn_cnn layer norm v3 (both wn and ns)')
     # mdl = fit_bncnn(gc_151121a, ['whitenoise'], '15-11-21a', l2_reg=0.1, description='whitenoise bn_cnn with l2reg=0.1')
 
     # 15-11-21b
     gc_151121b = [0, 1, 3, 5, 8, 9, 13, 14, 16, 17, 18, 20, 21, 22, 23, 24, 25]
-    _ = fit_bncnn(gc_151121b, train_stimuli, '15-11-21b', l2_reg=l2_reg, description='bn_cnn layer norm v3 (both wn and ns)')
+    # _ = fit_bncnn(gc_151121b, train_stimuli, '15-11-21b', l2_reg=l2_reg, description='bn_cnn layer norm v3 (both wn and ns)')
 
-    _ = fit_bncnn(gc_151121a, ['whitenoise'], '15-11-21a', l2_reg=0.5, description='whitenoise bn_cnn v3 with l2reg=0.5')
-    _ = fit_bncnn(gc_151121a, ['naturalscene'], '15-11-21a', l2_reg=0.05, description='naturalscene bn_cnn v3 with l2reg=0.05')
-    _ = fit_bncnn(gc_151121b, ['whitenoise'], '15-11-21b', l2_reg=0.5, description='whitenoise bn_cnn v3 with l2_reg=0.5')
-    _ = fit_bncnn(gc_151121b, ['naturalscene'], '15-11-21b', l2_reg=0.05, description='naturalscene bn_cnn v3 with l2_reg=0.05')
-    _ = fit_bncnn(gc_151007, ['whitenoise'], '15-10-07', l2_reg=0.5, description='whitenoise bn_cnn v3 with l2_reg=0.5')
-    _ = fit_bncnn(gc_151007, ['naturalscene'], '15-10-07', l2_reg=0.05, description='naturalscene bn_cnn v3 with l2_reg=0.05')
+    # _ = fit_bncnn(gc_151121a, ['whitenoise'], '15-11-21a', l2_reg=0.5, description='whitenoise bn_cnn v3 with l2reg=0.5')
+    # _ = fit_bncnn(gc_151121a, ['naturalscene'], '15-11-21a', l2_reg=0.05, description='naturalscene bn_cnn v3 with l2reg=0.05')
+    # _ = fit_bncnn(gc_151121b, ['whitenoise'], '15-11-21b', l2_reg=0.5, description='whitenoise bn_cnn v3 with l2_reg=0.5')
+    # _ = fit_bncnn(gc_151121b, ['naturalscene'], '15-11-21b', l2_reg=0.05, description='naturalscene bn_cnn v3 with l2_reg=0.05')
+    # _ = fit_bncnn(gc_151007, ['whitenoise'], '15-10-07', l2_reg=0.5, description='whitenoise bn_cnn v3 with l2_reg=0.5')
+    # _ = fit_bncnn(gc_151007, ['naturalscene'], '15-10-07', l2_reg=0.05, description='naturalscene bn_cnn v3 with l2_reg=0.05')
 
     # 16-01-07
     # gc_160107 = [0, 2, 7, 10, 11, 12, 31]

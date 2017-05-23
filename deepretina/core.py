@@ -3,7 +3,6 @@ Core tools for training models
 """
 from time import time
 import tableprint as tp
-import keras.backend as K
 
 __all__ = ['train']
 

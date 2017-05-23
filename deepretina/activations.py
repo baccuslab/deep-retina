@@ -33,7 +33,6 @@ class ParametricSoftplus(Layer):
         return K.softplus(self.beta * inputs) * self.alpha
 
     def get_config(self):
-        #config = {'alpha': self.alpha, 'beta': self.beta}
         config = {}
         base_config = Layer.get_config(self)
         return dict(list(base_config.items()) + list(config.items()))

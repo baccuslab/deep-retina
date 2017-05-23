@@ -20,7 +20,7 @@ from keras.regularizers import l1_l2, l2
 
 from .utils import notify
 
-__all__ = ['ln', 'nips_conv', 'rgc_rnn']
+__all__ = ['linear_nonlinear', 'nips_conv', 'rgc_rnn']
 
 
 def functional(inputs, outputs, optimizer, loss='poisson'):
@@ -39,7 +39,7 @@ def functional(inputs, outputs, optimizer, loss='poisson'):
     return model
 
 
-def ln(x, nout, nln='softplus', weight_init='he_normal', l2_reg=0.01):
+def linear_nonlinear(x, nout, nln='softplus', weight_init='he_normal', l2_reg=0.01):
     """A linear-nonlinear model
 
     Parameters
@@ -54,7 +54,7 @@ def ln(x, nout, nln='softplus', weight_init='he_normal', l2_reg=0.01):
         default: 'softplus'
 
     weight_init : string, optional
-        Keras weight initialization (default: 'glorot_normal')
+        Keras weight initialization (default: 'he_normal')
 
     l2_reg : float, optional
         l2 regularization on the weights (default: 0.01)
@@ -77,11 +77,11 @@ def nips_conv(num_cells):
     l2_weight = 1e-3
 
     # weight and activity regularization
-    W_reg = [(0., l2_weight), (0., l2_weight)]
-    act_reg = [(0., 0.), (0., 0.)]
+    weight_reg = ((0., l2_weight), (0., l2_weight))
+    activity_reg = ((0., 0.), (0., 0.))
 
     # loop over convolutional layers
-    for (n, size), w_args, act_args in zip(convlayers, W_reg, act_reg):
+    for (n, size), w_args, act_args in zip(convlayers, weight_reg, activity_reg):
         args = (n, size, size)
         kwargs = {
             'border_mode': 'valid',
@@ -90,7 +90,9 @@ def nips_conv(num_cells):
             'kernel_regularizer': l1_l2(*w_args),
             'activity_regularizer': l1_l2(*act_args),
         }
-        if len(layers) == 0:
+
+        # if layers is empty, this is the first iteration, and we need to specify input shape
+        if not layers:
             kwargs['input_shape'] = input_shape
 
         # add convolutional layer
@@ -116,13 +118,13 @@ def nips_conv(num_cells):
     return layers
 
 
-def conv(x, nfilters=8, sz=13, strides=(2, 2), l2reg=0.1):
+def conv(x, nfilters=8, kernel_size=13, strides=(2, 2), l2reg=0.1, sigma=0.05):
     """Conv-BN-GaussianNoise-Relu"""
-    y = Conv2D(nfilters, sz, strides=strides,
+    y = Conv2D(nfilters, kernel_size, strides=strides,
                kernel_regularizer=l2(l2reg),
                data_format="channels_first")(x)
     y = BatchNormalization()(y)
-    y = GaussianNoise(0.05)(y)
+    y = GaussianNoise(sigma)(y)
     return Activation('relu')(y)
 
 
@@ -143,35 +145,3 @@ def bn_cnn(x, nout):
     y = Dense(nout)(y)
     y = BatchNormalization()(y)
     return Activation('softplus')(y)
-
-
-class ParametricSoftplus(Layer):
-    def __init__(self, alpha_init=0.2, beta_init=5., **kwargs):
-        """Parametric softplus nonlinearity
-
-        Has the form: f(x) = alpha * log(1 + exp(beta * x))
-
-        Parameters
-        ----------
-        alpha_init : array_like
-            Initial values for the alphas (default: 0.2)
-
-        beta_init : float
-            Initial values for the betas (default: 5.0)
-        """
-        super().__init__(**kwargs)
-        self.alpha_init = alpha_init
-        self.beta_init = beta_init
-
-    def build(self, input_shape):
-        self.alpha = self.add_weight(shape=input_shape[1:], initializer=Constant(self.alpha_init))
-        self.beta = self.add_weight(shape=input_shape[1:], initializer=Constant(self.beta_init))
-        super().build(input_shape)
-
-    def call(self, inputs):
-        return K.softplus(self.beta * inputs) * self.alpha
-
-    def get_config(self):
-        config = {}
-        base_config = Layer.get_config(self)
-        return dict(list(base_config.items()) + list(config.items()))

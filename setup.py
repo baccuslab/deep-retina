@@ -10,7 +10,7 @@ setup(name = 'deepretina',
         install_requires = [i.strip() for i in open("requirements.txt").readlines()],
         long_description = '''
             The deepretina package contains methods for learning convolutional
-            and LSTM neural network models of the retina.
+            and recurrent neural network models of the retina.
             ''',
         classifiers = [
             'Intended Audience :: Science/Research',
@@ -18,4 +18,3 @@ setup(name = 'deepretina',
             'Topic :: Scientific/Engineering :: Information Analysis'],
         packages = find_packages(),
         )
-

@@ -3,27 +3,30 @@ Generic utilities
 """
 
 from __future__ import absolute_import, division, print_function
+
 import sys
 from contextlib import contextmanager
-from . import metrics
-import numpy as np
-from scipy.stats import zscore
 from itertools import combinations, repeat
 from numbers import Number
+
+import numpy as np
+from scipy.stats import zscore
+
+from . import metrics
 
 __all__ = ['notify', 'allmetrics']
 
 
-def allmetrics(r, rhat, functions):
+def allmetrics(obs_rate, est_rate, functions):
     """Evaluates the given responses on all of the given metrics
 
     Parameters
     ----------
-    r : array_like
-        True response, with shape (# of samples, # of cells)
+    obs_rate : array_like
+        Observed response (data), with shape (# of samples, # of cells)
 
-    rhat : array_like
-        Model response, with shape (# of samples, # of cells)
+    est_rate : array_like
+        Estimated (model) response, with shape (# of samples, # of cells)
 
     functions : list of strings
         Which functions from the metrics module to evaluate on
@@ -31,7 +34,7 @@ def allmetrics(r, rhat, functions):
     avg_scores = {}
     all_scores = {}
     for function in functions:
-        avg, cells = getattr(metrics, function)(r.T, rhat.T)
+        avg, cells = getattr(metrics, function)(obs_rate.T, est_rate.T)
         avg_scores[function] = avg
         all_scores[function] = cells
 
@@ -88,7 +91,7 @@ def xcorr(x, y, maxlag, normalize=True):
     corr : array_like
         The correlations of the two signals at each of the lags
     """
-    assert type(maxlag) is int and maxlag > 0, \
+    assert isinstance(maxlag, int) and maxlag > 0, \
         "maxlag must be a positive integer"
 
     assert x.shape == y.shape, \
@@ -142,13 +145,8 @@ def tuplify(x, n):
 
 def cutout_indices(center, size=7, ndim=50):
     """Cuts out a region with the given size around a point"""
-    xinds = slice(int(np.clip(center[0] - size, 0, ndim)), int(np.clip(center[0] + size + 1, 0, ndim)))
-    yinds = slice(int(np.clip(center[1] - size, 0, ndim)), int(np.clip(center[1] + size + 1, 0, ndim)))
-    return xinds, yinds
-
-
-def _deprecated_cutout_indices(center, size=7, ndim=50):
-    """Cuts out a region with the given size around a point"""
-    xinds = slice(center[0] - size, center[0] + size)
-    yinds = slice(center[1] - size, center[1] + size)
+    xinds = slice(int(np.clip(center[0] - size, 0, ndim)),
+                  int(np.clip(center[0] + size + 1, 0, ndim)))
+    yinds = slice(int(np.clip(center[1] - size, 0, ndim)),
+                  int(np.clip(center[1] + size + 1, 0, ndim)))
     return xinds, yinds

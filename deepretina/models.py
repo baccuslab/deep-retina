@@ -16,7 +16,7 @@ from keras import initializers
 from .utils import notify
 from .activations import ParametricSoftplus, ReQU
 
-__all__ = ['sequential', 'ln', 'convnet', 'fixedlstm', 'generalizedconvnet', 'nips_conv', 'conv_rgcs']
+__all__ = ['sequential', 'linear_nonlinear', 'convnet', 'fixedlstm', 'generalizedconvnet', 'nips_conv', 'conv_rgcs']
 
 
 def sequential(layers, optimizer, loss='poisson'):
@@ -61,7 +61,7 @@ def functional(inputs, outputs, optimizer, loss='poisson'):
     return model
 
 
-def ln(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
+def linear_nonlinear(input_shape, nout, weight_init='glorot_normal', l2_reg=0.0):
     """A linear-nonlinear model
 
     Parameters

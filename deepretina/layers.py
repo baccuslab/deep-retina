@@ -1,7 +1,6 @@
 """
 Custom Keras layers / stacks / models
 """
-
 from __future__ import absolute_import, division, print_function
 
 from keras import backend as K

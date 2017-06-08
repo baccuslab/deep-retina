@@ -1,7 +1,6 @@
 """
 Niru main script
 """
-
 from __future__ import absolute_import
 from deepretina.layers import functional, linear_nonlinear, bn_cnn
 from deepretina.core import train

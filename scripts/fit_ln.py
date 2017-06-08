@@ -1,5 +1,5 @@
 import os
-import datetime
+from datetime import datetime
 from keras.callbacks import (CSVLogger, ModelCheckpoint, ReduceLROnPlateau,
                              TensorBoard)
 from keras.layers import BatchNormalization, Dense, Flatten, Input

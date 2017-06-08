@@ -301,9 +301,7 @@ def rolling_window(array, window, time_axis=0):
     >>> np.mean(rolling_window(x, 3), -1)
     array([[ 1.,  2.,  3.],
            [ 6.,  7.,  8.]])
-
     """
-
     if time_axis == 0:
         array = array.T
 

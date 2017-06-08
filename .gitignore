@@ -31,3 +31,6 @@ var/
 # other
 tags
 .mypy_cache
+sandbox/
+tensorboard/
+results/

@@ -10,8 +10,17 @@ import numpy as np
 from scipy.stats import pearsonr
 from sklearn.metrics import auc
 from tqdm import tqdm
+import keras.backend as K
 
 __all__ = ['cc', 'lli', 'rmse', 'fev']
+
+
+def kcc(y_true, y_pred):
+    x_mu = y_true - K.mean(y_true, axis=0, keepdims=True)
+    x_std = K.std(y_true, axis=0, keepdims=True)
+    y_mu = y_pred - K.mean(y_pred, axis=0, keepdims=True)
+    y_std = K.std(y_pred, axis=0, keepdims=True)
+    return K.mean(x_mu * y_mu, axis=0, keepdims=True) / (x_std * y_std)
 
 
 def multicell(metric):

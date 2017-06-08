@@ -1,7 +1,6 @@
 """
 Construct Keras models
 """
-
 from __future__ import absolute_import, division, print_function
 from keras.models import Sequential, Model
 from keras.layers import Input

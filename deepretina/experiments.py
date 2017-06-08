@@ -195,7 +195,7 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip):
         Number of samples of history to include in the toeplitz stimulus
 
     nskip : float, optional
-        Number of samples to skip at the beginning of each repeat (Default: 0)
+        Number of samples to skip at the beginning of each repeat
     """
     assert history > 0 and type(history) is int, "Temporal history must be a positive integer"
     assert train_or_test in ('train', 'test'), "train_or_test must be 'train' or 'test'"

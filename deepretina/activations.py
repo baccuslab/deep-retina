@@ -2,6 +2,7 @@
 Custom keras activations
 """
 import numpy as np
+import tensorflow as tf
 from keras.engine import Layer
 from keras import backend as K
 from keras.initializers import Constant, Zeros
@@ -39,14 +40,6 @@ class ReQU(Layer):
         """Rectified quadratic nonlinearity
 
         Has the form: f(x) = [x]_+^2
-
-        Parameters
-        ----------
-        alpha_init : array_like
-            Initial values for the alphas (default: 0.2)
-
-        beta_init : float
-            Initial values for the betas (default: 5.0)
         """
         super().__init__(**kwargs)
 
@@ -55,6 +48,19 @@ class ReQU(Layer):
 
     def call(self, x):
         return K.square(K.relu(x))
+
+
+class SELU(Layer):
+    def __init__(self, **kwargs):
+        self.alpha = 1.6732632423543772848170429916717
+        self.scale = 1.0507009873554804934193349852946
+        super().__init__(**kwargs)
+
+    def build(self, input_shape):
+        super().build(input_shape)
+
+    def call(self, x):
+        return self.scale * tf.where(x >= 0, x, self.alpha * K.exp(x) - self.alpha)
 
 
 class RBF(Layer):

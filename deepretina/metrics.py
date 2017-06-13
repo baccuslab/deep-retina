@@ -1,111 +1,63 @@
 """
 Metrics comparing predicted and recorded firing rates
 """
-
 from __future__ import absolute_import, division, print_function
 
 from functools import wraps
 
-import numpy as np
-from scipy.stats import pearsonr
-from sklearn.metrics import auc
-from tqdm import tqdm
+import tensorflow as tf
+from keras.metrics import mse, poisson
 import keras.backend as K
 
-__all__ = ['cc', 'lli', 'rmse', 'fev']
+__all__ = ['cc', 'rmse', 'fev', 'mse', 'poisson', 'np_wrap',
+           'root_mean_squared_error', 'correlation_coefficient',
+           'fraction_of_explained_variance']
 
 
-def kcc(y_true, y_pred):
-    x_mu = y_true - K.mean(y_true, axis=0, keepdims=True)
-    x_std = K.std(y_true, axis=0, keepdims=True)
-    y_mu = y_pred - K.mean(y_pred, axis=0, keepdims=True)
-    y_std = K.std(y_pred, axis=0, keepdims=True)
+def correlation_coefficient(obs_rate, est_rate):
+    """Pearson correlation coefficient"""
+    x_mu = obs_rate - K.mean(obs_rate, axis=0, keepdims=True)
+    x_std = K.std(obs_rate, axis=0, keepdims=True)
+    y_mu = est_rate - K.mean(est_rate, axis=0, keepdims=True)
+    y_std = K.std(est_rate, axis=0, keepdims=True)
     return K.mean(x_mu * y_mu, axis=0, keepdims=True) / (x_std * y_std)
 
 
-def multicell(metric):
-    """Decorator for turning a function that takes two 1-D numpy arrays, and
-    makes it work for when you have a list of 1-D arrays or a 2-D array, where
-    the metric is applied to each item in the list or each matrix row.
-    """
-    @wraps(metric)
-    def multicell_wrapper(obs_rate, est_rate, **kwargs):
-
-        # ensure that the arguments have the right shape / dimensions
-        for arg in (obs_rate, est_rate):
-            assert isinstance(arg, (np.ndarray, list, tuple)), \
-                "Arguments must be a numpy array or list of numpy arrays"
-
-        # convert arguments to matrices
-        true_rates = np.atleast_2d(obs_rate)
-        model_rates = np.atleast_2d(est_rate)
-
-        assert true_rates.ndim == 2, "Arguments have too many dimensions"
-        assert true_rates.shape == model_rates.shape, "Shapes must be equal"
-
-        # compute scores for each pair
-        scores = [metric(true_rate, model_rate)
-                  for true_rate, model_rate in zip(true_rates, model_rates)]
-
-        # return the mean across cells and the full list
-        return np.nanmean(scores), scores
-
-    return multicell_wrapper
-
-
-@multicell
-def cc(obs_rate, est_rate):
-    """Pearson's correlation coefficient
-
-    If obs_rate, est_rate are matrices, cc() computes the average pearsonr correlation
-    of each column vector
-    """
-    return pearsonr(obs_rate, est_rate)[0]
-
-
-@multicell
-def lli(obs_rate, est_rate):
-    """Log-likelihood (arbitrary units)"""
-    epsilon = 1e-9
-    return np.mean(obs_rate * np.log(est_rate + epsilon) - est_rate)
-
-
-@multicell
-def rmse(obs_rate, est_rate):
+def root_mean_squared_error(obs_rate, est_rate):
     """Root mean squared error"""
-    return np.sqrt(np.mean((est_rate - obs_rate) ** 2))
+    return K.sqrt(K.mean(K.square(est_rate - obs_rate), axis=-1))
 
 
-@multicell
-def fev(obs_rate, est_rate):
+def fraction_of_explained_variance(obs_rate, est_rate):
     """Fraction of explained variance
 
     https://wikipedia.org/en/Fraction_of_variance_unexplained
     """
-    return 1.0 - rmse(obs_rate, est_rate)[0]**2 / obs_rate.var()
+    return 1.0 - mse(obs_rate, est_rate) / K.var(obs_rate, axis=-1)
 
 
-def roc(obs_rate, est_rate):
-    """Generates an ROC curve"""
-    thresholds = np.linspace(0, 100, 1e2)
-    data = np.vstack([binarized(obs_rate, est_rate, thr) for thr in tqdm(thresholds)])
-    fpr = data[:, 0]
-    tpr = data[:, 1]
-    tpr[np.isnan(tpr)] = 0.     # nans should be zero
-    return fpr, tpr, auc(fpr, tpr, reorder=True)
+def np_wrap(func):
+    """Converts the given keras metric into one that accepts numpy arrays
+
+    Usage
+    -----
+    corrcoef = np_wrap(cc)(y, yhat)     # y and yhat are numpy arrays
+    """
+    @wraps(func)
+    def wrapper(obs_rate, est_rate):
+        with tf.Session() as sess:
+            # compute the metric
+            yobs = tf.placeholder(tf.float64, obs_rate.shape)
+            yest = tf.placeholder(tf.float64, est_rate.shape)
+            metric = func(yobs, yest)
+
+            # evaluate using the given values
+            feed = {yobs: obs_rate, yest: est_rate}
+            return sess.run(metric, feed_dict=feed)
+    return wrapper
 
 
-def binarized(obs_rate, est_rate, threshold):
-    """Computes fraction of correct predictions given the threshold"""
-    bin_obs_rate = obs_rate > threshold
-    bin_est_rate = est_rate > threshold
-
-    true_positive = sum(bin_obs_rate & bin_est_rate)
-    true_negative = sum(np.invert(bin_obs_rate) & np.invert(bin_est_rate))
-    false_positive = sum(np.invert(bin_obs_rate) & bin_est_rate)
-    false_negative = sum(bin_obs_rate & np.invert(bin_est_rate))
-
-    true_positive_rate = true_positive / (true_positive + false_negative)
-    false_positive_rate = false_positive / (false_positive + true_negative)
-
-    return false_positive_rate, true_positive_rate
+# aliases
+cc = correlation_coefficient
+rmse = root_mean_squared_error
+fev = fraction_of_explained_variance

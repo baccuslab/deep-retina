@@ -1,8 +1,5 @@
-future
 numpy
 scipy
-theano
 keras
 h5py
 matplotlib
-pydot-ng

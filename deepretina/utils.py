@@ -1,8 +1,6 @@
 """
 Generic utilities
 """
-from __future__ import absolute_import, division, print_function
-
 import sys
 from contextlib import contextmanager
 from itertools import repeat

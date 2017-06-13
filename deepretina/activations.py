@@ -7,6 +7,8 @@ from keras.engine import Layer
 from keras import backend as K
 from keras.initializers import Constant, Zeros
 
+__all__ = ['ParametricSoftplus', 'ReQU', 'RBF', 'SELU', 'PSP']
+
 
 class ParametricSoftplus(Layer):
     def __init__(self, alpha_init=0.2, beta_init=5., **kwargs):
@@ -93,3 +95,7 @@ class RBF(Layer):
     def call(self, x):
         A = K.stack([self.gaussian(x, *args) for args in self.params], axis=1)
         return K.softplus(K.dot(self.theta, A))
+
+
+# aliases
+PSP = ParametricSoftplus

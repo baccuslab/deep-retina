@@ -1,9 +1,6 @@
 """
 Preprocessing utility functions for loading and formatting experimental data
 """
-
-from __future__ import absolute_import, division, print_function
-
 import os
 from collections import namedtuple
 

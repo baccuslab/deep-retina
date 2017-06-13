@@ -41,7 +41,7 @@ class GLM:
         }
 
         # initialize optimizer
-        self.opt = rmsprop(destruct(self.theta_init).copy(), lr=lr)
+        self.opt = rmsprop(lr=lr)
 
         # add regularization
         if type(l2) is float:
@@ -214,6 +214,7 @@ def test_glm():
 def texp(x, vmin=-20, vmax=20):
     """Truncated exponential"""
     return np.exp(x.clip(vmin, vmax))
+
 
 if __name__ == "__main__":
 

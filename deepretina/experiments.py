@@ -9,7 +9,6 @@ import numpy as np
 from scipy.stats import zscore
 
 import pyret.filtertools as ft
-from pyret.stimulustools import cutout
 
 from .utils import notify
 
@@ -104,7 +103,7 @@ def stimcut(stimulus, expt, ci, width=9):
     xi = slice(xc - width, xc + width + 1)
     yi = slice(yc - width, yc + width + 1)
 
-    return cutout(stimulus, yi, xi)
+    return ft.cutout(stimulus, yi, xi)
 
 
 def rolling_window(array, window, time_axis=0):

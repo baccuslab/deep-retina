@@ -2,7 +2,8 @@
 Construct Keras models
 """
 from __future__ import absolute_import, division, print_function
-from keras.layers import Model, Dense, Activation, Flatten, Reshape
+from keras.models import Model
+from keras.layers import Dense, Activation, Flatten, Reshape
 from keras.layers.convolutional import Conv2D
 from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise

@@ -8,6 +8,7 @@ import deepdish as dd
 import keras.callbacks as cb
 from keras.layers import Input
 from deepretina import metrics, activations
+from deepretina.experiments import loadexpt, CELLS
 from keras.models import load_model
 from keras.optimizers import Adam
 
@@ -21,10 +22,11 @@ def load(filepath):
     return load_model(filepath, custom_objects=objects)
 
 
-def train(model, data, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05):
+def train(model, expt, stim, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05):
     """Trains a model"""
 
     # build the model
+    data = loadexpt(expt, CELLS[expt], stim, 'train', 40, 6000)
     n_cells = data.y.shape[1]
     x = Input(shape=data.X.shape[1:], name='stimulus')
     mdl = model(x, n_cells)
@@ -33,7 +35,7 @@ def train(model, data, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05):
     mdl.compile(loss='poisson', optimizer=Adam(lr), metrics=[metrics.cc, metrics.rmse, metrics.fev])
 
     # store results in this directory
-    name = '_'.join([mdl.name, datetime.now().strftime('%Y.%m.%d_%H.%M.%S')])
+    name = '_'.join([mdl.name, expt, stim, datetime.now().strftime('%Y.%m.%d')])
     base = f'../results/{name}'
     os.mkdir(base)
 

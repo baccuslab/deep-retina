@@ -16,21 +16,21 @@ __all__ = ['bn_cnn', 'linear_nonlinear', 'ln', 'nips_cnn']
 def bn_layer(x, nchan, size, l2_reg, sigma=0.05):
     """An individual batchnorm layer"""
     n = int(x.shape[-1]) - size + 1
-    x = Conv2D(nchan, size, data_format="channels_first", kernel_regularizer=l2(l2_reg))(x)
-    x = Reshape((nchan, n, n))(BatchNormalization(axis=-1)(Flatten()(x)))
-    return Activation('relu')(GaussianNoise(sigma)(x))
+    y = Conv2D(nchan, size, data_format="channels_first", kernel_regularizer=l2(l2_reg))(x)
+    y = Reshape((nchan, n, n))(BatchNormalization(axis=-1)(Flatten()(y)))
+    return Activation('relu')(GaussianNoise(sigma)(y))
 
 
-def bn_cnn(x, n_out, l2_reg=1.0):
+def bn_cnn(inputs, n_out, l2_reg=0.01):
     """Batchnorm CNN model"""
-    x = bn_layer(x, 8, 15, l2_reg)
-    x = bn_layer(x, 8, 11, l2_reg)
-    x = Dense(n_out, use_bias=False)(Flatten()(x))
-    y = Activation('softplus')(BatchNormalization(axis=-1)(x))
-    return Model(x, y, name='BN_CNN')
+    y = bn_layer(inputs, 8, 15, l2_reg)
+    y = bn_layer(y, 8, 11, l2_reg)
+    y = Dense(n_out, use_bias=False)(Flatten()(y))
+    outputs = Activation('softplus')(BatchNormalization(axis=-1)(y))
+    return Model(inputs, outputs, name='BN_CNN')
 
 
-def linear_nonlinear(x, n_out, activation='softplus', l2_reg=0.01):
+def linear_nonlinear(inputs, n_out, activation='softplus', l2_reg=0.01):
     """A linear-nonlinear model"""
 
     # a default activation
@@ -45,31 +45,31 @@ def linear_nonlinear(x, n_out, activation='softplus', l2_reg=0.01):
     else:
         nonlinearity = activation
 
-    x = Flatten()(x)
-    x = Dense(n_out, kernel_regularizer=l2(l2_reg))(x)
-    y = nonlinearity(x)
+    y = Flatten()(inputs)
+    y = Dense(n_out, kernel_regularizer=l2(l2_reg))(y)
+    outputs = nonlinearity(y)
 
-    return Model(x, y, name=f'LN_{str(activation)}')
+    return Model(inputs, outputs, name=f'LN_{str(activation)}')
 
 
-def nips_cnn(x, n_out):
+def nips_cnn(inputs, n_out):
     """NIPS 2016 CNN Model"""
     # injected noise strength
     sigma = 0.1
 
     # first layer
-    x = Conv2D(16, 15, data_format="channels_first", kernel_regularizer=l2(1e-3))(x)
-    x = Activation('relu')(GaussianNoise(sigma)(x))
+    y = Conv2D(16, 15, data_format="channels_first", kernel_regularizer=l2(1e-3))(inputs)
+    y = Activation('relu')(GaussianNoise(sigma)(y))
 
     # second layer
-    x = Conv2D(8, 9, data_format="channels_first", kernel_regularizer=l2(1e-3))(x)
-    x = Activation('relu')(GaussianNoise(sigma)(x))
+    y = Conv2D(8, 9, data_format="channels_first", kernel_regularizer=l2(1e-3))(y)
+    y = Activation('relu')(GaussianNoise(sigma)(y))
 
-    x = Flatten()(x)
-    x = Dense(n_out, init='normal', kernel_regularizer=l2(1e-3), activity_regularizer=l1(1e-3))(x)
-    y = Activation('softplus')(x)
+    y = Flatten()(y)
+    y = Dense(n_out, init='normal', kernel_regularizer=l2(1e-3), activity_regularizer=l1(1e-3))(y)
+    outputs = Activation('softplus')(y)
 
-    return Model(x, y, name='NIPS_CNN')
+    return Model(inputs, outputs, name='NIPS_CNN')
 
 
 # aliases

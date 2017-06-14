@@ -44,7 +44,7 @@ def train(model, expt, stim, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05):
            cb.TensorBoard(log_dir=base, histogram_freq=1, batch_size=5000, write_grads=True),
            cb.ReduceLROnPlateau(min_lr=0, factor=0.2, patience=10),
            cb.CSVLogger(os.path.join(base, 'training.csv')),
-           cb.EarlyStopping(monitor='val_loss', patience=50)]
+           cb.EarlyStopping(monitor='loss', patience=50)]
 
     # train
     history = mdl.fit(x=data.X, y=data.y, batch_size=bz, epochs=nb_epochs,

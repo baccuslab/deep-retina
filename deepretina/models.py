@@ -27,7 +27,7 @@ def bn_cnn(x, n_out, l2_reg=1.0):
     x = bn_layer(x, 8, 11, l2_reg)
     x = Dense(n_out, use_bias=False)(Flatten()(x))
     y = Activation('softplus')(BatchNormalization(axis=-1)(x))
-    return Model(x=x, y=y, name='BN_CNN')
+    return Model(x, y, name='BN_CNN')
 
 
 def linear_nonlinear(x, n_out, activation='softplus', l2_reg=0.01):
@@ -49,7 +49,7 @@ def linear_nonlinear(x, n_out, activation='softplus', l2_reg=0.01):
     x = Dense(n_out, kernel_regularizer=l2(l2_reg))(x)
     y = nonlinearity(x)
 
-    return Model(x=x, y=y, name=f'LN_{str(activation)}')
+    return Model(x, y, name=f'LN_{str(activation)}')
 
 
 def nips_cnn(x, n_out):
@@ -67,7 +67,9 @@ def nips_cnn(x, n_out):
 
     x = Flatten()(x)
     x = Dense(n_out, init='normal', kernel_regularizer=l2(1e-3), activity_regularizer=l1(1e-3))(x)
-    return Activation('softplus')(x)
+    y = Activation('softplus')(x)
+
+    return Model(x, y, name='NIPS_CNN')
 
 
 # aliases

@@ -1,13 +1,15 @@
 """
 Metrics comparing predicted and recorded firing rates
+
+All metrics in this module are computed separately for each cell, but averaged
+across the sample dimension (axis=0).
 """
 from functools import wraps
 
 import tensorflow as tf
-from keras.metrics import mse, poisson
 import keras.backend as K
 
-__all__ = ['cc', 'rmse', 'fev', 'mse', 'poisson', 'np_wrap',
+__all__ = ['cc', 'rmse', 'fev', 'CC', 'RMSE', 'FEV', 'np_wrap',
            'root_mean_squared_error', 'correlation_coefficient',
            'fraction_of_explained_variance']
 
@@ -21,9 +23,14 @@ def correlation_coefficient(obs_rate, est_rate):
     return K.mean(x_mu * y_mu, axis=0, keepdims=True) / (x_std * y_std)
 
 
+def mean_squared_error(obs_rate, est_rate):
+    """Mean squared error across samples"""
+    return K.mean(K.square(est_rate - obs_rate), axis=0, keepdims=True)
+
+
 def root_mean_squared_error(obs_rate, est_rate):
     """Root mean squared error"""
-    return K.sqrt(K.mean(K.square(est_rate - obs_rate), axis=-1))
+    return K.sqrt(mean_squared_error(obs_rate, est_rate))
 
 
 def fraction_of_explained_variance(obs_rate, est_rate):
@@ -31,7 +38,7 @@ def fraction_of_explained_variance(obs_rate, est_rate):
 
     https://wikipedia.org/en/Fraction_of_variance_unexplained
     """
-    return 1.0 - mse(obs_rate, est_rate) / K.var(obs_rate, axis=-1)
+    return 1.0 - mean_squared_error(obs_rate, est_rate) / K.var(obs_rate, axis=0, keepdims=True)
 
 
 def np_wrap(func):
@@ -56,6 +63,6 @@ def np_wrap(func):
 
 
 # aliases
-cc = correlation_coefficient
-rmse = root_mean_squared_error
-fev = fraction_of_explained_variance
+cc = CC = correlation_coefficient
+rmse = RMSE = root_mean_squared_error
+fev = FEV = fraction_of_explained_variance

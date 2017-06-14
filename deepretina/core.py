@@ -33,7 +33,7 @@ def train(model, data, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05):
     mdl.compile(loss='poisson', optimizer=Adam(lr), metrics=[metrics.cc, metrics.rmse, metrics.fev])
 
     # store results in this directory
-    name = mdl.name + datetime.now().strftime('%Y.%m.%d_%H.%M.%S')
+    name = '_'.join([mdl.name, datetime.now().strftime('%Y.%m.%d_%H.%M.%S')])
     base = f'../results/{name}'
     os.mkdir(base)
 

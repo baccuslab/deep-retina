@@ -7,18 +7,18 @@ from datetime import datetime
 import deepdish as dd
 import keras.callbacks as cb
 from keras.layers import Input
-from keras.metrics import mse
+from deepretina import metrics, activations
 from keras.models import load_model
 from keras.optimizers import Adam
-
-from deepretina.metrics import kcc as cc
 
 __all__ = ['train']
 
 
 def load(filepath):
     """Reload a keras model"""
-    return load_model(filepath, custom_objects={'cc': cc})
+    objects = {k: activations.__dict__[k] for k in activations.__all__}
+    objects.update({k: metrics.__dict__[k] for k in metrics.__all__})
+    return load_model(filepath, custom_objects=objects)
 
 
 def train(model, data, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05):
@@ -30,7 +30,7 @@ def train(model, data, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05):
     mdl = model(x, n_cells)
 
     # compile the model
-    mdl.compile(loss='poisson', optimizer=Adam(lr), metrics=[cc, mse])
+    mdl.compile(loss='poisson', optimizer=Adam(lr), metrics=[metrics.cc, metrics.rmse, metrics.fev])
 
     # store results in this directory
     name = mdl.name + datetime.now().strftime('%Y.%m.%d_%H.%M.%S')

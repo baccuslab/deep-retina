@@ -2,7 +2,7 @@
 Construct Keras models
 """
 from __future__ import absolute_import, division, print_function
-from keras.layers import Dense, Activation, Flatten, Reshape
+from keras.layers import Model, Dense, Activation, Flatten, Reshape
 from keras.layers.convolutional import Conv2D
 from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise
@@ -25,7 +25,8 @@ def bn_cnn(x, n_out, l2_reg=1.0):
     x = bn_layer(x, 8, 15, l2_reg)
     x = bn_layer(x, 8, 11, l2_reg)
     x = Dense(n_out, use_bias=False)(Flatten()(x))
-    return Activation('softplus')(BatchNormalization(axis=-1)(x))
+    y = Activation('softplus')(BatchNormalization(axis=-1)(x))
+    return Model(x=x, y=y, name='BN_CNN')
 
 
 def linear_nonlinear(x, n_out, activation='softplus', l2_reg=0.01):
@@ -45,7 +46,9 @@ def linear_nonlinear(x, n_out, activation='softplus', l2_reg=0.01):
 
     x = Flatten()(x)
     x = Dense(n_out, kernel_regularizer=l2(l2_reg))(x)
-    return nonlinearity(x)
+    y = nonlinearity(x)
+
+    return Model(x=x, y=y, name=f'LN_{str(activation)}')
 
 
 def nips_cnn(x, n_out):

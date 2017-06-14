@@ -11,7 +11,7 @@ from deepretina import metrics, activations
 from keras.models import load_model
 from keras.optimizers import Adam
 
-__all__ = ['train']
+__all__ = ['train', 'load']
 
 
 def load(filepath):

@@ -3,7 +3,7 @@ Core tools for training models
 """
 import os
 from datetime import datetime
-
+import tensorflow as tf
 import deepdish as dd
 import keras.callbacks as cb
 from keras.layers import Input
@@ -24,34 +24,35 @@ def load(filepath):
 
 def train(model, expt, stim, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05):
     """Trains a model"""
+    with tf.Graph().as_default():
 
-    # build the model
-    data = loadexpt(expt, CELLS[expt], stim, 'train', 40, 6000)
-    n_cells = data.y.shape[1]
-    x = Input(shape=data.X.shape[1:], name='stimulus')
-    mdl = model(x, n_cells)
+        # build the model
+        data = loadexpt(expt, CELLS[expt], stim, 'train', 40, 6000)
+        n_cells = data.y.shape[1]
+        x = Input(shape=data.X.shape[1:], name='stimulus')
+        mdl = model(x, n_cells)
 
-    # compile the model
-    mdl.compile(loss='poisson', optimizer=Adam(lr), metrics=[metrics.cc, metrics.rmse, metrics.fev])
+        # compile the model
+        mdl.compile(loss='poisson', optimizer=Adam(lr), metrics=[metrics.cc, metrics.rmse, metrics.fev])
 
-    # store results in this directory
-    name = '_'.join([mdl.name, expt, stim, datetime.now().strftime('%Y.%m.%d-%H.%M')])
-    base = f'../results/{name}'
-    os.mkdir(base)
+        # store results in this directory
+        name = '_'.join([mdl.name, expt, stim, datetime.now().strftime('%Y.%m.%d-%H.%M')])
+        base = f'../results/{name}'
+        os.mkdir(base)
 
-    # define model callbacks
-    cbs = [cb.ModelCheckpoint(os.path.join(base, 'weights-{epoch:03d}-{val_loss:.3f}.h5')),
-           cb.TensorBoard(log_dir=base, histogram_freq=1, batch_size=5000, write_grads=True),
-           cb.ReduceLROnPlateau(min_lr=0, factor=0.2, patience=10),
-           cb.CSVLogger(os.path.join(base, 'training.csv')),
-           cb.EarlyStopping(monitor='val_loss', patience=20)]
+        # define model callbacks
+        cbs = [cb.ModelCheckpoint(os.path.join(base, 'weights-{epoch:03d}-{val_loss:.3f}.h5')),
+               cb.TensorBoard(log_dir=base, histogram_freq=1, batch_size=5000, write_grads=True),
+               cb.ReduceLROnPlateau(min_lr=0, factor=0.2, patience=10),
+               cb.CSVLogger(os.path.join(base, 'training.csv')),
+               cb.EarlyStopping(monitor='val_loss', patience=20)]
 
-    # train
-    history = mdl.fit(x=data.X, y=data.y, batch_size=bz, epochs=nb_epochs,
-                      callbacks=cbs, validation_split=val_split, shuffle=True)
-    dd.io.save(os.path.join(base, 'history.h5'), history.history)
+        # train
+        history = mdl.fit(x=data.X, y=data.y, batch_size=bz, epochs=nb_epochs,
+                          callbacks=cbs, validation_split=val_split, shuffle=True)
+        dd.io.save(os.path.join(base, 'history.h5'), history.history)
 
-    # delete model
-    del mdl
+        # delete model
+        del mdl
 
     return history

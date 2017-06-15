@@ -2,12 +2,11 @@
 Custom keras activations
 """
 import numpy as np
-import tensorflow as tf
 from keras.engine import Layer
 from keras import backend as K
 from keras.initializers import Constant, Zeros
 
-__all__ = ['ParametricSoftplus', 'ReQU', 'RBF', 'SELU', 'PSP']
+__all__ = ['ParametricSoftplus', 'psp', 'PSP', 'requ', 'ReQU', 'rbf', 'RBF', 'selu', 'SELU']
 
 
 class ParametricSoftplus(Layer):
@@ -37,32 +36,21 @@ class ParametricSoftplus(Layer):
         return K.softplus(self.beta * x) * self.alpha
 
 
-class ReQU(Layer):
-    def __init__(self, **kwargs):
-        """Rectified quadratic nonlinearity
-
-        Has the form: f(x) = [x]_+^2
-        """
-        super().__init__(**kwargs)
-
-    def build(self, input_shape):
-        super().build(input_shape)
-
-    def call(self, x):
-        return K.square(K.relu(x))
+def requ(x):
+    """Rectified quadratic"""
+    return K.square(K.relu(x))
 
 
-class SELU(Layer):
-    def __init__(self, **kwargs):
-        self.alpha = 1.6732632423543772848170429916717
-        self.scale = 1.0507009873554804934193349852946
-        super().__init__(**kwargs)
-
-    def build(self, input_shape):
-        super().build(input_shape)
-
-    def call(self, x):
-        return self.scale * tf.where(x >= 0, x, self.alpha * K.exp(x) - self.alpha)
+def selu(x):
+    """Scaled Exponential Linear Unit. (Klambauer et al., 2017)
+    # Arguments
+        x: A tensor or variable to compute the activation function for.
+    # References
+        - [Self-Normalizing Neural Networks](https://arxiv.org/abs/1706.02515)
+    """
+    alpha = 1.6732632423543772848170429916717
+    scale = 1.0507009873554804934193349852946
+    return scale * K.elu(x, alpha)
 
 
 class RBF(Layer):
@@ -98,4 +86,7 @@ class RBF(Layer):
 
 
 # aliases
-PSP = ParametricSoftplus
+psp = PSP = ParametricSoftplus
+ReQU = requ
+SELU = selu
+rbf = RBF

@@ -8,7 +8,7 @@ import deepdish as dd
 import keras.callbacks as cb
 from keras.layers import Input
 from deepretina import metrics, activations
-from deepretina.experiments import loadexpt, CELLS
+from deepretina.experiments import loadexpt, CELLS, stimcut
 from keras.models import load_model
 from keras.optimizers import Adam
 
@@ -22,12 +22,18 @@ def load(filepath):
     return load_model(filepath, custom_objects=objects)
 
 
-def train(model, expt, stim, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05):
+def train(model, expt, stim, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05, cutout=None):
     """Trains a model"""
     with tf.Graph().as_default():
 
-        # build the model
+        # load experimental data
         data = loadexpt(expt, CELLS[expt], stim, 'train', 40, 6000)
+
+        # If cutout is a cell index, cut out the stimulus around that cell's STA
+        if cutout is not None:
+            data = stimcut(data, expt, cutout, width=11)
+
+        # build the model
         n_cells = data.y.shape[1]
         x = Input(shape=data.X.shape[1:], name='stimulus')
         mdl = model(x, n_cells)

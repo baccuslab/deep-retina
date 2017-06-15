@@ -29,7 +29,7 @@ CELLS = {
 }
 
 Exptdata = namedtuple('Exptdata', ['X', 'y'])
-__all__ = ['loadexpt']
+__all__ = ['loadexpt', 'stimcut', 'CELLS']
 
 
 def loadexpt(expt, cells, filename, train_or_test, history, nskip):
@@ -89,21 +89,21 @@ def _loadexpt_h5(expt, filename):
     return h5py.File(filepath, mode='r')
 
 
-def stimcut(stimulus, expt, ci, width=9):
+def stimcut(data, expt, ci, width=11):
     """Cuts out a stimulus around the whitenoise receptive field"""
 
     # get the white noise STA for this cell
     wn = _loadexpt_h5(expt, 'whitenoise')
-    sta = np.array(wn[f'train/stas/cell{ci:02d}']).copy()
+    sta = np.array(wn[f'train/stas/cell{ci+1:02d}']).copy()
 
     # find the peak of the sta
     xc, yc = ft.filterpeak(sta)[1]
 
-    # slice indices
-    xi = slice(xc - width, xc + width + 1)
-    yi = slice(yc - width, yc + width + 1)
-
-    return ft.cutout(stimulus, yi, xi)
+    # cutout stimulus
+    X, y = data
+    Xc = ft.cutout(X, idx=(yc, xc), width=width)
+    yc = y[:, ci].reshape(-1, 1)
+    return Exptdata(Xc, yc)
 
 
 def rolling_window(array, window, time_axis=0):

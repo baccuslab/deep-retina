@@ -1,11 +1,11 @@
 """
 Preprocessing utility functions for loading and formatting experimental data
 """
-import os
 from collections import namedtuple
 
 import h5py
 import numpy as np
+from os.path import join, expanduser
 from scipy.stats import zscore
 
 import pyret.filtertools as ft
@@ -32,7 +32,7 @@ Exptdata = namedtuple('Exptdata', ['X', 'y'])
 __all__ = ['loadexpt', 'stimcut', 'CELLS']
 
 
-def loadexpt(expt, cells, filename, train_or_test, history, nskip):
+def loadexpt(expt, cells, filename, train_or_test, history, nskip, cutout_width=None):
     """Loads an experiment from an h5 file on disk
 
     Parameters
@@ -40,7 +40,7 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip):
     expt : str
         The date of the experiment to load in YY-MM-DD format (e.g. '15-10-07')
 
-    cells : int or list of ints
+    cells : list of ints
         Indices of the cells to load from the experiment
 
     filename : string
@@ -54,20 +54,32 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip):
 
     nskip : float, optional
         Number of samples to skip at the beginning of each repeat
+
+    cutout_width : int, optional
+        If not None, cuts out the stimulus around the STA (assumes cells is a scalar)
     """
     assert history > 0 and type(history) is int, "Temporal history must be a positive integer"
     assert train_or_test in ('train', 'test'), "train_or_test must be 'train' or 'test'"
 
     with notify('Loading {}ing data for {}/{}'.format(train_or_test, expt, filename)):
 
+        # get whitenoise STA for cutout stimulus
+        if cutout_width is not None:
+            assert len(cells) == 1, "cutout must be used with single cells"
+            wn = _loadexpt_h5(expt, 'whitenoise')
+            sta = np.array(wn[f'train/stas/cell{cells[0]+1:02d}']).copy()
+            py, px = ft.filterpeak(sta)[1]
+
         # load the hdf5 file
-        filepath = os.path.join(os.path.expanduser('~/experiments/data'), expt, filename + '.h5')
-        with h5py.File(filepath, mode='r') as f:
+        with _loadexpt_h5(expt, filename) as f:
 
             expt_length = f[train_or_test]['time'].size
 
             # load the stimulus into memory as a numpy array, and z-score it
-            stim = zscore(np.array(f[train_or_test]['stimulus']).astype('float32'))
+            if cutout_width is None:
+                stim = zscore(np.array(f[train_or_test]['stimulus']).astype('float32'))
+            else:
+                stim = zscore(ft.cutout(np.array(f[train_or_test]['stimulus']), idx=(px, py), width=cutout_width).astype('float32'))
 
             # apply clipping to remove the stimulus just after transitions
             num_blocks = NUM_BLOCKS[expt] if train_or_test == 'train' and nskip > 0 else 1
@@ -85,7 +97,7 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip):
 
 def _loadexpt_h5(expt, filename):
     """Loads an h5py reference to an experiment on disk"""
-    filepath = os.path.join(os.path.expanduser('~/experiments/data'), expt, filename + '.h5')
+    filepath = join(expanduser('~/experiments/data'), expt, filename + '.h5')
     return h5py.File(filepath, mode='r')
 
 

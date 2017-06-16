@@ -22,16 +22,18 @@ def load(filepath):
     return load_model(filepath, custom_objects=objects)
 
 
-def train(model, expt, stim, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05, cutout=None):
+def train(model, expt, stim, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05, cells=None):
     """Trains a model"""
     with tf.Graph().as_default():
 
-        # load experimental data
-        data = loadexpt(expt, CELLS[expt], stim, 'train', 40, 6000)
+        if cells is None:
+            width = None
+            cells = CELLS[expt]
+        else:
+            width = 11
 
-        # If cutout is a cell index, cut out the stimulus around that cell's STA
-        if cutout is not None:
-            data = stimcut(data, expt, cutout, width=11)
+        # load experimental data
+        data = loadexpt(expt, cells, stim, 'train', 40, 6000, cutout_width=width)
 
         # build the model
         n_cells = data.y.shape[1]

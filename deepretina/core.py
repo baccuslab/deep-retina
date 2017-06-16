@@ -29,8 +29,10 @@ def train(model, expt, stim, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05, ce
         if cells is None:
             width = None
             cells = CELLS[expt]
+            cellname = ''
         else:
             width = 11
+            cellname = f'cell-{cells[0]+1:02d}'
 
         # load experimental data
         data = loadexpt(expt, cells, stim, 'train', 40, 6000, cutout_width=width)
@@ -44,7 +46,7 @@ def train(model, expt, stim, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05, ce
         mdl.compile(loss='poisson', optimizer=Adam(lr), metrics=[metrics.cc, metrics.rmse, metrics.fev])
 
         # store results in this directory
-        name = '_'.join([mdl.name, expt, stim, datetime.now().strftime('%Y.%m.%d-%H.%M')])
+        name = '_'.join([mdl.name, cellname, expt, stim, datetime.now().strftime('%Y.%m.%d-%H.%M')])
         base = f'../results/{name}'
         os.mkdir(base)
 

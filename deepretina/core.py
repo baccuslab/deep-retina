@@ -8,7 +8,7 @@ import deepdish as dd
 import keras.callbacks as cb
 from keras.layers import Input
 from deepretina import metrics, activations
-from deepretina.experiments import loadexpt, CELLS, stimcut
+from deepretina.experiments import loadexpt, CELLS
 from keras.models import load_model
 from keras.optimizers import Adam
 
@@ -26,6 +26,8 @@ def train(model, expt, stim, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05, ce
     """Trains a model"""
     with tf.Graph().as_default():
 
+        tf.reset_default_graph()
+
         if cells is None:
             width = None
             cells = CELLS[expt]
@@ -39,7 +41,7 @@ def train(model, expt, stim, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05, ce
 
         # build the model
         n_cells = data.y.shape[1]
-        x = Input(shape=data.X.shape[1:], name='stimulus')
+        x = Input(shape=data.X.shape[1:])
         mdl = model(x, n_cells)
 
         # compile the model
@@ -61,8 +63,5 @@ def train(model, expt, stim, lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05, ce
         history = mdl.fit(x=data.X, y=data.y, batch_size=bz, epochs=nb_epochs,
                           callbacks=cbs, validation_split=val_split, shuffle=True)
         dd.io.save(os.path.join(base, 'history.h5'), history.history)
-
-        # delete model
-        del mdl
 
     return history

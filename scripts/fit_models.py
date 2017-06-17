@@ -10,18 +10,14 @@ from deepretina.models import bn_cnn, linear_nonlinear
 from deepretina.experiments import CELLS
 
 
-def ln(activation, l2_reg):
-    return functools.partial(linear_nonlinear, activation=activation, l2_reg=l2_reg)
-
-
 def fit_bn_cnn(expt, stim):
     train(bn_cnn, expt, stim, lr=1e-2, nb_epochs=250, val_split=0.05)
 
 
 def fit_ln(expt, stim, activation, l2_reg=0.1):
     for ci in CELLS[expt]:
-        model = ln(activation, l2_reg)
-        tp.banner(f'Training LN_{activation}, expt {args.expt}, {args.stim}, cell {ci+1:02d}')
+        model = functools.partial(linear_nonlinear, activation=activation, l2_reg=l2_reg)
+        tp.banner(f'Training LN-{activation}, expt {args.expt}, {args.stim}, cell {ci+1:02d}')
         train(model, expt, stim, lr=1e-2, nb_epochs=250, val_split=0.05, cells=[ci])
 
 

@@ -3,7 +3,6 @@ import h5py
 from os.path import expanduser
 import pyret.spiketools as spktools
 from deepretina.metrics import cc
-from deepretina.visualizations import adjust_spines
 import matplotlib.pyplot as plt
 
 expt = raw_input("Please type in the experiment date (e.g. 15-10-07) 'Enter': ")
@@ -84,7 +83,6 @@ for c in range(ncells):
 
             else:
                 plt.plot(tax/60.0, all_frs[j][c,:], 'k', linewidth=2)
-                #adjust_spines(ax, ['left', 'bottom'])
                 plt.xlabel('Time (min)', fontsize=20)
                 # only label firing rate on far left plot
                 if j == 0:

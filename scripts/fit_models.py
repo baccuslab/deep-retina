@@ -9,7 +9,6 @@ import keras.backend as K
 import tableprint as tp
 from deepretina.core import train
 from deepretina.models import bn_cnn, linear_nonlinear
-from deepretina.experiments import CELLS
 
 
 def context(func):
@@ -29,17 +28,16 @@ def fit_bn_cnn(expt, stim):
 
 
 @context
-def fit_ln(expt, stim, activation, l2_reg=0.1):
+def fit_ln(expt, ci, stim, activation, l2_reg=0.1):
 
     if activation.lower() == 'rbf':
         model_args = (30, 6)
     else:
         model_args = ()
 
-    for ci in CELLS[expt]:
-        model = functools.partial(linear_nonlinear, activation=activation, l2_reg=l2_reg)
-        tp.banner(f'Training LN-{activation}, expt {args.expt}, {args.stim}, cell {ci+1:02d}')
-        train(model, expt, stim, model_args=model_args, lr=1e-2, nb_epochs=500, val_split=0.05, cells=[ci])
+    model = functools.partial(linear_nonlinear, activation=activation, l2_reg=l2_reg)
+    tp.banner(f'Training LN-{activation}, expt {args.expt}, {args.stim}, cell {ci+1:02d}')
+    train(model, expt, stim, model_args=model_args, lr=1e-2, nb_epochs=500, val_split=0.05, cells=[ci])
 
 
 if __name__ == '__main__':
@@ -52,6 +50,7 @@ if __name__ == '__main__':
     parser.add_argument('--expt', help='Experiment date (e.g. 15-10-07)')
     parser.add_argument('--stim', help='Stimulus class (e.g. naturalscene)')
     parser.add_argument('--model', help='Model architecture (e.g. BN_CNN or LN_softplus)')
+    parser.add_argument('--cell', help='Cell index (only for LN models)')
     args = parser.parse_args()
 
     if args.model.upper() == 'BN_CNN':
@@ -60,4 +59,4 @@ if __name__ == '__main__':
 
     elif args.model.split('_')[0].upper() == 'LN':
         activation = args.model.split('_')[1]
-        fit_ln(args.expt, args.stim, activation)
+        fit_ln(args.expt, int(args.cell), args.stim, activation)

@@ -3,8 +3,6 @@ Generic utilities
 """
 import sys
 from contextlib import contextmanager
-from itertools import repeat
-from numbers import Number
 
 import numpy as np
 
@@ -33,21 +31,6 @@ def notify(title):
         yield
     finally:
         print('Done.')
-
-
-def tuplify(x, n):
-    """Converts a number into a tuple with that number repeating
-
-    Usage
-    -----
-    >>> tuplify(3, 5)
-    (3, 3, 3, 3, 3)
-    >>> tuplify((1,2), 5)
-    (1, 2)
-    """
-    if isinstance(x, Number):
-        x = tuple(repeat(x, n))
-    return x
 
 
 def cutout_indices(center, size=7, ndim=50):

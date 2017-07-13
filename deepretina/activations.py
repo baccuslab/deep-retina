@@ -28,8 +28,8 @@ class ParametricSoftplus(Layer):
         super().__init__(**kwargs)
 
     def build(self, input_shape):
-        self.alpha = self.add_weight(shape=input_shape[1:], initializer=Constant(self.alpha_init))
-        self.beta = self.add_weight(shape=input_shape[1:], initializer=Constant(self.beta_init))
+        self.alpha = self.add_weight(shape=input_shape[1:], initializer=Constant(self.alpha_init), name="alpha")
+        self.beta = self.add_weight(shape=input_shape[1:], initializer=Constant(self.beta_init), name="beta")
         super().build(input_shape)
 
     def call(self, x):
@@ -77,7 +77,7 @@ class RBF(Layer):
         return K.exp(-(x - mu) ** 2 / sigma) / (2 * np.pi * sigma)
 
     def build(self, input_shape):
-        self.theta = self.add_weight(shape=(len(self.params),), initializer=Zeros())
+        self.theta = self.add_weight(shape=(len(self.params),), initializer=Zeros(), name="RBF_weights")
         super().build(input_shape)
 
     def call(self, x):

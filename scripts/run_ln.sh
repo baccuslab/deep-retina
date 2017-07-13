@@ -14,7 +14,7 @@ do
   do
     for stim in 'whitenoise' 'naturalscene'
     do
-      echo "python fit_models.py --expt $expt --stim $stim --model LN_softplus --cell $ci"
+      python fit_models.py --expt $expt --stim $stim --model LN_softplus --cell $ci
     done
   done
 done

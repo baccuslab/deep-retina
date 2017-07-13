@@ -30,7 +30,7 @@ def bn_cnn(inputs, n_out, l2_reg=0.01):
     return Model(inputs, outputs, name='BN-CNN')
 
 
-def linear_nonlinear(inputs, n_out, activation='softplus', l2_reg=0.01):
+def linear_nonlinear(inputs, n_out, *args, activation='softplus', l2_reg=0.01):
     """A linear-nonlinear model"""
 
     # a default activation
@@ -39,7 +39,7 @@ def linear_nonlinear(inputs, n_out, activation='softplus', l2_reg=0.01):
 
     # one of the custom deepretina activations
     elif activation in activations.__all__:
-        nonlinearity = activations.__dict__[activation]()
+        nonlinearity = activations.__dict__[activation](*args)
 
     # a custom class
     else:

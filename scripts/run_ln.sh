@@ -14,7 +14,7 @@ do
   do
     for stim in 'whitenoise' 'naturalscene'
     do
-      python fit_models.py --expt $expt --stim $stim --model LN_RBF --cell $ci
+      python fit_models.py --expt $expt --stim $stim --model LN_requ --cell $ci
     done
   done
 done

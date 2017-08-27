@@ -241,7 +241,7 @@ def fit_fixedrnn(cells, train_stimuli, test_stimuli, exptdate, readme=None, num_
 def fit_bncnn(cells, train_stimuli, test_stimuli, exptdate, readme=None):
     stim_shape = (40, 50, 50)
     ncells = len(cells)
-    bs = 9500
+    bs = 4000 #9500
     l2_reg = 0.01
     
     opt = Adam(lr=2e-3, decay=0.)
@@ -310,5 +310,6 @@ if __name__ == '__main__':
     #mdl = fit_generalizedconvnet(gc_15_10_07, ['whitenoise_4_5_2017'], ['whitenoise_4_5_2017', 'naturalscene_4_5_2017'], '15-10-07', nclip=6000, description='verify that parametric softplus works before working on requ')
     #mdl = fit_generalizedconvnet(gc_15_11_21a, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-11-21a', nclip=6000, description='requ batchnorm on naturalscenes 15-11-21a')
     #mdl = fit_bncnn(gc_15_11_21a, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-11-21a', description='l2_reg=0.01 and 15, 11 filter sizes for requ network')
-    with tf.device('/gpu:0'):
-        mdl = fit_fixedlstm(list(range(len(gc_15_11_21a))), ['naturalscene_ganglions_7fc87c'], ['naturalscene_ganglions_7fc87c'], '15-11-21a', 500, description='fixedlstm on ganglion predictions of 7fc87c bn_cnn naturalscene')
+    #with tf.device('/gpu:0'):
+    #    mdl = fit_fixedlstm(list(range(len(gc_15_11_21a))), ['naturalscene_ganglions_7fc87c'], ['naturalscene_ganglions_7fc87c'], '15-11-21a', 500, description='fixedlstm on ganglion predictions of 7fc87c bn_cnn naturalscene')
+    mdl = fit_bncnn(gc_15_10_07, ['naturalscene_4_6_2017'], ['whitenoise_4_6_2017', 'naturalscene_4_6_2017'], '15-10-07', description='15-10-07 bn cnn model')

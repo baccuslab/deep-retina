@@ -51,7 +51,8 @@ def argmin_loss(obs_rate, est_rate):
     https://github.com/mbaradad/munkres-tensorflow"""
     print("shape",obs_rate.shape, est_rate.shape)
     # min(N x N)
-    matching = raise
+    matching = 1
+    raise
 
 
 def np_wrap(func):

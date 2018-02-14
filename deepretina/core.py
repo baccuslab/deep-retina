@@ -21,7 +21,7 @@ def load(filepath):
     return load_model(filepath, custom_objects=objects)
 
 
-def train(model, expt, stim, model_args=(), lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05, cells=None):
+def train(model, expt, stim, model_args=(), lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05, cells=None, loss="poisson"):
     """Trains a model"""
     if cells is None:
         width = None
@@ -40,7 +40,7 @@ def train(model, expt, stim, model_args=(), lr=1e-2, bz=5000, nb_epochs=500, val
     mdl = model(x, n_cells, *model_args)
 
     # compile the model
-    mdl.compile(loss='poisson', optimizer=Adam(lr), metrics=[metrics.cc, metrics.rmse, metrics.fev])
+    mdl.compile(loss=loss, optimizer=Adam(lr), metrics=[metrics.cc, metrics.rmse, metrics.fev])
 
     # store results in this directory
     name = '_'.join([mdl.name, cellname, expt, stim, datetime.now().strftime('%Y.%m.%d-%H.%M')])

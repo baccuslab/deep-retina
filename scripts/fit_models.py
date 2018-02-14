@@ -8,7 +8,8 @@ import tensorflow as tf
 import keras.backend as K
 import tableprint as tp
 from deepretina.core import train
-from deepretina.models import bn_cnn, linear_nonlinear
+from deepretina import activations
+from deepretina.models import bn_cnn, linear_nonlinear, g_cnn
 
 
 def context(func):
@@ -51,11 +52,18 @@ if __name__ == '__main__':
     parser.add_argument('--stim', help='Stimulus class (e.g. naturalscene)')
     parser.add_argument('--model', help='Model architecture (e.g. BN_CNN or LN_softplus)')
     parser.add_argument('--cell', help='Cell index (only for LN models)')
+    parser.add_argument('--dir', help='Data directory')
     args = parser.parse_args()
 
     if args.model.upper() == 'BN_CNN':
         tp.banner(f'Training BN_CNN, expt {args.expt}, {args.stim}')
         fit_bn_cnn(args.expt, args.stim)
+    if args.dir:
+        print(f"using data directory {args.dir}")
+        config.data_dir = args.dir
+    if args.model.upper() == 'G_CNN':
+        tp.banner(f'Training G_CNN, expt {args.expt}, {args.stim}')
+        fit_g_cnn(args.expt, args.stim)
 
     elif args.model.split('_')[0].upper() == 'LN':
         activation = args.model.split('_')[1]

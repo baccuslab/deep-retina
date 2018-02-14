@@ -41,6 +41,19 @@ def fraction_of_explained_variance(obs_rate, est_rate):
     return 1.0 - mean_squared_error(obs_rate, est_rate) / K.var(obs_rate, axis=0, keepdims=True)
 
 
+def argmin_loss(obs_rate, est_rate):
+    """Find a matching that produces the lowest loss and return that loss.
+    Params:
+        obs_rate: N x T
+        est_rate: X x Y x T x C
+    Return:
+        loss: X x Y x T x C
+    https://github.com/mbaradad/munkres-tensorflow"""
+    print("shape",obs_rate.shape, est_rate.shape)
+    # min(N x N)
+    matching = raise
+
+
 def np_wrap(func):
     """Converts the given keras metric into one that accepts numpy arrays
 

@@ -3,13 +3,14 @@ import h5py
 from os.path import expanduser
 import pyret.spiketools as spktools
 from deepretina.metrics import cc
+from deepretina import config
 import matplotlib.pyplot as plt
 
 expt = raw_input("Please type in the experiment date (e.g. 15-10-07) 'Enter': ")
 num_stim_types = raw_input("Please indicate how many stimulus types were in this experiment (e.g. 2 for whitenoise and naturalscene) 'Enter': ")
 stim_idx = np.array([i in range(int(num_stim_types)) for i in range(4)]).astype('bool')
 #experiments = ['15-10-07', '15-11-21a', '15-11-21b', '16-01-07', '16-01-08']
-data_dir = expanduser('~/experiments/data/')
+data_dir = expanduser(config.data_dir)
 stim_types = np.array(['whitenoise.h5', 'naturalscene.h5', 'structured.h5', 'naturalmovie.h5'])
 stim_types = stim_types[stim_idx]
 #test_stim = 'whitenoise.h5'
@@ -79,7 +80,7 @@ for c in range(ncells):
                     for x_val in range(y_val):
                         if x_val != y_val:
                             label = '%0.2f' %(flipped_ccs[x_val, y_val])
-                            ax.text(y_val, x_val, label, va='center', ha='center') 
+                            ax.text(y_val, x_val, label, va='center', ha='center')
 
             else:
                 plt.plot(tax/60.0, all_frs[j][c,:], 'k', linewidth=2)

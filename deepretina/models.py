@@ -29,6 +29,14 @@ def bn_cnn(inputs, n_out, l2_reg=0.01):
     outputs = Activation('softplus')(BatchNormalization(axis=-1)(y))
     return Model(inputs, outputs, name='BN-CNN')
 
+def g_cnn(inputs, n_out, l2_reg=0.01):
+    """Batchnorm CNN model with ganglion convolution."""
+    y = bn_layer(inputs, 8, 15, l2_reg)
+    y = bn_layer(y, 8, 11, l2_reg)
+    y = bn_layer(y, 8, 9, l2_reg)
+    outputs = Activation('softplus')(BatchNormalization(axis=-1)(y))
+    return Model(inputs, outputs, name='G-CNN')
+
 
 def linear_nonlinear(inputs, n_out, *args, activation='softplus', l2_reg=0.01):
     """A linear-nonlinear model"""

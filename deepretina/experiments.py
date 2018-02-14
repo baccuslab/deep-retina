@@ -7,6 +7,7 @@ import h5py
 import numpy as np
 from os.path import join, expanduser
 from scipy.stats import zscore
+from deepretina import config
 
 import pyret.filtertools as ft
 
@@ -97,7 +98,7 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, cutout_width=
 
 def _loadexpt_h5(expt, filename):
     """Loads an h5py reference to an experiment on disk"""
-    filepath = join(expanduser('~/experiments/data'), expt, filename + '.h5')
+    filepath = join(expanduser(config.data_dir), expt, filename + '.h5')
     return h5py.File(filepath, mode='r')
 
 

@@ -9,6 +9,7 @@ import keras.backend as K
 import tableprint as tp
 from deepretina.core import train
 from deepretina import activations
+import deepretina.config as config
 from deepretina.models import bn_cnn, linear_nonlinear, g_cnn
 
 
@@ -58,7 +59,7 @@ if __name__ == '__main__':
     if args.model.upper() == 'BN_CNN':
         tp.banner(f'Training BN_CNN, expt {args.expt}, {args.stim}')
         fit_bn_cnn(args.expt, args.stim)
-    if args.dir:
+    if args.dir != None:
         print(f"using data directory {args.dir}")
         config.data_dir = args.dir
     if args.model.upper() == 'G_CNN':

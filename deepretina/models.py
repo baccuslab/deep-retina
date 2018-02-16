@@ -2,12 +2,18 @@
 Construct Keras models
 """
 from __future__ import absolute_import, division, print_function
-from keras.models import Model
-from keras.layers import Dense, Activation, Flatten, Reshape
-from keras.layers.convolutional import Conv2D
-from keras.layers.normalization import BatchNormalization
-from keras.layers.noise import GaussianNoise
-from keras.regularizers import l1, l2
+import tensorflow as tf
+keras = tf.keras
+Model = tf.keras.models.Model
+Dense = tf.keras.layers.Dense
+Activation = tf.keras.layers.Activation
+Flatten = tf.keras.layers.Flatten
+Reshape = tf.keras.layers.Reshape
+Conv2D = tf.keras.layers.Conv2D
+BatchNormalization = tf.keras.layers.BatchNormalization
+GaussianNoise = tf.keras.layers.GaussianNoise
+l1 = tf.keras.regularizers.l1
+l2 = tf.keras.regularizers.l2
 from deepretina import activations
 
 __all__ = ['bn_cnn', 'linear_nonlinear', 'ln', 'nips_cnn']

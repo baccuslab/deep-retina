@@ -7,8 +7,8 @@ across the sample dimension (axis=0).
 from functools import wraps
 
 import tensorflow as tf
-import keras.backend as K
-from keras import layers
+K = tf.keras.backend
+from tensorflow.python.keras import layers
 
 __all__ = ['cc', 'rmse', 'fev', 'CC', 'RMSE', 'FEV', 'np_wrap',
            'root_mean_squared_error', 'correlation_coefficient',
@@ -23,7 +23,6 @@ def correlation_coefficient(obs_rate, est_rate):
     y_std = K.std(est_rate, axis=0, keepdims=True)
     return K.mean(x_mu * y_mu, axis=0, keepdims=True) / (x_std * y_std)
 
-
 def mean_squared_error(obs_rate, est_rate):
     """Mean squared error across samples"""
     return K.mean(K.square(est_rate - obs_rate), axis=0, keepdims=True)
@@ -32,6 +31,37 @@ def mean_squared_error(obs_rate, est_rate):
 def root_mean_squared_error(obs_rate, est_rate):
     """Root mean squared error"""
     return K.sqrt(mean_squared_error(obs_rate, est_rate))
+
+def argmin_cc(obs_rate, est_rate):
+    """Pearson correlation coefficient"""
+    obs, est, nb, nr, nx, ny, nc = get_gconv_shape(obs_rate,est_rate)
+    x_mu = obs_rate - K.mean(obs_rate, axis=0, keepdims=True)
+    x_std = K.std(obs_rate, axis=0, keepdims=True)
+    y_mu = est_rate - K.mean(est_rate, axis=0, keepdims=True)
+    y_std = K.std(est_rate, axis=0, keepdims=True)
+    z = x_mu * y_mu
+    return K.mean(z, axis=0, keepdims=True) / (x_std * y_std)
+
+def argmin_mse(obs_rate, est_rate):
+    """Mean squared error across samples"""
+    obs, est, nb, nr, nx, ny, nc = get_gconv_shape(obs_rate,est_rate)
+    return K.mean(K.square(est_rate - obs_rate), axis=0, keepdims=True)
+
+
+def argmin_rmse(obs_rate, est_rate):
+    """Root mean squared error"""
+    obs, est, nb, nr, nx, ny, nc = get_gconv_shape(obs_rate,est_rate)
+    return K.sqrt(mean_squared_error(obs_rate, est_rate))
+
+def get_gconv_shape(obs_rate, est_rate):
+    nr = tf.shape(obs_rate)[1]
+    nb = tf.shape(est_rate)[0]
+    nx = tf.shape(est_rate)[1]
+    ny = tf.shape(est_rate)[2]
+    nc = tf.shape(est_rate)[3]
+    obs = tf.reshape(obs_rate, [nb,nr,1])
+    est = tf.reshape(est_rate, (nb,1,nx*ny*nc))
+    return obs, est, nb, nr, nx, ny, nc
 
 
 def fraction_of_explained_variance(obs_rate, est_rate):
@@ -46,7 +76,8 @@ def poisson(y_true, y_pred):
     # print(tf.shape(loss),tf.shape(y_true),tf.shape(y_pred))
     return loss
 
-def argmin_loss(obs_rate, est_rate):
+
+def argmin_poisson(obs_rate, est_rate):
     """Find a matching that produces the lowest loss and return that loss.
     Params:
         obs_rate: B x R
@@ -54,15 +85,10 @@ def argmin_loss(obs_rate, est_rate):
     Return:
         loss: L
     future ref: https://github.com/mbaradad/munkres-tensorflow"""
+    obs, est, nb, nr, nx, ny, nc = get_gconv_shape(obs_rate,est_rate)
     # print("est_rate",est_rate.shape)
     # print("obs_rate",obs_rate.shape)
-    nr = tf.shape(obs_rate)[1]
-    nb = tf.shape(est_rate)[0]
-    nx = tf.shape(est_rate)[1]
-    ny = tf.shape(est_rate)[2]
-    nc = tf.shape(est_rate)[3]
-    obs = tf.reshape(obs_rate, [nb,nr,1])
-    est = tf.reshape(est_rate, (nb,1,nx*ny*nc))
+    # return poisson(obs_rate[:,:,0,0],est_rate[:,0:nr,0,0])
     # print("est",est.shape)
     # print("obs",obs.shape)
 

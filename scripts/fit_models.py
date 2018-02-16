@@ -5,7 +5,7 @@ import os
 import functools
 import argparse
 import tensorflow as tf
-import keras.backend as K
+K = tf.keras.backend
 import tableprint as tp
 from deepretina.core import train
 from deepretina import activations

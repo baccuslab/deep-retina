@@ -1,7 +1,8 @@
 """
 Custom deepretina callbacks
 """
-import keras
+import tensorflow as tf
+keras = tf.keras
 import tableprint as tp
 
 

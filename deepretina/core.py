@@ -10,6 +10,8 @@ from deepretina import metrics, activations
 from deepretina.experiments import loadexpt, CELLS
 from keras.models import load_model
 from keras.optimizers import Adam
+from deepretina import config
+
 
 __all__ = ['train', 'load']
 
@@ -21,7 +23,7 @@ def load(filepath):
     return load_model(filepath, custom_objects=objects)
 
 
-def train(model, expt, stim, model_args=(), lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05, cells=None, loss="poisson"):
+def train(model, expt, stim, model_args=(), lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05, cells=None, loss="poisson",data=None):
     """Trains a model"""
     if cells is None:
         width = None
@@ -32,7 +34,8 @@ def train(model, expt, stim, model_args=(), lr=1e-2, bz=5000, nb_epochs=500, val
         cellname = f'cell-{cells[0]+1:02d}'
 
     # load experimental data
-    data = loadexpt(expt, cells, stim, 'train', 40, 6000, cutout_width=width)
+    if data==None:
+        data = loadexpt(expt, cells, stim, 'train', 40, 6000, cutout_width=width)
 
     # build the model
     n_cells = data.y.shape[1]
@@ -44,7 +47,7 @@ def train(model, expt, stim, model_args=(), lr=1e-2, bz=5000, nb_epochs=500, val
 
     # store results in this directory
     name = '_'.join([mdl.name, cellname, expt, stim, datetime.now().strftime('%Y.%m.%d-%H.%M')])
-    base = f'../results/{name}'
+    base = config.results_dir + name
     os.mkdir(base)
 
     # define model callbacks

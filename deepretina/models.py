@@ -34,7 +34,8 @@ def g_cnn(inputs, n_out, l2_reg=0.01):
     y = bn_layer(inputs, 8, 15, l2_reg)
     y = bn_layer(y, 8, 11, l2_reg)
     y = bn_layer(y, 8, 9, l2_reg)
-    outputs = Activation('softplus')(BatchNormalization(axis=-1)(y))
+    # outputs = Flatten()(y)
+    outputs = y
     return Model(inputs, outputs, name='G-CNN')
 
 

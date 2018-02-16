@@ -28,6 +28,10 @@ def context(func):
 def fit_bn_cnn(expt, stim):
     train(bn_cnn, expt, stim, lr=1e-2, nb_epochs=250, val_split=0.05)
 
+@context
+def fit_g_cnn(expt, stim):
+    train(g_cnn, expt, stim, lr=1e-2, nb_epochs=250, val_split=0.05)
+
 
 @context
 def fit_ln(expt, ci, stim, activation, l2_reg=0.1):

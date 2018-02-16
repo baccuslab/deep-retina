@@ -8,6 +8,7 @@ from functools import wraps
 
 import tensorflow as tf
 import keras.backend as K
+from keras import layers
 
 __all__ = ['cc', 'rmse', 'fev', 'CC', 'RMSE', 'FEV', 'np_wrap',
            'root_mean_squared_error', 'correlation_coefficient',
@@ -40,19 +41,46 @@ def fraction_of_explained_variance(obs_rate, est_rate):
     """
     return 1.0 - mean_squared_error(obs_rate, est_rate) / K.var(obs_rate, axis=0, keepdims=True)
 
+def poisson(y_true, y_pred):
+    loss = K.mean(tf.subtract(y_pred, y_true) * K.log(tf.add(y_pred, K.epsilon())), axis=-1)
+    # print(tf.shape(loss),tf.shape(y_true),tf.shape(y_pred))
+    return loss
 
 def argmin_loss(obs_rate, est_rate):
     """Find a matching that produces the lowest loss and return that loss.
     Params:
-        obs_rate: N x T
-        est_rate: X x Y x T x C
+        obs_rate: B x R
+        est_rate: B x X x Y x C
     Return:
-        loss: X x Y x T x C
-    https://github.com/mbaradad/munkres-tensorflow"""
-    print("shape",obs_rate.shape, est_rate.shape)
+        loss: L
+    future ref: https://github.com/mbaradad/munkres-tensorflow"""
+    # print("est_rate",est_rate.shape)
+    # print("obs_rate",obs_rate.shape)
+    nr = tf.shape(obs_rate)[1]
+    nb = tf.shape(est_rate)[0]
+    nx = tf.shape(est_rate)[1]
+    ny = tf.shape(est_rate)[2]
+    nc = tf.shape(est_rate)[3]
+    obs = tf.reshape(obs_rate, [nb,nr,1])
+    est = tf.reshape(est_rate, (nb,1,nx*ny*nc))
+    # print("est",est.shape)
+    # print("obs",obs.shape)
+
+    # print("!!!",tf.shape(tf.subtract(est, obs)))
+    # B x R x (X+Y+C)
+    loss = tf.multiply(
+        tf.subtract(est, obs),
+        K.log(tf.add(est, K.epsilon())))
+    # R x (X+Y+C)
+    mean_loss = tf.reduce_mean(loss,axis=[0])
+    # R
+    argmin = tf.reduce_min(mean_loss,axis=[1])
+    # print("argmin",tf.shape(argmin))
+    # B x R x (X+Y+C)
+    # tf.segment_min(obs_rate,tf.ones(obs_rate.shape))
     # min(N x N)
-    matching = 1
-    raise
+    # matching = 1
+    return K.mean(argmin)
 
 
 def np_wrap(func):

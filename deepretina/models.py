@@ -39,8 +39,9 @@ def g_cnn(inputs, n_out, l2_reg=0.01):
     """Batchnorm CNN model with ganglion convolution."""
     y = bn_layer(inputs, 8, 15, l2_reg)
     y = bn_layer(y, 8, 11, l2_reg)
-    y = bn_layer(y, 8, 9, l2_reg)
-    # outputs = Flatten()(y)
+    # y = bn_layer(y, 8, 9, l2_reg)
+    y = Conv2D(8, 11, data_format="channels_first", kernel_regularizer=l2(l2_reg))(x)
+    y = Activation('relu')(y)
     outputs = y
     return Model(inputs, outputs, name='G-CNN')
 

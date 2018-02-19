@@ -1,0 +1,529 @@
+python scripts/dev.py
+Loading training data for 15-11-21b/whitenoise... Done.
+WARNING:tensorflow:From /home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/keras/_impl/keras/backend.py:1456: calling reduce_sum (from tensorflow.python.ops.math_ops) with keep_dims is deprecated and will be removed in a future version.
+Instructions for updating:
+keep_dims is deprecated, use keepdims instead
+WARNING:tensorflow:From /home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/keras/_impl/keras/backend.py:1557: calling reduce_mean (from tensorflow.python.ops.math_ops) with keep_dims is deprecated and will be removed in a future version.
+Instructions for updating:
+keep_dims is deprecated, use keepdims instead
+Train on 307573 samples, validate on 16189 samples
+2018-02-15 21:15:39.683573: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1105] Found device 0 with properties:
+name: GeForce GTX 1070 major: 6 minor: 1 memoryClockRate(GHz): 1.721
+pciBusID: 0000:03:00.0
+totalMemory: 7.92GiB freeMemory: 5.74GiB
+2018-02-15 21:15:39.683603: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1195] Creating TensorFlow device (/device:GPU:0) -> (device: 0, name: GeForce GTX 1070, pci bus id: 0000:03:00.0, compute capability: 6.1)
+Epoch 1/250
+  2000/307573 [..............................]  2000/307573 [..............................] - ETA: 20:19 - loss: 28.86932018-02-15 21:15:55.973555: W tensorflow/core/common_runtime/bfc_allocator.cc:217] Allocator (GPU_0_bfc) ran out of memory trying to allocate 3.10GiB. The caller indicates that this is not a failure, but may mean that there could be performance gains if more memory is available.
+2018-02-15 21:15:55.973615: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+  4000/307573 [..............................]  4000/307573 [..............................] - ETA: 13:56 - loss: 29.48522018-02-15 21:15:59.004496: W tensorflow/core/common_runtime/bfc_allocator.cc:217] Allocator (GPU_0_bfc) ran out of memory trying to allocate 3.10GiB. The caller indicates that this is not a failure, but may mean that there could be performance gains if more memory is available.
+2018-02-15 21:15:59.004558: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+  6000/307573 [..............................]  6000/307573 [..............................] - ETA: 11:46 - loss: 29.29372018-02-15 21:16:02.020007: W tensorflow/core/common_runtime/bfc_allocator.cc:217] Allocator (GPU_0_bfc) ran out of memory trying to allocate 3.10GiB. The caller indicates that this is not a failure, but may mean that there could be performance gains if more memory is available.
+2018-02-15 21:16:02.020043: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+  8000/307573 [..............................]  8000/307573 [..............................] - ETA: 10:38 - loss: 29.19322018-02-15 21:16:05.012969: W tensorflow/core/common_runtime/bfc_allocator.cc:217] Allocator (GPU_0_bfc) ran out of memory trying to allocate 3.10GiB. The caller indicates that this is not a failure, but may mean that there could be performance gains if more memory is available.
+2018-02-15 21:16:05.013007: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 10000/307573 [..............................] 10000/307573 [..............................] - ETA: 9:57 - loss: 29.0942 2018-02-15 21:16:08.049656: W tensorflow/core/common_runtime/bfc_allocator.cc:217] Allocator (GPU_0_bfc) ran out of memory trying to allocate 3.10GiB. The caller indicates that this is not a failure, but may mean that there could be performance gains if more memory is available.
+2018-02-15 21:16:08.049696: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 12000/307573 [>.............................] 12000/307573 [>.............................] - ETA: 9:29 - loss: 29.24292018-02-15 21:16:11.074559: W tensorflow/core/common_runtime/bfc_allocator.cc:217] Allocator (GPU_0_bfc) ran out of memory trying to allocate 3.10GiB. The caller indicates that this is not a failure, but may mean that there could be performance gains if more memory is available.
+2018-02-15 21:16:11.074611: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 14000/307573 [>.............................] 14000/307573 [>.............................] - ETA: 9:07 - loss: 29.17812018-02-15 21:16:14.117772: W tensorflow/core/common_runtime/bfc_allocator.cc:217] Allocator (GPU_0_bfc) ran out of memory trying to allocate 3.10GiB. The caller indicates that this is not a failure, but may mean that there could be performance gains if more memory is available.
+2018-02-15 21:16:14.117804: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 16000/307573 [>.............................] 16000/307573 [>.............................] - ETA: 8:51 - loss: 29.16692018-02-15 21:16:17.154996: W tensorflow/core/common_runtime/bfc_allocator.cc:217] Allocator (GPU_0_bfc) ran out of memory trying to allocate 3.10GiB. The caller indicates that this is not a failure, but may mean that there could be performance gains if more memory is available.
+2018-02-15 21:16:17.155032: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 18000/307573 [>.............................] 18000/307573 [>.............................] - ETA: 8:38 - loss: 29.21032018-02-15 21:16:20.210565: W tensorflow/core/common_runtime/bfc_allocator.cc:217] Allocator (GPU_0_bfc) ran out of memory trying to allocate 3.10GiB. The caller indicates that this is not a failure, but may mean that there could be performance gains if more memory is available.
+2018-02-15 21:16:20.210609: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 20000/307573 [>.............................] 20000/307573 [>.............................] - ETA: 8:27 - loss: 29.27782018-02-15 21:16:23.219457: W tensorflow/core/common_runtime/bfc_allocator.cc:217] Allocator (GPU_0_bfc) ran out of memory trying to allocate 3.10GiB. The caller indicates that this is not a failure, but may mean that there could be performance gains if more memory is available.
+2018-02-15 21:16:23.219490: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 22000/307573 [=>............................] 22000/307573 [=>............................] - ETA: 8:16 - loss: 29.33472018-02-15 21:16:26.256175: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 24000/307573 [=>............................] 24000/307573 [=>............................] - ETA: 8:07 - loss: 29.30882018-02-15 21:16:29.244890: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 26000/307573 [=>............................] 26000/307573 [=>............................] - ETA: 7:59 - loss: 29.43902018-02-15 21:16:32.151335: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 28000/307573 [=>............................] 28000/307573 [=>............................] - ETA: 7:51 - loss: 29.45502018-02-15 21:16:35.162781: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 30000/307573 [=>............................] 30000/307573 [=>............................] - ETA: 7:44 - loss: 29.47392018-02-15 21:16:38.161991: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 32000/307573 [==>...........................] 32000/307573 [==>...........................] - ETA: 7:38 - loss: 29.58102018-02-15 21:16:55.275350: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 34000/307573 [==>...........................] 34000/307573 [==>...........................] - ETA: 9:25 - loss: 29.60392018-02-15 21:17:21.052643: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 36000/307573 [==>...........................] 36000/307573 [==>...........................] - ETA: 12:04 - loss: 29.62002018-02-15 21:17:43.685540: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 40000/307573 [==>...........................] 40000/307573 [==>...........................] - ETA: 15:44 - loss: 29.58252018-02-15 21:18:32.326385: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 42000/307573 [===>..........................] 42000/307573 [===>..........................] - ETA: 17:38 - loss: 29.57452018-02-15 21:18:55.442228: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 46000/307573 [===>..........................] 46000/307573 [===>..........................] - ETA: 20:04 - loss: 29.62592018-02-15 21:19:42.572877: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 48000/307573 [===>..........................] 48000/307573 [===>..........................] - ETA: 21:25 - loss: 29.61582018-02-15 21:20:05.786097: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 50000/307573 [===>..........................] 50000/307573 [===>..........................] - ETA: 22:23 - loss: 29.62222018-02-15 21:20:28.092126: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 52000/307573 [====>.........................] 52000/307573 [====>.........................] - ETA: 23:11 - loss: 29.69182018-02-15 21:20:55.552542: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 54000/307573 [====>.........................] 54000/307573 [====>.........................] - ETA: 24:18 - loss: 29.69512018-02-15 21:21:17.731823: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 56000/307573 [====>.........................] 56000/307573 [====>.........................] - ETA: 24:54 - loss: 29.73922018-02-15 21:21:39.908609: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 58000/307573 [====>.........................] 58000/307573 [====>.........................] - ETA: 25:27 - loss: 29.76602018-02-15 21:22:06.132106: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 60000/307573 [====>.........................] 60000/307573 [====>.........................] - ETA: 26:12 - loss: 29.76312018-02-15 21:22:32.375994: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 62000/307573 [=====>........................] 62000/307573 [=====>........................] - ETA: 26:53 - loss: 29.78872018-02-15 21:22:58.346335: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 64000/307573 [=====>........................] 64000/307573 [=====>........................] - ETA: 27:29 - loss: 29.77212018-02-15 21:23:25.894993: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 66000/307573 [=====>........................] 66000/307573 [=====>........................] - ETA: 28:07 - loss: 29.80872018-02-15 21:23:53.375629: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 68000/307573 [=====>........................] 68000/307573 [=====>........................] - ETA: 28:40 - loss: 29.84602018-02-15 21:24:20.388176: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 70000/307573 [=====>........................] 70000/307573 [=====>........................] - ETA: 29:09 - loss: 29.87302018-02-15 21:24:40.409038: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 72000/307573 [======>.......................] 72000/307573 [======>.......................] - ETA: 29:11 - loss: 29.88842018-02-15 21:25:07.558175: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 74000/307573 [======>.......................] 74000/307573 [======>.......................] - ETA: 29:35 - loss: 29.89852018-02-15 21:25:34.081991: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 76000/307573 [======>.......................] 76000/307573 [======>.......................] - ETA: 29:55 - loss: 29.91332018-02-15 21:26:01.088505: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 78000/307573 [======>.......................] 78000/307573 [======>.......................] - ETA: 30:13 - loss: 29.96712018-02-15 21:26:23.775040: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 80000/307573 [======>.......................] 80000/307573 [======>.......................] - ETA: 30:17 - loss: 29.96392018-02-15 21:26:49.642522: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 82000/307573 [======>.......................] 82000/307573 [======>.......................] - ETA: 30:28 - loss: 29.95882018-02-15 21:27:17.046428: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 84000/307573 [=======>......................] 84000/307573 [=======>......................] - ETA: 30:42 - loss: 29.98732018-02-15 21:27:44.295138: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 86000/307573 [=======>......................] 86000/307573 [=======>......................] - ETA: 30:53 - loss: 30.01022018-02-15 21:28:11.002081: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 88000/307573 [=======>......................] 88000/307573 [=======>......................] - ETA: 31:01 - loss: 30.04802018-02-15 21:28:38.083399: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 90000/307573 [=======>......................] 90000/307573 [=======>......................] - ETA: 31:09 - loss: 30.04782018-02-15 21:29:06.546920: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 92000/307573 [=======>......................] 92000/307573 [=======>......................] - ETA: 31:18 - loss: 30.06332018-02-15 21:29:33.563544: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 94000/307573 [========>.....................] 94000/307573 [========>.....................] - ETA: 31:22 - loss: 30.06012018-02-15 21:30:00.188942: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+ 96000/307573 [========>.....................] 96000/307573 [========>.....................] - ETA: 31:24 - loss: 30.07902018-02-15 21:30:27.504848: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+100000/307573 [========>.....................]100000/307573 [========>.....................] - ETA: 31:16 - loss: 30.12782018-02-15 21:31:16.077815: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+102000/307573 [========>.....................]102000/307573 [========>.....................] - ETA: 31:16 - loss: 30.12982018-02-15 21:31:42.775894: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+104000/307573 [=========>....................]104000/307573 [=========>....................] - ETA: 31:14 - loss: 30.12752018-02-15 21:32:05.202541: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+106000/307573 [=========>....................]106000/307573 [=========>....................] - ETA: 31:04 - loss: 30.12522018-02-15 21:32:31.252638: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+108000/307573 [=========>....................]108000/307573 [=========>....................] - ETA: 30:59 - loss: 30.12992018-02-15 21:32:57.716253: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+110000/307573 [=========>....................]110000/307573 [=========>....................] - ETA: 30:54 - loss: 30.12282018-02-15 21:33:16.809483: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+112000/307573 [=========>....................]112000/307573 [=========>....................] - ETA: 30:36 - loss: 30.10332018-02-15 21:33:42.927686: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+114000/307573 [==========>...................]114000/307573 [==========>...................] - ETA: 30:30 - loss: 30.08882018-02-15 21:34:10.203220: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+116000/307573 [==========>...................]116000/307573 [==========>...................] - ETA: 30:25 - loss: 30.10982018-02-15 21:34:28.516380: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+118000/307573 [==========>...................]118000/307573 [==========>...................] - ETA: 30:05 - loss: 30.07112018-02-15 21:34:55.095844: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+120000/307573 [==========>...................]120000/307573 [==========>...................] - ETA: 29:57 - loss: 30.02972018-02-15 21:35:22.252093: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+122000/307573 [==========>...................]122000/307573 [==========>...................] - ETA: 29:50 - loss: 29.99672018-02-15 21:35:40.489542: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+124000/307573 [===========>..................]124000/307573 [===========>..................] - ETA: 29:29 - loss: 29.94992018-02-15 21:36:08.083895: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+126000/307573 [===========>..................]126000/307573 [===========>..................] - ETA: 29:22 - loss: 29.90972018-02-15 21:36:33.026845: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+128000/307573 [===========>..................]128000/307573 [===========>..................] - ETA: 29:10 - loss: 29.88962018-02-15 21:36:52.912113: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+130000/307573 [===========>..................]130000/307573 [===========>..................] - ETA: 28:51 - loss: 29.85432018-02-15 21:37:20.033173: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+132000/307573 [===========>..................]132000/307573 [===========>..................] - ETA: 28:42 - loss: 29.77792018-02-15 21:37:43.347051: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+134000/307573 [============>.................]134000/307573 [============>.................] - ETA: 28:27 - loss: 29.72162018-02-15 21:38:09.491583: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+136000/307573 [============>.................]136000/307573 [============>.................] - ETA: 28:16 - loss: 29.64592018-02-15 21:38:32.531951: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+138000/307573 [============>.................]138000/307573 [============>.................] - ETA: 28:00 - loss: 29.56302018-02-15 21:38:59.400916: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+140000/307573 [============>.................]140000/307573 [============>.................] - ETA: 27:49 - loss: 29.46202018-02-15 21:39:23.664516: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+142000/307573 [============>.................]142000/307573 [============>.................] - ETA: 27:34 - loss: 29.37052018-02-15 21:39:48.433833: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+144000/307573 [=============>................]144000/307573 [=============>................] - ETA: 27:19 - loss: 29.29302018-02-15 21:40:14.966169: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+146000/307573 [=============>................]146000/307573 [=============>................] - ETA: 27:06 - loss: 29.21032018-02-15 21:40:35.598840: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+148000/307573 [=============>................]148000/307573 [=============>................] - ETA: 26:47 - loss: 29.11032018-02-15 21:41:03.739267: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+150000/307573 [=============>................]150000/307573 [=============>................] - ETA: 26:35 - loss: 29.01552018-02-15 21:41:30.139359: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+152000/307573 [=============>................]152000/307573 [=============>................] - ETA: 26:21 - loss: 28.92062018-02-15 21:41:57.575853: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+156000/307573 [==============>...............]156000/307573 [==============>...............] - ETA: 25:53 - loss: 28.67932018-02-15 21:42:50.313910: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+158000/307573 [==============>...............]158000/307573 [==============>...............] - ETA: 25:38 - loss: 28.56362018-02-15 21:43:17.619767: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+160000/307573 [==============>...............]160000/307573 [==============>...............] - ETA: 25:24 - loss: 28.42802018-02-15 21:43:45.145396: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+162000/307573 [==============>...............]162000/307573 [==============>...............] - ETA: 25:09 - loss: 28.31232018-02-15 21:44:11.083111: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+164000/307573 [==============>...............]164000/307573 [==============>...............] - ETA: 24:53 - loss: 28.18662018-02-15 21:44:38.914718: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+166000/307573 [===============>..............]166000/307573 [===============>..............] - ETA: 24:38 - loss: 28.05912018-02-15 21:45:05.290336: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+168000/307573 [===============>..............]168000/307573 [===============>..............] - ETA: 24:22 - loss: 27.92072018-02-15 21:45:32.286601: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+170000/307573 [===============>..............]170000/307573 [===============>..............] - ETA: 24:06 - loss: 27.79612018-02-15 21:45:59.080223: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+172000/307573 [===============>..............]172000/307573 [===============>..............] - ETA: 23:49 - loss: 27.65452018-02-15 21:46:21.814416: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+174000/307573 [===============>..............]174000/307573 [===============>..............] - ETA: 23:30 - loss: 27.50042018-02-15 21:46:48.551813: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+176000/307573 [================>.............]176000/307573 [================>.............] - ETA: 23:13 - loss: 27.34812018-02-15 21:47:14.521575: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+178000/307573 [================>.............]178000/307573 [================>.............] - ETA: 22:55 - loss: 27.19442018-02-15 21:47:37.900424: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+180000/307573 [================>.............]180000/307573 [================>.............] - ETA: 22:35 - loss: 27.04582018-02-15 21:47:58.032441: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+182000/307573 [================>.............]182000/307573 [================>.............] - ETA: 22:13 - loss: 26.88282018-02-15 21:48:23.219519: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+184000/307573 [================>.............]184000/307573 [================>.............] - ETA: 21:55 - loss: 26.72402018-02-15 21:48:45.477959: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+186000/307573 [=================>............]186000/307573 [=================>............] - ETA: 21:34 - loss: 26.55192018-02-15 21:49:08.312920: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+190000/307573 [=================>............]190000/307573 [=================>............] - ETA: 20:55 - loss: 26.23632018-02-15 21:49:59.178791: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+192000/307573 [=================>............]192000/307573 [=================>............] - ETA: 20:36 - loss: 26.06902018-02-15 21:50:21.445770: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+194000/307573 [=================>............]194000/307573 [=================>............] - ETA: 20:15 - loss: 25.89802018-02-15 21:50:47.799214: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+196000/307573 [==================>...........]196000/307573 [==================>...........] - ETA: 19:57 - loss: 25.72712018-02-15 21:51:12.778037: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+198000/307573 [==================>...........]198000/307573 [==================>...........] - ETA: 19:37 - loss: 25.55462018-02-15 21:51:34.856665: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+200000/307573 [==================>...........]200000/307573 [==================>...........] - ETA: 19:16 - loss: 25.37502018-02-15 21:52:01.444026: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+202000/307573 [==================>...........]202000/307573 [==================>...........] - ETA: 18:57 - loss: 25.19832018-02-15 21:52:26.777600: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+204000/307573 [==================>...........]204000/307573 [==================>...........] - ETA: 18:37 - loss: 25.02242018-02-15 21:52:49.427345: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+206000/307573 [===================>..........]206000/307573 [===================>..........] - ETA: 18:16 - loss: 24.84662018-02-15 21:53:11.810830: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+208000/307573 [===================>..........]208000/307573 [===================>..........] - ETA: 17:55 - loss: 24.67452018-02-15 21:53:37.298042: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+210000/307573 [===================>..........]210000/307573 [===================>..........] - ETA: 17:35 - loss: 24.50152018-02-15 21:54:01.256839: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+212000/307573 [===================>..........]212000/307573 [===================>..........] - ETA: 17:15 - loss: 24.33082018-02-15 21:54:24.156099: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+214000/307573 [===================>..........]214000/307573 [===================>..........] - ETA: 16:54 - loss: 24.16242018-02-15 21:54:50.414687: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+216000/307573 [====================>.........]216000/307573 [====================>.........] - ETA: 16:34 - loss: 23.99642018-02-15 21:55:14.618988: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+218000/307573 [====================>.........]218000/307573 [====================>.........] - ETA: 16:13 - loss: 23.83072018-02-15 21:55:36.782855: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+220000/307573 [====================>.........]220000/307573 [====================>.........] - ETA: 15:52 - loss: 23.66602018-02-15 21:56:03.303635: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+222000/307573 [====================>.........]222000/307573 [====================>.........] - ETA: 15:32 - loss: 23.50452018-02-15 21:56:30.472655: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+224000/307573 [====================>.........]224000/307573 [====================>.........] - ETA: 15:12 - loss: 23.34472018-02-15 21:56:53.841822: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+226000/307573 [=====================>........]226000/307573 [=====================>........] - ETA: 14:51 - loss: 23.18842018-02-15 21:57:20.955818: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+228000/307573 [=====================>........]228000/307573 [=====================>........] - ETA: 14:31 - loss: 23.03402018-02-15 21:57:43.771959: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+230000/307573 [=====================>........]230000/307573 [=====================>........] - ETA: 14:09 - loss: 22.88262018-02-15 21:58:07.293686: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+232000/307573 [=====================>........]232000/307573 [=====================>........] - ETA: 13:48 - loss: 22.73282018-02-15 21:58:34.582326: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+236000/307573 [======================>.......]236000/307573 [======================>.......] - ETA: 13:05 - loss: 22.43932018-02-15 21:59:22.172705: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+238000/307573 [======================>.......]238000/307573 [======================>.......] - ETA: 12:45 - loss: 22.29542018-02-15 21:59:48.456507: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+240000/307573 [======================>.......]240000/307573 [======================>.......] - ETA: 12:24 - loss: 22.15412018-02-15 22:00:11.497346: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+242000/307573 [======================>.......]242000/307573 [======================>.......] - ETA: 12:02 - loss: 22.01512018-02-15 22:00:38.002528: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+244000/307573 [======================>.......]244000/307573 [======================>.......] - ETA: 11:41 - loss: 21.87832018-02-15 22:01:06.291408: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+246000/307573 [======================>.......]246000/307573 [======================>.......] - ETA: 11:21 - loss: 21.74302018-02-15 22:01:26.912178: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+248000/307573 [=======================>......]248000/307573 [=======================>......] - ETA: 10:58 - loss: 21.61002018-02-15 22:01:52.785354: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+250000/307573 [=======================>......]250000/307573 [=======================>......] - ETA: 10:37 - loss: 21.47902018-02-15 22:02:19.777105: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+252000/307573 [=======================>......]252000/307573 [=======================>......] - ETA: 10:16 - loss: 21.34952018-02-15 22:02:43.199479: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+254000/307573 [=======================>......]254000/307573 [=======================>......] - ETA: 9:54 - loss: 21.2224 2018-02-15 22:03:09.865847: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+256000/307573 [=======================>......]256000/307573 [=======================>......] - ETA: 9:33 - loss: 21.09722018-02-15 22:03:37.191828: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+258000/307573 [========================>.....]258000/307573 [========================>.....] - ETA: 9:11 - loss: 20.97362018-02-15 22:03:57.025028: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+260000/307573 [========================>.....]260000/307573 [========================>.....] - ETA: 8:49 - loss: 20.85182018-02-15 22:04:24.011102: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+262000/307573 [========================>.....]262000/307573 [========================>.....] - ETA: 8:27 - loss: 20.73132018-02-15 22:04:47.497886: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+264000/307573 [========================>.....]264000/307573 [========================>.....] - ETA: 8:05 - loss: 20.61272018-02-15 22:05:09.457268: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+266000/307573 [========================>.....]266000/307573 [========================>.....] - ETA: 7:43 - loss: 20.49592018-02-15 22:05:36.180959: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+268000/307573 [=========================>....]268000/307573 [=========================>....] - ETA: 7:21 - loss: 20.38082018-02-15 22:05:59.506353: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+270000/307573 [=========================>....]270000/307573 [=========================>....] - ETA: 6:59 - loss: 20.26662018-02-15 22:06:21.993613: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+272000/307573 [=========================>....]272000/307573 [=========================>....] - ETA: 6:37 - loss: 20.15482018-02-15 22:06:49.601822: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+274000/307573 [=========================>....]274000/307573 [=========================>....] - ETA: 6:15 - loss: 20.04422018-02-15 22:07:16.321383: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+276000/307573 [=========================>....]276000/307573 [=========================>....] - ETA: 5:53 - loss: 19.93532018-02-15 22:07:38.691686: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+278000/307573 [==========================>...]278000/307573 [==========================>...] - ETA: 5:31 - loss: 19.82792018-02-15 22:08:05.538632: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+280000/307573 [==========================>...]280000/307573 [==========================>...] - ETA: 5:09 - loss: 19.72162018-02-15 22:08:28.350761: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+282000/307573 [==========================>...]282000/307573 [==========================>...] - ETA: 4:46 - loss: 19.61662018-02-15 22:08:54.699548: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+284000/307573 [==========================>...]284000/307573 [==========================>...] - ETA: 4:24 - loss: 19.51322018-02-15 22:09:22.146532: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+286000/307573 [==========================>...]286000/307573 [==========================>...] - ETA: 4:02 - loss: 19.41132018-02-15 22:09:45.929417: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+288000/307573 [===========================>..]288000/307573 [===========================>..] - ETA: 3:40 - loss: 19.31052018-02-15 22:10:11.145732: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+290000/307573 [===========================>..]290000/307573 [===========================>..] - ETA: 3:17 - loss: 19.21122018-02-15 22:10:38.678435: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+292000/307573 [===========================>..]292000/307573 [===========================>..] - ETA: 2:55 - loss: 19.11342018-02-15 22:10:58.780504: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+294000/307573 [===========================>..]294000/307573 [===========================>..] - ETA: 2:32 - loss: 19.01632018-02-15 22:11:23.473010: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+296000/307573 [===========================>..]296000/307573 [===========================>..] - ETA: 2:10 - loss: 18.92082018-02-15 22:11:50.937308: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+298000/307573 [============================>.]298000/307573 [============================>.] - ETA: 1:48 - loss: 18.82592018-02-15 22:12:13.973734: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+300000/307573 [============================>.]300000/307573 [============================>.] - ETA: 1:25 - loss: 18.73302018-02-15 22:12:40.596722: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+302000/307573 [============================>.]302000/307573 [============================>.] - ETA: 1:03 - loss: 18.64092018-02-15 22:13:09.002952: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+304000/307573 [============================>.]304000/307573 [============================>.] - ETA: 40s - loss: 18.5500 2018-02-15 22:13:28.335252: W tensorflow/stream_executor/cuda/cuda_dnn.cc:3482]
+306000/307573 [============================>.]306000/307573 [============================>.] - ETA: 17s - loss: 18.46032018-02-15 22:19:13.564058: W tensorflow/core/common_runtime/bfc_allocator.cc:273] Allocator (GPU_0_bfc) ran out of memory trying to allocate 840.45MiB.  Current allocation summary follows.
+2018-02-15 22:19:13.564132: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (256): 	Total Chunks: 98, Chunks in use: 98. 24.5KiB allocated for chunks. 24.5KiB in use in bin. 756B client-requested in use in bin.
+2018-02-15 22:19:13.564153: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (512): 	Total Chunks: 0, Chunks in use: 0. 0B allocated for chunks. 0B in use in bin. 0B client-requested in use in bin.
+2018-02-15 22:19:13.564172: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (1024): 	Total Chunks: 1, Chunks in use: 1. 1.2KiB allocated for chunks. 1.2KiB in use in bin. 1.0KiB client-requested in use in bin.
+2018-02-15 22:19:13.564188: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (2048): 	Total Chunks: 1, Chunks in use: 0. 2.5KiB allocated for chunks. 0B in use in bin. 0B client-requested in use in bin.
+2018-02-15 22:19:13.564205: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (4096): 	Total Chunks: 1, Chunks in use: 0. 5.0KiB allocated for chunks. 0B in use in bin. 0B client-requested in use in bin.
+2018-02-15 22:19:13.564224: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (8192): 	Total Chunks: 17, Chunks in use: 17. 174.2KiB allocated for chunks. 174.2KiB in use in bin. 172.1KiB client-requested in use in bin.
+2018-02-15 22:19:13.564244: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (16384): 	Total Chunks: 31, Chunks in use: 31. 724.8KiB allocated for chunks. 724.8KiB in use in bin. 712.6KiB client-requested in use in bin.
+2018-02-15 22:19:13.564263: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (32768): 	Total Chunks: 17, Chunks in use: 17. 694.5KiB allocated for chunks. 694.5KiB in use in bin. 688.5KiB client-requested in use in bin.
+2018-02-15 22:19:13.564280: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (65536): 	Total Chunks: 1, Chunks in use: 0. 112.5KiB allocated for chunks. 0B in use in bin. 0B client-requested in use in bin.
+2018-02-15 22:19:13.564298: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (131072): 	Total Chunks: 0, Chunks in use: 0. 0B allocated for chunks. 0B in use in bin. 0B client-requested in use in bin.
+2018-02-15 22:19:13.564316: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (262144): 	Total Chunks: 8, Chunks in use: 7. 2.31MiB allocated for chunks. 1.92MiB in use in bin. 1.92MiB client-requested in use in bin.
+2018-02-15 22:19:13.564332: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (524288): 	Total Chunks: 0, Chunks in use: 0. 0B allocated for chunks. 0B in use in bin. 0B client-requested in use in bin.
+2018-02-15 22:19:13.564348: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (1048576): 	Total Chunks: 0, Chunks in use: 0. 0B allocated for chunks. 0B in use in bin. 0B client-requested in use in bin.
+2018-02-15 22:19:13.564363: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (2097152): 	Total Chunks: 0, Chunks in use: 0. 0B allocated for chunks. 0B in use in bin. 0B client-requested in use in bin.
+2018-02-15 22:19:13.564379: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (4194304): 	Total Chunks: 0, Chunks in use: 0. 0B allocated for chunks. 0B in use in bin. 0B client-requested in use in bin.
+2018-02-15 22:19:13.564394: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (8388608): 	Total Chunks: 0, Chunks in use: 0. 0B allocated for chunks. 0B in use in bin. 0B client-requested in use in bin.
+2018-02-15 22:19:13.564409: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (16777216): 	Total Chunks: 0, Chunks in use: 0. 0B allocated for chunks. 0B in use in bin. 0B client-requested in use in bin.
+2018-02-15 22:19:13.564429: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (33554432): 	Total Chunks: 7, Chunks in use: 7. 350.37MiB allocated for chunks. 350.37MiB in use in bin. 346.07MiB client-requested in use in bin.
+2018-02-15 22:19:13.564448: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (67108864): 	Total Chunks: 5, Chunks in use: 5. 515.75MiB allocated for chunks. 515.75MiB in use in bin. 515.75MiB client-requested in use in bin.
+2018-02-15 22:19:13.564468: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (134217728): 	Total Chunks: 5, Chunks in use: 5. 989.00MiB allocated for chunks. 989.00MiB in use in bin. 988.77MiB client-requested in use in bin.
+2018-02-15 22:19:13.564486: I tensorflow/core/common_runtime/bfc_allocator.cc:628] Bin (268435456): 	Total Chunks: 3, Chunks in use: 3. 3.59GiB allocated for chunks. 3.59GiB in use in bin. 3.50GiB client-requested in use in bin.
+2018-02-15 22:19:13.564503: I tensorflow/core/common_runtime/bfc_allocator.cc:644] Bin for 840.45MiB was 256.00MiB, Chunk State:
+2018-02-15 22:19:13.564520: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c00000 of size 1280
+2018-02-15 22:19:13.564533: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c00500 of size 256
+2018-02-15 22:19:13.564545: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c00600 of size 256
+2018-02-15 22:19:13.564557: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c00700 of size 256
+2018-02-15 22:19:13.564569: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c00800 of size 41472
+2018-02-15 22:19:13.564581: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c0aa00 of size 41472
+2018-02-15 22:19:13.564594: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c14c00 of size 41472
+2018-02-15 22:19:13.564605: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c1ee00 of size 41472
+2018-02-15 22:19:13.564617: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c29000 of size 256
+2018-02-15 22:19:13.564629: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c29100 of size 256
+2018-02-15 22:19:13.564640: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c29200 of size 256
+2018-02-15 22:19:13.564653: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c29300 of size 21760
+2018-02-15 22:19:13.564665: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c2e800 of size 21760
+2018-02-15 22:19:13.564676: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c33d00 of size 21760
+2018-02-15 22:19:13.564688: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c39200 of size 21760
+2018-02-15 22:19:13.564700: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c3e700 of size 256
+2018-02-15 22:19:13.564712: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c3e800 of size 256
+2018-02-15 22:19:13.564724: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c3e900 of size 256
+2018-02-15 22:19:13.564736: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c3ea00 of size 10496
+2018-02-15 22:19:13.564748: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c41300 of size 10496
+2018-02-15 22:19:13.564760: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c43c00 of size 10496
+2018-02-15 22:19:13.564771: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c46500 of size 10496
+2018-02-15 22:19:13.564783: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c48e00 of size 256
+2018-02-15 22:19:13.564795: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c48f00 of size 256
+2018-02-15 22:19:13.564807: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c49000 of size 256
+2018-02-15 22:19:13.564818: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c49100 of size 256
+2018-02-15 22:19:13.564831: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c49200 of size 288000
+2018-02-15 22:19:13.564843: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c8f700 of size 256
+2018-02-15 22:19:13.564855: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c8f800 of size 41472
+2018-02-15 22:19:13.564867: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209c99a00 of size 30976
+2018-02-15 22:19:13.564879: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209ca1300 of size 21760
+2018-02-15 22:19:13.564891: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209ca6800 of size 20736
+2018-02-15 22:19:13.564903: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209cab900 of size 10496
+2018-02-15 22:19:13.564914: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209cae200 of size 30976
+2018-02-15 22:19:13.564926: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209cb5b00 of size 30976
+2018-02-15 22:19:13.564938: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209cbd400 of size 20736
+2018-02-15 22:19:13.564949: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209cc2500 of size 30976
+2018-02-15 22:19:13.564961: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209cc9e00 of size 20736
+2018-02-15 22:19:13.564973: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209ccef00 of size 10496
+2018-02-15 22:19:13.564984: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209cd1800 of size 10496
+2018-02-15 22:19:13.564996: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209cd4100 of size 21760
+2018-02-15 22:19:13.565008: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209cd9600 of size 21760
+2018-02-15 22:19:13.565020: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209cdeb00 of size 41472
+2018-02-15 22:19:13.565032: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209ce8d00 of size 47616
+2018-02-15 22:19:13.565044: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209cf4700 of size 256
+2018-02-15 22:19:13.565056: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209cf4800 of size 41472
+2018-02-15 22:19:13.565067: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209cfea00 of size 41472
+2018-02-15 22:19:13.565079: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d08c00 of size 41472
+2018-02-15 22:19:13.565091: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d12e00 of size 41472
+2018-02-15 22:19:13.565102: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d1d000 of size 30976
+2018-02-15 22:19:13.565114: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d24900 of size 256
+2018-02-15 22:19:13.565126: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d24a00 of size 21760
+2018-02-15 22:19:13.565138: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d29f00 of size 21760
+2018-02-15 22:19:13.565149: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d2f400 of size 21760
+2018-02-15 22:19:13.565161: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d34900 of size 21760
+2018-02-15 22:19:13.565173: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d39e00 of size 256
+2018-02-15 22:19:13.565185: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d39f00 of size 256
+2018-02-15 22:19:13.565196: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3a000 of size 256
+2018-02-15 22:19:13.565208: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3a100 of size 256
+2018-02-15 22:19:13.565220: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3a200 of size 256
+2018-02-15 22:19:13.565232: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3a300 of size 256
+2018-02-15 22:19:13.565243: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3a400 of size 256
+2018-02-15 22:19:13.565255: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3a500 of size 256
+2018-02-15 22:19:13.565267: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3a600 of size 256
+2018-02-15 22:19:13.565279: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3a700 of size 256
+2018-02-15 22:19:13.565290: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3a800 of size 256
+2018-02-15 22:19:13.565302: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3a900 of size 256
+2018-02-15 22:19:13.565314: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3aa00 of size 256
+2018-02-15 22:19:13.565325: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3ab00 of size 256
+2018-02-15 22:19:13.565337: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3ac00 of size 256
+2018-02-15 22:19:13.565349: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3ad00 of size 256
+2018-02-15 22:19:13.565361: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3ae00 of size 256
+2018-02-15 22:19:13.565373: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3af00 of size 256
+2018-02-15 22:19:13.565384: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3b000 of size 256
+2018-02-15 22:19:13.565396: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3b100 of size 256
+2018-02-15 22:19:13.565408: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3b200 of size 256
+2018-02-15 22:19:13.565420: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3b300 of size 256
+2018-02-15 22:19:13.565431: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3b400 of size 256
+2018-02-15 22:19:13.565443: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3b500 of size 256
+2018-02-15 22:19:13.565454: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3b600 of size 256
+2018-02-15 22:19:13.565466: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3b700 of size 256
+2018-02-15 22:19:13.565478: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3b800 of size 256
+2018-02-15 22:19:13.565489: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3b900 of size 256
+2018-02-15 22:19:13.565501: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3ba00 of size 256
+2018-02-15 22:19:13.565513: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3bb00 of size 256
+2018-02-15 22:19:13.565524: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3bc00 of size 256
+2018-02-15 22:19:13.565536: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3bd00 of size 256
+2018-02-15 22:19:13.565548: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3be00 of size 256
+2018-02-15 22:19:13.565559: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3bf00 of size 256
+2018-02-15 22:19:13.565571: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3c000 of size 256
+2018-02-15 22:19:13.565583: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3c100 of size 256
+2018-02-15 22:19:13.565594: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3c200 of size 256
+2018-02-15 22:19:13.565606: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3c300 of size 256
+2018-02-15 22:19:13.565617: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3c400 of size 256
+2018-02-15 22:19:13.565629: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3c500 of size 256
+2018-02-15 22:19:13.565641: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3c600 of size 256
+2018-02-15 22:19:13.565652: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3c700 of size 256
+2018-02-15 22:19:13.565664: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3c800 of size 256
+2018-02-15 22:19:13.565676: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3c900 of size 256
+2018-02-15 22:19:13.565687: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3ca00 of size 256
+2018-02-15 22:19:13.565699: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3cb00 of size 256
+2018-02-15 22:19:13.565710: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3cc00 of size 256
+2018-02-15 22:19:13.565722: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3cd00 of size 256
+2018-02-15 22:19:13.565734: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3ce00 of size 256
+2018-02-15 22:19:13.565745: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3cf00 of size 256
+2018-02-15 22:19:13.565757: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3d000 of size 256
+2018-02-15 22:19:13.565768: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3d100 of size 256
+2018-02-15 22:19:13.565780: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3d200 of size 256
+2018-02-15 22:19:13.565791: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3d300 of size 256
+2018-02-15 22:19:13.565803: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3d400 of size 256
+2018-02-15 22:19:13.565815: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3d500 of size 256
+2018-02-15 22:19:13.565826: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3d600 of size 256
+2018-02-15 22:19:13.565838: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3d700 of size 256
+2018-02-15 22:19:13.565849: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3d800 of size 256
+2018-02-15 22:19:13.565861: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3d900 of size 256
+2018-02-15 22:19:13.565873: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3da00 of size 256
+2018-02-15 22:19:13.565884: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3db00 of size 256
+2018-02-15 22:19:13.565896: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3dc00 of size 256
+2018-02-15 22:19:13.565907: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3dd00 of size 256
+2018-02-15 22:19:13.565919: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3de00 of size 256
+2018-02-15 22:19:13.565931: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3df00 of size 256
+2018-02-15 22:19:13.565942: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3e000 of size 256
+2018-02-15 22:19:13.565954: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3e100 of size 256
+2018-02-15 22:19:13.565965: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3e200 of size 256
+2018-02-15 22:19:13.565977: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3e300 of size 256
+2018-02-15 22:19:13.565988: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3e400 of size 256
+2018-02-15 22:19:13.566000: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3ef00 of size 256
+2018-02-15 22:19:13.566012: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d3f000 of size 10496
+2018-02-15 22:19:13.566023: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d41900 of size 10496
+2018-02-15 22:19:13.566035: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d44200 of size 10496
+2018-02-15 22:19:13.566047: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d46b00 of size 10496
+2018-02-15 22:19:13.566058: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d49400 of size 256
+2018-02-15 22:19:13.566070: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d49500 of size 256
+2018-02-15 22:19:13.566081: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d49600 of size 256
+2018-02-15 22:19:13.566093: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d49700 of size 256
+2018-02-15 22:19:13.566104: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d49800 of size 288000
+2018-02-15 22:19:13.566116: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d8fd00 of size 256
+2018-02-15 22:19:13.566128: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d8fe00 of size 41472
+2018-02-15 22:19:13.566140: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209d9a000 of size 41472
+2018-02-15 22:19:13.566151: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209da4200 of size 30976
+2018-02-15 22:19:13.566163: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209dabb00 of size 256
+2018-02-15 22:19:13.566174: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209dabc00 of size 21760
+2018-02-15 22:19:13.566186: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209db1100 of size 21760
+2018-02-15 22:19:13.566198: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209db6600 of size 21760
+2018-02-15 22:19:13.566209: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209dbbb00 of size 20736
+2018-02-15 22:19:13.566221: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209dc0c00 of size 256
+2018-02-15 22:19:13.566233: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209dc0d00 of size 10496
+2018-02-15 22:19:13.566245: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209dc3600 of size 10496
+2018-02-15 22:19:13.566256: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209dc5f00 of size 20736
+2018-02-15 22:19:13.566268: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209dcb000 of size 288000
+2018-02-15 22:19:13.566280: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209e11500 of size 10496
+2018-02-15 22:19:13.566292: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209e13e00 of size 256
+2018-02-15 22:19:13.566304: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209e13f00 of size 41472
+2018-02-15 22:19:13.566316: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209e1e100 of size 256
+2018-02-15 22:19:13.580773: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209e1e200 of size 41472
+2018-02-15 22:19:13.580826: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209e28400 of size 30976
+2018-02-15 22:19:13.580852: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209e2fd00 of size 256
+2018-02-15 22:19:13.580875: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209e2fe00 of size 10496
+2018-02-15 22:19:13.580897: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209e32700 of size 21760
+2018-02-15 22:19:13.580917: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209e37c00 of size 288000
+2018-02-15 22:19:13.580937: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209e7e100 of size 288000
+2018-02-15 22:19:13.580958: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209ec4600 of size 288000
+2018-02-15 22:19:13.580983: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10209f0ab00 of size 2000000000
+2018-02-15 22:19:13.581005: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x102812c6100 of size 207606528
+2018-02-15 22:19:13.581026: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x1028d8c3400 of size 207360000
+2018-02-15 22:19:13.581046: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10299e85800 of size 30976
+2018-02-15 22:19:13.581066: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10299e8d100 of size 20736
+2018-02-15 22:19:13.581087: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10299e92200 of size 288000
+2018-02-15 22:19:13.581107: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10299ed8700 of size 10496
+2018-02-15 22:19:13.581127: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10299edb000 of size 21760
+2018-02-15 22:19:13.581148: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10299ee0500 of size 41472
+2018-02-15 22:19:13.581168: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10299eea700 of size 10496
+2018-02-15 22:19:13.581187: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10299eed000 of size 21760
+2018-02-15 22:19:13.581223: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10299ef2500 of size 41472
+2018-02-15 22:19:13.581243: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10299f18900 of size 207360000
+2018-02-15 22:19:13.581263: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x102a64d9900 of size 207360000
+2018-02-15 22:19:13.581283: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x102b2a9a900 of size 51840000
+2018-02-15 22:19:13.581304: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x102b5c0ad00 of size 56350976
+2018-02-15 22:19:13.581325: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x102b91c8600 of size 108160000
+2018-02-15 22:19:13.581346: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x102bf8eea00 of size 207360000
+2018-02-15 22:19:13.581362: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x102cbeafa00 of size 108160000
+2018-02-15 22:19:13.581374: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x102d25d5e00 of size 108160000
+2018-02-15 22:19:13.581387: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x102d8cfc200 of size 51840000
+2018-02-15 22:19:13.581399: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x102dbe6c600 of size 51840000
+2018-02-15 22:19:13.581412: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x102defdca00 of size 881280000
+2018-02-15 22:19:13.581425: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10313850e00 of size 51840000
+2018-02-15 22:19:13.581437: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x103169c1200 of size 51840000
+2018-02-15 22:19:13.581449: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10319b31600 of size 108160000
+2018-02-15 22:19:13.581461: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10320257a00 of size 51840000
+2018-02-15 22:19:13.581473: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x103233c7e00 of size 108160000
+2018-02-15 22:19:13.581486: I tensorflow/core/common_runtime/bfc_allocator.cc:662] Chunk at 0x10329aee200 of size 970661376
+2018-02-15 22:19:13.581502: I tensorflow/core/common_runtime/bfc_allocator.cc:671] Free at 0x10209d3e500 of size 2560
+2018-02-15 22:19:13.581515: I tensorflow/core/common_runtime/bfc_allocator.cc:671] Free at 0x10281263f00 of size 401920
+2018-02-15 22:19:13.581528: I tensorflow/core/common_runtime/bfc_allocator.cc:671] Free at 0x10299e84400 of size 5120
+2018-02-15 22:19:13.581540: I tensorflow/core/common_runtime/bfc_allocator.cc:671] Free at 0x10299efc700 of size 115200
+2018-02-15 22:19:13.581554: I tensorflow/core/common_runtime/bfc_allocator.cc:677]      Summary of in-use Chunks by size:
+2018-02-15 22:19:13.581575: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 98 Chunks of size 256 totalling 24.5KiB
+2018-02-15 22:19:13.581591: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 1 Chunks of size 1280 totalling 1.2KiB
+2018-02-15 22:19:13.581606: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 17 Chunks of size 10496 totalling 174.2KiB
+2018-02-15 22:19:13.581622: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 6 Chunks of size 20736 totalling 121.5KiB
+2018-02-15 22:19:13.581637: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 17 Chunks of size 21760 totalling 361.2KiB
+2018-02-15 22:19:13.581652: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 8 Chunks of size 30976 totalling 242.0KiB
+2018-02-15 22:19:13.581667: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 16 Chunks of size 41472 totalling 648.0KiB
+2018-02-15 22:19:13.581681: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 1 Chunks of size 47616 totalling 46.5KiB
+2018-02-15 22:19:13.581696: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 7 Chunks of size 288000 totalling 1.92MiB
+2018-02-15 22:19:13.581711: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 6 Chunks of size 51840000 totalling 296.63MiB
+2018-02-15 22:19:13.581726: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 1 Chunks of size 56350976 totalling 53.74MiB
+2018-02-15 22:19:13.581742: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 5 Chunks of size 108160000 totalling 515.75MiB
+2018-02-15 22:19:13.581757: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 4 Chunks of size 207360000 totalling 791.02MiB
+2018-02-15 22:19:13.581776: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 1 Chunks of size 207606528 totalling 197.99MiB
+2018-02-15 22:19:13.581791: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 1 Chunks of size 881280000 totalling 840.45MiB
+2018-02-15 22:19:13.581806: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 1 Chunks of size 970661376 totalling 925.69MiB
+2018-02-15 22:19:13.581820: I tensorflow/core/common_runtime/bfc_allocator.cc:680] 1 Chunks of size 2000000000 totalling 1.86GiB
+2018-02-15 22:19:13.581833: I tensorflow/core/common_runtime/bfc_allocator.cc:684] Sum Total of in-use chunks: 5.40GiB
+2018-02-15 22:19:13.581852: I tensorflow/core/common_runtime/bfc_allocator.cc:686] Stats:
+Limit:                  5801377792
+InUse:                  5800852992
+MaxInUse:               5801193472
+NumAllocs:                   33128
+MaxAllocSize:           4117283584
+
+2018-02-15 22:19:13.581896: W tensorflow/core/common_runtime/bfc_allocator.cc:277] ***************************************************************************************************x
+2018-02-15 22:19:13.581927: W tensorflow/core/framework/op_kernel.cc:1198] Resource exhausted: OOM when allocating tensor with shape[5000,17,2592] and type float on /job:localhost/replica:0/task:0/device:GPU:0 by allocator GPU_0_bfc
+Traceback (most recent call last):
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 1350, in _do_call
+    return fn(*args)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 1329, in _run_fn
+    status, run_metadata)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/errors_impl.py", line 473, in __exit__
+    c_api.TF_GetCode(self.status.status))
+tensorflow.python.framework.errors_impl.ResourceExhaustedError: OOM when allocating tensor with shape[5000,17,2592] and type float on /job:localhost/replica:0/task:0/device:GPU:0 by allocator GPU_0_bfc
+	 [[Node: gradients/loss/activation_3_loss/Mul_grad/mul = Mul[T=DT_FLOAT, _class=["loc:@loss/activation_3_loss/Mul"], _device="/job:localhost/replica:0/task:0/device:GPU:0"](gradients/loss/activation_3_loss/Mean_grad/truediv, loss/activation_3_loss/Log)]]
+Hint: If you want to see a list of allocated tensors when OOM happens, add report_tensor_allocations_upon_oom to RunOptions for current allocation info.
+
+	 [[Node: batch_normalization_2/gamma_0_grad/values/_449 = _Recv[client_terminated=false, recv_device="/job:localhost/replica:0/task:0/device:CPU:0", send_device="/job:localhost/replica:0/task:0/device:GPU:0", send_device_incarnation=1, tensor_name="edge_711_batch_normalization_2/gamma_0_grad/values", tensor_type=DT_FLOAT, _device="/job:localhost/replica:0/task:0/device:CPU:0"]()]]
+Hint: If you want to see a list of allocated tensors when OOM happens, add report_tensor_allocations_upon_oom to RunOptions for current allocation info.
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "scripts/dev.py", line 35, in <module>
+    loss=D.metrics.argmin_poisson,the_metrics=None)
+  File "/home/tyler/code/baccus/deep-retina/deepretina/core.py", line 64, in train
+    callbacks=cbs, validation_split=val_split, shuffle=True)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/keras/_impl/keras/engine/training.py", line 1678, in fit
+    validation_steps=validation_steps)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/keras/_impl/keras/engine/training.py", line 1242, in _fit_loop
+    callbacks.on_epoch_end(epoch, epoch_logs)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/keras/_impl/keras/callbacks.py", line 95, in on_epoch_end
+    callback.on_epoch_end(epoch, logs)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/keras/_impl/keras/callbacks.py", line 757, in on_epoch_end
+    result = self.sess.run([self.merged], feed_dict=feed_dict)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 895, in run
+    run_metadata_ptr)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 1128, in _run
+    feed_dict_tensor, options, run_metadata)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 1344, in _do_run
+    options, run_metadata)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 1363, in _do_call
+    raise type(e)(node_def, op, message)
+tensorflow.python.framework.errors_impl.ResourceExhaustedError: OOM when allocating tensor with shape[5000,17,2592] and type float on /job:localhost/replica:0/task:0/device:GPU:0 by allocator GPU_0_bfc
+	 [[Node: gradients/loss/activation_3_loss/Mul_grad/mul = Mul[T=DT_FLOAT, _class=["loc:@loss/activation_3_loss/Mul"], _device="/job:localhost/replica:0/task:0/device:GPU:0"](gradients/loss/activation_3_loss/Mean_grad/truediv, loss/activation_3_loss/Log)]]
+Hint: If you want to see a list of allocated tensors when OOM happens, add report_tensor_allocations_upon_oom to RunOptions for current allocation info.
+
+	 [[Node: batch_normalization_2/gamma_0_grad/values/_449 = _Recv[client_terminated=false, recv_device="/job:localhost/replica:0/task:0/device:CPU:0", send_device="/job:localhost/replica:0/task:0/device:GPU:0", send_device_incarnation=1, tensor_name="edge_711_batch_normalization_2/gamma_0_grad/values", tensor_type=DT_FLOAT, _device="/job:localhost/replica:0/task:0/device:CPU:0"]()]]
+Hint: If you want to see a list of allocated tensors when OOM happens, add report_tensor_allocations_upon_oom to RunOptions for current allocation info.
+
+
+Caused by op 'gradients/loss/activation_3_loss/Mul_grad/mul', defined at:
+  File "scripts/dev.py", line 35, in <module>
+    loss=D.metrics.argmin_poisson,the_metrics=None)
+  File "/home/tyler/code/baccus/deep-retina/deepretina/core.py", line 64, in train
+    callbacks=cbs, validation_split=val_split, shuffle=True)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/keras/_impl/keras/engine/training.py", line 1678, in fit
+    validation_steps=validation_steps)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/keras/_impl/keras/engine/training.py", line 1153, in _fit_loop
+    callbacks.set_model(callback_model)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/keras/_impl/keras/callbacks.py", line 70, in set_model
+    callback.set_model(model)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/keras/_impl/keras/callbacks.py", line 682, in set_model
+    grads = model.optimizer.get_gradients(model.total_loss, weight)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/keras/_impl/keras/optimizers.py", line 95, in get_gradients
+    grads = K.gradients(loss, params)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/keras/_impl/keras/backend.py", line 2593, in gradients
+    loss, variables, colocate_gradients_with_ops=True)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/gradients_impl.py", line 609, in gradients
+    grad_scope, op, func_call, lambda: grad_fn(op, *out_grads))
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/gradients_impl.py", line 375, in _MaybeCompile
+    return grad_fn()  # Exit early
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/gradients_impl.py", line 609, in <lambda>
+    grad_scope, op, func_call, lambda: grad_fn(op, *out_grads))
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/math_grad.py", line 787, in _MulGrad
+    return (array_ops.reshape(math_ops.reduce_sum(grad * y, rx), sx),
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/math_ops.py", line 907, in binary_op_wrapper
+    return func(x, y, name=name)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/math_ops.py", line 1131, in _mul_dispatch
+    return gen_math_ops._mul(x, y, name=name)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/gen_math_ops.py", line 2798, in _mul
+    "Mul", x=x, y=y, name=name)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/op_def_library.py", line 787, in _apply_op_helper
+    op_def=op_def)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/ops.py", line 3160, in create_op
+    op_def=op_def)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/ops.py", line 1625, in __init__
+    self._traceback = self._graph._extract_stack()  # pylint: disable=protected-access
+
+...which was originally created as op 'loss/activation_3_loss/Mul', defined at:
+  File "scripts/dev.py", line 35, in <module>
+    loss=D.metrics.argmin_poisson,the_metrics=None)
+  File "/home/tyler/code/baccus/deep-retina/deepretina/core.py", line 48, in train
+    mdl.compile(loss=loss, optimizer=Adam(lr), metrics=the_metrics)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/keras/_impl/keras/engine/training.py", line 849, in compile
+    output_loss = weighted_loss(y_true, y_pred, sample_weight, mask)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/keras/_impl/keras/engine/training.py", line 454, in weighted
+    score_array = fn(y_true, y_pred)
+  File "/home/tyler/code/baccus/deep-retina/deepretina/metrics.py", line 99, in argmin_poisson
+    K.log(tf.add(est, K.epsilon())))
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/math_ops.py", line 321, in multiply
+    return gen_math_ops._mul(x, y, name)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/gen_math_ops.py", line 2798, in _mul
+    "Mul", x=x, y=y, name=name)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/op_def_library.py", line 787, in _apply_op_helper
+    op_def=op_def)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/ops.py", line 3160, in create_op
+    op_def=op_def)
+  File "/home/tyler/lib/anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/ops.py", line 1625, in __init__
+    self._traceback = self._graph._extract_stack()  # pylint: disable=protected-access
+
+ResourceExhaustedError (see above for traceback): OOM when allocating tensor with shape[5000,17,2592] and type float on /job:localhost/replica:0/task:0/device:GPU:0 by allocator GPU_0_bfc
+	 [[Node: gradients/loss/activation_3_loss/Mul_grad/mul = Mul[T=DT_FLOAT, _class=["loc:@loss/activation_3_loss/Mul"], _device="/job:localhost/replica:0/task:0/device:GPU:0"](gradients/loss/activation_3_loss/Mean_grad/truediv, loss/activation_3_loss/Log)]]
+Hint: If you want to see a list of allocated tensors when OOM happens, add report_tensor_allocations_upon_oom to RunOptions for current allocation info.
+
+	 [[Node: batch_normalization_2/gamma_0_grad/values/_449 = _Recv[client_terminated=false, recv_device="/job:localhost/replica:0/task:0/device:CPU:0", send_device="/job:localhost/replica:0/task:0/device:GPU:0", send_device_incarnation=1, tensor_name="edge_711_batch_normalization_2/gamma_0_grad/values", tensor_type=DT_FLOAT, _device="/job:localhost/replica:0/task:0/device:CPU:0"]()]]
+Hint: If you want to see a list of allocated tensors when OOM happens, add report_tensor_allocations_upon_oom to RunOptions for current allocation info.

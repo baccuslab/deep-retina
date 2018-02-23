@@ -23,21 +23,21 @@ D = deepretina
 
 expt = "15-11-21b"
 stim = "whitenoise"
-stim = "naturalscene"
+# stim = "naturalscene"
 cells = D.experiments.CELLS[expt]
 
 config.data_dir = "/storage/baccus/"
 config.results_dir = "/storage/baccus/results/"
-# data = D.experiments.loadexpt(expt, cells, stim, 'train', 40, 6000)
-# n = data.X.shape[0]
-# ntrain = int(np.floor(n*0.95))
-# y = np.reshape(data.y,[*data.y.shape,1,1])
-# data.X[0:10].shape
-# train_data = D.experiments.Exptdata(data.X[0:ntrain],y[0:ntrain])
-# valid_data = D.experiments.Exptdata(data.X[ntrain:],y[ntrain:])
-#
-# small_train_data = D.experiments.Exptdata(train_data.X[:2000],train_data.y[:2000])
-# small_valid_data = D.experiments.Exptdata(valid_data.X[:1000],valid_data.y[:1000])
+data = D.experiments.loadexpt(expt, cells, stim, 'train', 40, 6000)
+n = data.X.shape[0]
+ntrain = int(np.floor(n*0.95))
+y = np.reshape(data.y,[*data.y.shape,1,1])
+data.X[0:10].shape
+train_data = D.experiments.Exptdata(data.X[0:ntrain],y[0:ntrain])
+valid_data = D.experiments.Exptdata(data.X[ntrain:],y[ntrain:])
+
+small_train_data = D.experiments.Exptdata(train_data.X[:2000],train_data.y[:2000])
+small_valid_data = D.experiments.Exptdata(valid_data.X[:1000],valid_data.y[:1000])
 
 
 def context(func):

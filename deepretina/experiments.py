@@ -8,6 +8,7 @@ import numpy as np
 from os.path import join, expanduser
 from scipy.stats import zscore
 from deepretina import config
+from random import shuffle
 
 import pyret.filtertools as ft
 
@@ -82,15 +83,22 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, cutout_width=
             else:
                 stim = zscore(ft.cutout(np.array(f[train_or_test]['stimulus']), idx=(px, py), width=cutout_width).astype('float32'))
 
-            # apply clipping to remove the stimulus just after transitions
-            num_blocks = NUM_BLOCKS[expt] if train_or_test == 'train' and nskip > 0 else 1
+            # TODO I have no idea what num_blocks is for...is this reasonable?
+            if expt in NUM_BLOCKS:
+                # apply clipping to remove the stimulus just after transitions
+                num_blocks = NUM_BLOCKS[expt] if train_or_test == 'train' and nskip > 0 else 1
+            else:
+                num_blocks = 1
             valid_indices = np.arange(expt_length).reshape(num_blocks, -1)[:, nskip:].ravel()
 
             # reshape into the Toeplitz matrix (nsamples, history, *stim_dims)
             stim_reshaped = rolling_window(stim[valid_indices], history, time_axis=0)
 
             # get the response for this cell (nsamples, ncells)
-            resp = np.array(f[train_or_test]['response/firing_rate_10ms'][cells]).T[valid_indices]
+            if cells=="all":
+                resp = np.array(f[train_or_test]['response/firing_rate_10ms']).T[valid_indices]
+            else:
+                resp = np.array(f[train_or_test]['response/firing_rate_10ms'][cells]).T[valid_indices]
             resp = resp[history:]
 
     return Exptdata(stim_reshaped, resp)
@@ -101,6 +109,74 @@ def _loadexpt_h5(expt, filename):
     filepath = join(expanduser(config.data_dir), expt, filename + '.h5')
     return h5py.File(filepath, mode='r')
 
+def load_multiple_expt(list_expt_cells_filename, train_or_test, history, nskip, cutout_width=None):
+    """Load multiple experiments into a single array. Reshape for G_CONV.
+
+    Parameters
+    ----------
+    list_expt_cells_filename : List(Tuple(expt, cells, filename))
+
+    Others are the same as load_ext
+    """
+    expts = []
+    nsamples = 0
+    input_shape = None
+    for item in list_expt_cells_filename:
+        expt, cells, filename = item
+        data = loadexpt(expt, cells, filename, train_or_test, history, nskip, cutout_width)
+        y = np.reshape(data.y,[*data.y.shape,1,1])
+        expdata = Exptdata(data.X,y)
+        expts.append(expdata)
+        nsamples+= len(expdata.X)
+        input_shape = expdata.X.shape[1:]
+
+    return expts, input_shape, nsamples
+
+def ntrain_by_experiment(experiments,val_split=0.95):
+    experiment_ntrain = []
+    experiment_n = []
+
+    for i, experiment in enumerate(experiments):
+        n = len(experiment.X)
+        experiment_n.append(n)
+        ntrain = int(np.floor(n*0.95))
+        experiment_ntrain.append(ntrain)
+
+    return np.array(experiment_n), np.array(experiment_ntrain)
+
+def multiple_experiment_generator(experiments, train_or_valid="TRAIN", batch_size=1000,val_split=0.95):
+    """Takes a list of ExptData and yields a randomly chosen batch."""
+    # first is the file index, then the batch index
+    indices = []
+    experiment_n, experiment_ntrain = ntrain_by_experiment(experiments,val_split)
+
+    for i, experiment in enumerate(experiments):
+        n = experiment_n[i]
+        ntrain = experiment_ntrain[i]
+
+        if train_or_valid=="TRAIN":
+            bi = np.arange(0,ntrain-1,batch_size)
+        else:
+            bi = np.arange(ntrain,n-1,batch_size)
+
+        for batch_start in bi:
+            indices.append((i,batch_start))
+
+    number_to_yield = len(indices)
+
+
+    while True:
+        shuffle(indices)
+        for i,batch_start in indices:
+            experiment = experiments[i]
+            n = experiment_n[i]
+            ntrain = experiment_ntrain[i]
+            if train_or_valid=="TRAIN":
+                batch_end = min(ntrain, batch_start+batch_size)
+            else:
+                batch_end = min(n, batch_start+batch_size)
+            yield (experiment.X[batch_start:batch_end],
+                   experiment.y[batch_start:batch_end])
 
 def stimcut(data, expt, ci, width=11):
     """Cuts out a stimulus around the whitenoise receptive field"""

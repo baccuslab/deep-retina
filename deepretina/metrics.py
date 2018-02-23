@@ -17,11 +17,11 @@ __all__ = ['cc', 'rmse', 'fev', 'CC', 'RMSE', 'FEV', 'np_wrap',
 
 def correlation_coefficient(obs_rate, est_rate):
     """Pearson correlation coefficient"""
-    x_mu = obs_rate - K.mean(obs_rate, axis=0, keepdims=True)
-    x_std = K.std(obs_rate, axis=0, keepdims=True)
-    y_mu = est_rate - K.mean(est_rate, axis=0, keepdims=True)
-    y_std = K.std(est_rate, axis=0, keepdims=True)
-    return K.mean(x_mu * y_mu, axis=0, keepdims=True) / (x_std * y_std)
+    obs_mu = obs_rate - K.mean(obs_rate, axis=0, keepdims=True)
+    obs_std = K.std(obs_rate, axis=0, keepdims=True)
+    est_mu = est_rate - K.mean(est_rate, axis=0, keepdims=True)
+    est_std = K.std(est_rate, axis=0, keepdims=True)
+    return K.mean(obs_mu * est_mu, axis=0, keepdims=True) / (obs_std * est_std + K.epsilon())
 
 def mean_squared_error(obs_rate, est_rate):
     """Mean squared error across samples"""

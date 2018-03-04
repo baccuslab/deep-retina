@@ -4,12 +4,17 @@ Construct Keras models
 from __future__ import absolute_import, division, print_function
 import tensorflow as tf
 keras = tf.keras
+K = keras.backend
 Model = tf.keras.models.Model
 Dense = tf.keras.layers.Dense
 Activation = tf.keras.layers.Activation
 Flatten = tf.keras.layers.Flatten
+Lambda = tf.keras.layers.Lambda
 Reshape = tf.keras.layers.Reshape
 Conv2D = tf.keras.layers.Conv2D
+Permute = tf.keras.layers.Permute
+ResizeMethod = tf.image.ResizeMethod
+Conv2DTranspose = tf.keras.layers.Conv2DTranspose
 BatchNormalization = tf.keras.layers.BatchNormalization
 GaussianNoise = tf.keras.layers.GaussianNoise
 l1 = tf.keras.regularizers.l1
@@ -24,6 +29,22 @@ def bn_layer(x, nchan, size, l2_reg, sigma=0.05):
     n = int(x.shape[-1]) - size + 1
     y = Conv2D(nchan, size, data_format="channels_first", kernel_regularizer=l2(l2_reg))(x)
     y = Reshape((nchan, n, n))(BatchNormalization(axis=-1)(Flatten()(y)))
+    return Activation('relu')(GaussianNoise(sigma)(y))
+
+def resize_layer(x,resize):
+    # account for channels_first
+    xx = Permute((2,3,1))(x)
+    xx = Lambda( lambda y: tf.image.resize_images(y, resize,
+        method=ResizeMethod.NEAREST_NEIGHBOR))(x)
+    return Permute((3,1,2))(xx)
+
+def bn_layer_t(x, nchan, size, resize, l2_reg, sigma=0.05):
+    """An individual batchnorm transpose-rescale layer"""
+    y = resize_layer(x,resize)
+    y = Conv2D(nchan, size, data_format="channels_first",
+        padding='same',
+        kernel_regularizer=l2(l2_reg))(y)
+    # y = Reshape((nchan, n, n))(BatchNormalization(axis=-1)(Flatten()(y)))
     return Activation('relu')(GaussianNoise(sigma)(y))
 
 def bn_conv(x, nchan, size, l2_reg):
@@ -50,6 +71,19 @@ def g_cnn(inputs, l2_reg=0.01,name="G-CNN"):
     y = Activation('relu')(y)
     outputs = y
     return Model(inputs, outputs, name=name)
+
+def auto_encoder(inputs, l2_reg=0.01,name="Autoencoder"):
+    """Autoencoder CNN model with ganglion convolution."""
+    encoded = bn_conv(inputs, 8, 15, l2_reg)
+    encoded = bn_conv(encoded, 8, 11, l2_reg)
+    encoded = Conv2D(8, 15, data_format="channels_first", kernel_regularizer=l2(l2_reg))(encoded)
+    encoded = Activation('relu')(encoded)
+
+    decoded = bn_layer_t(encoded, 8, 15, [26,26], l2_reg)
+    decoded = bn_layer_t(decoded, 8, 11, [36,36], l2_reg)
+    decoded = bn_layer_t(decoded, 1, 15, [50,50], l2_reg)
+    decoded = Lambda(lambda y: tf.squeeze(y, 1))(decoded)
+    return Model(inputs, decoded, name=name)
 
 
 def linear_nonlinear(inputs, n_out, *args, activation='softplus', l2_reg=0.01):

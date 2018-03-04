@@ -90,24 +90,12 @@ def argmin_poisson(y_true, y_pred):
         loss: L
     future ref: https://github.com/mbaradad/munkres-tensorflow"""
     obs, est, nb, nr, nx, ny, nc = get_gconv_shape(y_true,y_pred)
-    # print("y_pred",y_pred.shape)
-    # print("y_true",y_true.shape)
-    # return poisson(y_true[:,:,0,0],y_pred[:,0:nr,0,0])
-    # print("est",est.shape)
-    # print("obs",obs.shape)
 
-    # print("!!!",tf.shape(tf.subtract(est, obs)))
-    # B x R x (X+Y+C)
     loss = est - obs * K.log(est + K.epsilon())
     # R x (X+Y+C)
     mean_loss = tf.reduce_mean(loss,axis=[0])
     # R
     argmin = tf.reduce_min(mean_loss,axis=[1])
-    # print("argmin",tf.shape(argmin))
-    # B x R x (X+Y+C)
-    # tf.segment_min(y_true,tf.ones(y_true.shape))
-    # min(N x N)
-    # matching = 1
     return K.mean(argmin)
 
 

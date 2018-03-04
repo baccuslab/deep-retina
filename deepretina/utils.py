@@ -2,6 +2,8 @@
 Generic utilities
 """
 import sys
+import tensorflow as tf
+K = tf.keras.backend
 from contextlib import contextmanager
 
 import numpy as np
@@ -40,3 +42,13 @@ def cutout_indices(center, size=7, ndim=50):
     yinds = slice(int(np.clip(center[1] - size, 0, ndim)),
                   int(np.clip(center[1] + size + 1, 0, ndim)))
     return xinds, yinds
+
+def context(func):
+    def wrapper(*args, **kwargs):
+        graph = tf.Graph()
+        with graph.as_default():
+            with tf.Session(graph=graph) as sess:
+                K.set_session(sess)
+                result = func(*args, **kwargs)
+        return result
+    return wrapper

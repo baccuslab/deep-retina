@@ -175,8 +175,36 @@ def multiple_experiment_generator(experiments, train_or_valid="TRAIN", batch_siz
                 batch_end = min(ntrain, batch_start+batch_size)
             else:
                 batch_end = min(n, batch_start+batch_size)
-            yield (experiment.X[batch_start:batch_end],
-                   experiment.y[batch_start:batch_end])
+            yield (np.array(experiment.X[batch_start:batch_end]),
+                   np.array(experiment.y[batch_start:batch_end]))
+
+def single_experiment_generator(experiment, train_or_valid="TRAIN", batch_size=1000):
+    """Takes a ExptData and yields a batch."""
+    # first is the file index, then the batch index
+    n = len(experiment.X)
+    ntrain = int(np.floor(n*0.95))
+
+    if train_or_valid=="TRAIN":
+        bi = np.arange(0,ntrain-1,batch_size)
+    else:
+        bi = np.arange(ntrain,n-1,batch_size)
+
+    indices = []
+    for batch_start in bi:
+        indices.append((i,batch_start))
+
+    number_to_yield = len(indices)
+
+
+    while True:
+        # shuffle(indices)
+        for i,batch_start in indices:
+            if train_or_valid=="TRAIN":
+                batch_end = min(ntrain, batch_start+batch_size)
+            else:
+                batch_end = min(n, batch_start+batch_size)
+            yield (np.array(experiment.X[batch_start:batch_end]),
+                   np.array(experiment.y[batch_start:batch_end]))
 
 def stimcut(data, expt, ci, width=11):
     """Cuts out a stimulus around the whitenoise receptive field"""

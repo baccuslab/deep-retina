@@ -9,7 +9,8 @@ from os.path import join, expanduser
 from scipy.stats import zscore
 from deepretina import config
 from random import shuffle
-
+import tensorflow as tf
+Sequence = tf.keras.utils.Sequence
 import pyret.filtertools as ft
 
 from .utils import notify
@@ -33,6 +34,45 @@ CELLS = {
 Exptdata = namedtuple('Exptdata', ['X', 'y'])
 __all__ = ['loadexpt', 'stimcut', 'CELLS']
 
+
+class ExptSequence(Sequence):
+    """Takes a list of ExptData and create a Sequence for training."""
+    def __init__(self, experiments, train_or_valid="TRAIN", batch_size=1000,val_split=0.95):
+        indices = []
+        self.experiments = experiments
+        self.batch_size = batch_size
+        self.train_or_valid = train_or_valid
+        self.experiment_n, self.experiment_ntrain = ntrain_by_experiment(experiments,val_split)
+
+        nbatches = sum([np.ceil(len(e)/batch_size) for e in experiments])
+        for i, experiment in enumerate(experiments):
+            n = self.experiment_n[i]
+            ntrain = self.experiment_ntrain[i]
+
+            if train_or_valid=="TRAIN":
+                bi = np.arange(0,ntrain-1,batch_size)
+            else:
+                bi = np.arange(ntrain,n-1,batch_size)
+
+            # interpolate the experiments evenly
+            for ranking, batch_start in zip(np.linspace(0,nbatches,len(bi)), bi):
+                if self.train_or_valid=="TRAIN":
+                    batch_end = min(ntrain, batch_start+self.batch_size)
+                else:
+                    batch_end = min(n, batch_start+self.batch_size)
+                indices.append((ranking, i, batch_start, batch_end))
+
+        self.indices = [x[1:] for x in sorted(indices,key=lambda y: y[0])]
+
+    def __len__(self):
+        return len(self.indices)
+
+    def __getitem__(self, idx):
+        expt, batch_start, batch_end = self.indices[idx]
+        experiment = self.experiments[expt]
+
+        return (experiment.X[batch_start:batch_end],
+               experiment.y[batch_start:batch_end])
 
 def loadexpt(expt, cells, filename, train_or_test, history, nskip, cutout_width=None):
     """Loads an experiment from an h5 file on disk
@@ -143,68 +183,6 @@ def ntrain_by_experiment(experiments,val_split=0.95):
         experiment_ntrain.append(ntrain)
 
     return np.array(experiment_n), np.array(experiment_ntrain)
-
-def multiple_experiment_generator(experiments, train_or_valid="TRAIN", batch_size=1000,val_split=0.95):
-    """Takes a list of ExptData and yields a randomly chosen batch."""
-    # first is the file index, then the batch index
-    indices = []
-    experiment_n, experiment_ntrain = ntrain_by_experiment(experiments,val_split)
-
-    for i, experiment in enumerate(experiments):
-        n = experiment_n[i]
-        ntrain = experiment_ntrain[i]
-
-        if train_or_valid=="TRAIN":
-            bi = np.arange(0,ntrain-1,batch_size)
-        else:
-            bi = np.arange(ntrain,n-1,batch_size)
-
-        for batch_start in bi:
-            indices.append((i,batch_start))
-
-    number_to_yield = len(indices)
-
-
-    while True:
-        shuffle(indices)
-        for i,batch_start in indices:
-            experiment = experiments[i]
-            n = experiment_n[i]
-            ntrain = experiment_ntrain[i]
-            if train_or_valid=="TRAIN":
-                batch_end = min(ntrain, batch_start+batch_size)
-            else:
-                batch_end = min(n, batch_start+batch_size)
-            yield (np.array(experiment.X[batch_start:batch_end]),
-                   np.array(experiment.y[batch_start:batch_end]))
-
-def single_experiment_generator(experiment, train_or_valid="TRAIN", batch_size=1000):
-    """Takes a ExptData and yields a batch."""
-    # first is the file index, then the batch index
-    n = len(experiment.X)
-    ntrain = int(np.floor(n*0.95))
-
-    if train_or_valid=="TRAIN":
-        bi = np.arange(0,ntrain-1,batch_size)
-    else:
-        bi = np.arange(ntrain,n-1,batch_size)
-
-    indices = []
-    for batch_start in bi:
-        indices.append((i,batch_start))
-
-    number_to_yield = len(indices)
-
-
-    while True:
-        # shuffle(indices)
-        for i,batch_start in indices:
-            if train_or_valid=="TRAIN":
-                batch_end = min(ntrain, batch_start+batch_size)
-            else:
-                batch_end = min(n, batch_start+batch_size)
-            yield (np.array(experiment.X[batch_start:batch_end]),
-                   np.array(experiment.y[batch_start:batch_end]))
 
 def stimcut(data, expt, ci, width=11):
     """Cuts out a stimulus around the whitenoise receptive field"""

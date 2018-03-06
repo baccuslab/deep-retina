@@ -119,9 +119,9 @@ def train_generator(model, train_gen, input_shape, steps_per_epoch, run_name, va
     # define model callbacks
     cbs = [cb.ModelCheckpoint(os.path.join(base, 'weights-{epoch:03d}-{val_loss:.3f}.h5')),
            # cb.TensorBoard(log_dir=base, histogram_freq=1, batch_size=5000, write_grads=True),
-           # cb.TensorBoard(log_dir=base, batch_size=5000, write_grads=True),
-           # cb.ReduceLROnPlateau(min_lr=0, factor=0.2, patience=10),
-           # cb.CSVLogger(os.path.join(base, 'training.csv')),
+           cb.TensorBoard(log_dir=base, batch_size=1000, write_grads=True),
+           cb.ReduceLROnPlateau(min_lr=0, factor=0.2, patience=10),
+           cb.CSVLogger(os.path.join(base, 'training.csv')),
            cb.EarlyStopping(monitor='val_loss', patience=20)]
 
     # train

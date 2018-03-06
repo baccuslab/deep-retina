@@ -23,6 +23,7 @@ from deepretina import activations
 
 __all__ = ['bn_cnn', 'linear_nonlinear', 'ln', 'nips_cnn']
 
+RandomNormal = keras.initializers.RandomNormal(mean=0.0, stddev=0.01)
 
 def bn_layer(x, nchan, size, l2_reg, sigma=0.05):
     """An individual batchnorm layer"""
@@ -50,7 +51,7 @@ def bn_layer_t(x, nchan, size, resize, l2_reg, sigma=0.05):
 def bn_conv(x, nchan, size, l2_reg):
     """An individual batchnorm layer without GaussianNoise"""
     n = int(x.shape[-1]) - size + 1
-    y = Conv2D(nchan, size, kernel_regularizer=l2(l2_reg), data_format="channels_first")(x)
+    y = Conv2D(nchan, size, kernel_regularizer=l2(l2_reg), data_format="channels_first", kernel_initializer=RandomNormal)(x)
     y = BatchNormalization(axis=1)(y)
     return Activation('relu')(y)
 
@@ -67,7 +68,7 @@ def g_cnn(inputs, l2_reg=0.01,name="G-CNN"):
     y = bn_conv(inputs, 8, 15, l2_reg)
     y = bn_conv(y, 8, 11, l2_reg)
     # y = bn_layer(y, 8, 9, l2_reg)
-    y = Conv2D(8, 15, kernel_regularizer=l2(l2_reg), data_format="channels_first")(y)
+    y = Conv2D(8, 15, kernel_regularizer=l2(l2_reg), data_format="channels_first", kernel_initializer=RandomNormal)(y)
     y = Activation('relu')(y)
     outputs = y
     return Model(inputs, outputs, name=name)

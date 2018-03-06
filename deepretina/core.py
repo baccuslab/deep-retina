@@ -101,7 +101,7 @@ def simple_train(model, train_data, valid_data, run_name=None, model_args=(), lr
     return history
 
 
-def train_generator(model, train_gen, input_shape, steps_per_epoch, run_name, valid_gen=None, validation_steps=None, model_args=(), lr=1e-2, bz=1000, nb_epochs=250, loss="poisson", the_metrics=[metrics.cc, metrics.rmse, metrics.fev]):
+def train_generator(model, train_gen, input_shape, steps_per_epoch, run_name, valid_gen=None, validation_steps=None, model_args=(), lr=5e-2, bz=1000, nb_epochs=250, loss="poisson", the_metrics=[metrics.cc, metrics.rmse, metrics.fev]):
     """Trains a model"""
     # build the model
     x = Input(shape=input_shape)

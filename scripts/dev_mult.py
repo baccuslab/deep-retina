@@ -4,8 +4,6 @@
 import os
 import functools
 import argparse
-import tensorflow as tf
-K = tf.keras.backend
 import tableprint as tp
 import numpy as np
 from deepretina import config
@@ -20,6 +18,8 @@ import deepretina.metrics
 # %aimport deepretina.models
 # %aimport deepretina.core
 # %aimport deepretina.metrics
+import tensorflow as tf
+K = tf.keras.backend
 
 D = deepretina
 

@@ -119,15 +119,15 @@ def train_generator(model, train_gen, input_shape, steps_per_epoch, run_name, va
     # define model callbacks
     cbs = [cb.ModelCheckpoint(os.path.join(base, 'weights-{epoch:03d}-{val_loss:.3f}.h5')),
            # cb.TensorBoard(log_dir=base, histogram_freq=1, batch_size=5000, write_grads=True),
-           cb.TensorBoard(log_dir=base, batch_size=5000, write_grads=True),
-           cb.ReduceLROnPlateau(min_lr=0, factor=0.2, patience=10),
-           cb.CSVLogger(os.path.join(base, 'training.csv')),
+           # cb.TensorBoard(log_dir=base, batch_size=5000, write_grads=True),
+           # cb.ReduceLROnPlateau(min_lr=0, factor=0.2, patience=10),
+           # cb.CSVLogger(os.path.join(base, 'training.csv')),
            cb.EarlyStopping(monitor='val_loss', patience=20)]
 
     # train
     history = mdl.fit_generator(train_gen, steps_per_epoch=steps_per_epoch,
         epochs=nb_epochs, callbacks=cbs, validation_data=valid_gen,
-        validation_steps=validation_steps,# workers=6,
+        validation_steps=validation_steps, workers=10,
         use_multiprocessing=True, shuffle=False)
     dd.io.save(os.path.join(base, 'history.h5'), history.history)
 

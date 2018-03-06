@@ -45,10 +45,11 @@ def cutout_indices(center, size=7, ndim=50):
 
 def context(func):
     def wrapper(*args, **kwargs):
-        graph = tf.Graph()
-        with graph.as_default():
-            with tf.Session(graph=graph) as sess:
-                K.set_session(sess)
-                result = func(*args, **kwargs)
-        return result
+        with tf.device('/gpu:0'):
+            graph = tf.Graph()
+            with graph.as_default():
+                with tf.Session(graph=graph) as sess:
+                    K.set_session(sess)
+                    result = func(*args, **kwargs)
+            return result
     return wrapper

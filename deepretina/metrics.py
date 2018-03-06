@@ -76,6 +76,7 @@ def poisson_matching(y_true, y_pred):
     loss = est - obs * K.log(est + K.epsilon())
     # R x (X+Y+C)
     mean_loss = tf.reduce_mean(loss,axis=[0])
+    # reduce across XYC
     matching = tf.argmin(mean_loss,axis=1)
     est_matched = tf.gather(est[:,0,:],matching,axis=1)
     obs_matched = obs[:,:,0]
@@ -95,8 +96,8 @@ def argmin_poisson(y_true, y_pred):
     # R x (X+Y+C)
     mean_loss = tf.reduce_mean(loss,axis=[0])
     # R
-    argmin = tf.reduce_min(mean_loss,axis=[1])
-    return K.mean(argmin)
+    minimized = tf.reduce_min(mean_loss,axis=[1])
+    return K.mean(minimized)
 
 
 def np_wrap(func):

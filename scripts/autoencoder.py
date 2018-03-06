@@ -40,7 +40,8 @@ def window_ndarray(array,window_width,step=1):
         return array[idx]
 X = data["train"]["stimulus"]
 Y = X[41:]
-X = window_ndarray(X,40)
+# X = window_ndarray(X,40)
+X = D.experiments.rolling_window(X,40)
 X = X[0:len(X)-1]
 X.shape
 Y.shape
@@ -58,4 +59,11 @@ def fit_autoencoder(train_data, valid_data, name="AE"):
 
 # %%
 fit_autoencoder(train_data, valid_data, "AE_test")
-tf.reset_default_graph()
+
+
+# @D.utils.context
+# def fit_autoencoder(train_data, valid_data, name="AE"):
+#     D.core.simple_train(D.models.auto_encoder, train_data, valid_data, name, lr=1e-2, nb_epochs=250, bz=1000,the_metrics=[])
+#
+# # %%
+# fit_autoencoder(train_data, valid_data, "AE_test")

@@ -3,3 +3,4 @@ scipy
 tensorflow>=1.4.0
 h5py
 matplotlib
+tableprint>=0.7.1

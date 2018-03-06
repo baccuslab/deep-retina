@@ -43,12 +43,13 @@ expts = [
     ("16-01-07",D.experiments.CELLS["16-01-07"],"whitenoise"),
     ("16-01-08",D.experiments.CELLS["16-01-08"],"naturalscene"),
     ("16-01-08",D.experiments.CELLS["16-01-08"],"whitenoise"),
-    # ("17-11-10-ssb","all","naturalmovie"),
+    ("17-11-10-ssb","all","naturalmovie"),
     ("17-12-09-ssb","all","naturalmovie"),
-    ("17-12-09b-ssb","all","naturalmovie"),
+    # ("17-12-09b-ssb","all","naturalmovie"),
     ("17-12-16b-ssb","all","naturalmovie")
     ]
 run_name = "13_files"
+run_name = "test"
 
 data, input_shape, nsamples = D.experiments.load_multiple_expt(expts, 'train', 40, 6000)
 train_data = D.experiments.ExptSequence(data)

@@ -123,6 +123,7 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, cutout_width=
             else:
                 stim = zscore(ft.cutout(np.array(f[train_or_test]['stimulus']), idx=(px, py), width=cutout_width).astype('float32'))
 
+
             # TODO I have no idea what num_blocks is for...is this reasonable?
             if expt in NUM_BLOCKS:
                 # apply clipping to remove the stimulus just after transitions
@@ -131,8 +132,11 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, cutout_width=
                 num_blocks = 1
             valid_indices = np.arange(expt_length).reshape(num_blocks, -1)[:, nskip:].ravel()
 
-            # reshape into the Toeplitz matrix (nsamples, history, *stim_dims)
+            # reshape into the Toeplitz matrix (nsamples, *stim_dims, history)
             stim_reshaped = rolling_window(stim[valid_indices], history, time_axis=0)
+            # channels last
+            stim_reshaped = np.moveaxis(stim_reshaped,1,-1)
+
 
             # get the response for this cell (nsamples, ncells)
             if cells=="all":

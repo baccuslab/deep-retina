@@ -28,12 +28,13 @@ def bn_layer(x, nchan, size, l2_reg, sigma=0.05):
     """An individual batchnorm layer"""
     n = int(x.shape[-2]) - size + 1
     y = Conv2D(nchan, size, kernel_regularizer=l2(l2_reg))(x)
-    y = Reshape((n, n, nchan))(BatchNormalization(axis=-1)(Flatten()(y)))
+    # y = Reshape((n, n, nchan))(BatchNormalization(axis=-1)(Flatten()(y)))
+    y = BatchNormalization(axis=-1)(y)
     return Activation('relu')(GaussianNoise(sigma)(y))
 
 def resize_layer(x,resize):
     # account for channels_first
-    xx = Permute((2,3,1))(x)
+    # xx = Permute((2,3,1))(x)
     xx = Lambda( lambda y: tf.image.resize_images(y, resize,
         method=ResizeMethod.NEAREST_NEIGHBOR))(x)
     return Permute((3,1,2))(xx)
@@ -48,10 +49,11 @@ def bn_layer_t(x, nchan, size, resize, l2_reg, sigma=0.05):
     return Activation('relu')(GaussianNoise(sigma)(y))
 
 def bn_conv(x, nchan, size, l2_reg):
-    """An individual batchnorm layer."""
+    """An individual batchnorm layer without GaussianNoise"""
     n = int(x.shape[-1]) - size + 1
     y = Conv2D(nchan, size, kernel_regularizer=l2(l2_reg))(x)
-    y = Reshape((n, n, nchan))(BatchNormalization(axis=-1)(Flatten()(y)))
+    # y = Reshape((n, n, nchan))(BatchNormalization(axis=-1)(Flatten()(y)))
+    y = BatchNormalization(axis=-1)(y)
     return Activation('relu')(y)
 
 def bn_cnn(inputs, n_out, l2_reg=0.01):
@@ -59,6 +61,7 @@ def bn_cnn(inputs, n_out, l2_reg=0.01):
     y = bn_layer(inputs, 8, 15, l2_reg)
     y = bn_layer(y, 8, 11, l2_reg)
     y = Dense(n_out, use_bias=False)(Flatten()(y))
+    # outputs = Activation('softplus')(BatchNormalization(axis=-1)(y))
     outputs = Activation('softplus')(BatchNormalization(axis=-1)(y))
     return Model(inputs, outputs, name='BN-CNN')
 

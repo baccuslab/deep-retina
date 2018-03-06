@@ -127,8 +127,7 @@ def train_generator(model, train_gen, input_shape, steps_per_epoch, run_name, va
     # train
     history = mdl.fit_generator(train_gen, steps_per_epoch=steps_per_epoch,
         epochs=nb_epochs, callbacks=cbs, validation_data=valid_gen,
-        validation_steps=validation_steps, workers=10,
-        use_multiprocessing=True, shuffle=False)
+        validation_steps=validation_steps, shuffle=False)
     dd.io.save(os.path.join(base, 'history.h5'), history.history)
 
     return history

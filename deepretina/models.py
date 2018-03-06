@@ -27,9 +27,8 @@ __all__ = ['bn_cnn', 'linear_nonlinear', 'ln', 'nips_cnn']
 def bn_layer(x, nchan, size, l2_reg, sigma=0.05):
     """An individual batchnorm layer"""
     n = int(x.shape[-2]) - size + 1
-    y = Conv2D(nchan, size, kernel_regularizer=l2(l2_reg))(x)
-    # y = Reshape((n, n, nchan))(BatchNormalization(axis=-1)(Flatten()(y)))
-    y = BatchNormalization(axis=-1)(y)
+    y = Conv2D(nchan, size, kernel_regularizer=l2(l2_reg), data_format="channels_first")(x)
+    y = BatchNormalization(axis=1)(y)
     return Activation('relu')(GaussianNoise(sigma)(y))
 
 def resize_layer(x,resize):
@@ -44,16 +43,15 @@ def bn_layer_t(x, nchan, size, resize, l2_reg, sigma=0.05):
     y = resize_layer(x,resize)
     y = Conv2D(nchan, size,
         padding='same',
-        kernel_regularizer=l2(l2_reg))(y)
-    # y = Reshape((n, n, nchan))(BatchNormalization(axis=-1)(Flatten()(y)))
+        kernel_regularizer=l2(l2_reg), data_format="channels_first")(y)
+    y = BatchNormalization(axis=1)(y)
     return Activation('relu')(GaussianNoise(sigma)(y))
 
 def bn_conv(x, nchan, size, l2_reg):
     """An individual batchnorm layer without GaussianNoise"""
     n = int(x.shape[-1]) - size + 1
-    y = Conv2D(nchan, size, kernel_regularizer=l2(l2_reg))(x)
-    # y = Reshape((n, n, nchan))(BatchNormalization(axis=-1)(Flatten()(y)))
-    y = BatchNormalization(axis=-1)(y)
+    y = Conv2D(nchan, size, kernel_regularizer=l2(l2_reg), data_format="channels_first")(x)
+    y = BatchNormalization(axis=1)(y)
     return Activation('relu')(y)
 
 def bn_cnn(inputs, n_out, l2_reg=0.01):
@@ -61,8 +59,7 @@ def bn_cnn(inputs, n_out, l2_reg=0.01):
     y = bn_layer(inputs, 8, 15, l2_reg)
     y = bn_layer(y, 8, 11, l2_reg)
     y = Dense(n_out, use_bias=False)(Flatten()(y))
-    # outputs = Activation('softplus')(BatchNormalization(axis=-1)(y))
-    outputs = Activation('softplus')(BatchNormalization(axis=-1)(y))
+    outputs = Activation('softplus')(BatchNormalization(axis=1)(y))
     return Model(inputs, outputs, name='BN-CNN')
 
 def g_cnn(inputs, l2_reg=0.01,name="G-CNN"):
@@ -70,7 +67,7 @@ def g_cnn(inputs, l2_reg=0.01,name="G-CNN"):
     y = bn_conv(inputs, 8, 15, l2_reg)
     y = bn_conv(y, 8, 11, l2_reg)
     # y = bn_layer(y, 8, 9, l2_reg)
-    y = Conv2D(8, 15, kernel_regularizer=l2(l2_reg))(y)
+    y = Conv2D(8, 15, kernel_regularizer=l2(l2_reg), data_format="channels_first")(y)
     y = Activation('relu')(y)
     outputs = y
     return Model(inputs, outputs, name=name)
@@ -79,7 +76,7 @@ def auto_encoder(inputs, l2_reg=0.01,name="Autoencoder"):
     """Autoencoder CNN model with ganglion convolution."""
     encoded = bn_conv(inputs, 8, 15, l2_reg)
     encoded = bn_conv(encoded, 8, 11, l2_reg)
-    encoded = Conv2D(8, 15, kernel_regularizer=l2(l2_reg))(encoded)
+    encoded = Conv2D(8, 15, kernel_regularizer=l2(l2_reg), data_format="channels_first")(encoded)
     encoded = Activation('relu')(encoded)
 
     decoded = bn_layer_t(encoded, 8, 15, [26,26], l2_reg)

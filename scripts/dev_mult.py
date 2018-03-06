@@ -33,18 +33,18 @@ config.results_dir = "/home/tyler/results/"
 # config.data_dir = "/home/tyler/scratch/"
 # config.results_dir = "/home/tyler/scratch/results/"
 expts = [
-    ("15-10-07",D.experiments.CELLS["15-10-07"],"whitenoise"),
-    ("15-10-07",D.experiments.CELLS["15-10-07"],"naturalscene"),
-    ("15-11-21a",D.experiments.CELLS["15-11-21a"],"whitenoise"),
-    ("15-11-21a",D.experiments.CELLS["15-11-21a"],"naturalscene"),
-    ("15-11-21b",D.experiments.CELLS["15-11-21b"],"whitenoise"),
-    ("15-11-21b",D.experiments.CELLS["15-11-21b"],"naturalscene"),
-    ("16-01-07",D.experiments.CELLS["16-01-07"],"naturalscene"),
-    ("16-01-07",D.experiments.CELLS["16-01-07"],"whitenoise"),
-    ("16-01-08",D.experiments.CELLS["16-01-08"],"naturalscene"),
-    ("16-01-08",D.experiments.CELLS["16-01-08"],"whitenoise"),
-    ("17-11-10-ssb","all","naturalmovie"),
-    ("17-12-09-ssb","all","naturalmovie"),
+    # ("15-10-07",D.experiments.CELLS["15-10-07"],"whitenoise"),
+    # ("15-10-07",D.experiments.CELLS["15-10-07"],"naturalscene"),
+    # ("15-11-21a",D.experiments.CELLS["15-11-21a"],"whitenoise"),
+    # ("15-11-21a",D.experiments.CELLS["15-11-21a"],"naturalscene"),
+    # ("15-11-21b",D.experiments.CELLS["15-11-21b"],"whitenoise"),
+    # ("15-11-21b",D.experiments.CELLS["15-11-21b"],"naturalscene"),
+    # ("16-01-07",D.experiments.CELLS["16-01-07"],"naturalscene"),
+    # ("16-01-07",D.experiments.CELLS["16-01-07"],"whitenoise"),
+    # ("16-01-08",D.experiments.CELLS["16-01-08"],"naturalscene"),
+    # ("16-01-08",D.experiments.CELLS["16-01-08"],"whitenoise"),
+    # ("17-11-10-ssb","all","naturalmovie"),
+    # ("17-12-09-ssb","all","naturalmovie"),
     # ("17-12-09b-ssb","all","naturalmovie"),
     ("17-12-16b-ssb","all","naturalmovie")
     ]
@@ -84,7 +84,8 @@ def fit_g_cnn_2(expt, stim, data):
 
 
 # %%
-fit_g_cnn(train_data, input_shape, steps_per_epoch, run_name, valid_data, steps_per_valid)
+# fit_g_cnn(train_data, input_shape, steps_per_epoch, run_name, valid_data, steps_per_valid)
+fit_bn_cnn(train_data, input_shape, steps_per_epoch, run_name, valid_data, steps_per_valid)
 # expt = expts[0][0]
 # stim = expts[0][2]
 # d = single_experiment_generator()

@@ -135,7 +135,7 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, cutout_width=
             # reshape into the Toeplitz matrix (nsamples, *stim_dims, history)
             stim_reshaped = rolling_window(stim[valid_indices], history, time_axis=0)
             # channels last
-            stim_reshaped = np.moveaxis(stim_reshaped,1,-1)
+            # stim_reshaped = np.moveaxis(stim_reshaped,1,-1)
 
 
             # get the response for this cell (nsamples, ncells)

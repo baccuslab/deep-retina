@@ -26,7 +26,7 @@ __all__ = ['bn_cnn', 'linear_nonlinear', 'ln', 'nips_cnn']
 
 def bn_layer(x, nchan, size, l2_reg, sigma=0.05):
     """An individual batchnorm layer"""
-    n = int(x.shape[-1]) - size + 1
+    n = int(x.shape[-2]) - size + 1
     y = Conv2D(nchan, size, kernel_regularizer=l2(l2_reg))(x)
     y = Reshape((n, n, nchan))(BatchNormalization(axis=-1)(Flatten()(y)))
     return Activation('relu')(GaussianNoise(sigma)(y))

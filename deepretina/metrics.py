@@ -36,9 +36,9 @@ def get_gconv_shape(obs_rate, est_rate):
     "Return dims and reshape to obs: B x R x 1, est: B x 1 x (X*Y*C)"
     nr = tf.shape(obs_rate)[1]
     nb = tf.shape(est_rate)[0]
-    nx = tf.shape(est_rate)[1]
-    ny = tf.shape(est_rate)[2]
-    nc = tf.shape(est_rate)[3]
+    nc = tf.shape(est_rate)[1]
+    nx = tf.shape(est_rate)[2]
+    ny = tf.shape(est_rate)[3]
     obs = tf.reshape(obs_rate, [nb,nr,1])
     est = tf.reshape(est_rate, (nb,1,nx*ny*nc))
     return obs, est, nb, nr, nx, ny, nc

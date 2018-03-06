@@ -28,7 +28,7 @@ def bn_layer(x, nchan, size, l2_reg, sigma=0.05):
     """An individual batchnorm layer"""
     n = int(x.shape[-1]) - size + 1
     y = Conv2D(nchan, size, kernel_regularizer=l2(l2_reg))(x)
-    y = Reshape((nchan, n, n))(BatchNormalization(axis=-1)(Flatten()(y)))
+    y = Reshape((n, n, nchan))(BatchNormalization(axis=-1)(Flatten()(y)))
     return Activation('relu')(GaussianNoise(sigma)(y))
 
 def resize_layer(x,resize):
@@ -44,14 +44,14 @@ def bn_layer_t(x, nchan, size, resize, l2_reg, sigma=0.05):
     y = Conv2D(nchan, size,
         padding='same',
         kernel_regularizer=l2(l2_reg))(y)
-    # y = Reshape((nchan, n, n))(BatchNormalization(axis=-1)(Flatten()(y)))
+    # y = Reshape((n, n, nchan))(BatchNormalization(axis=-1)(Flatten()(y)))
     return Activation('relu')(GaussianNoise(sigma)(y))
 
 def bn_conv(x, nchan, size, l2_reg):
     """An individual batchnorm layer."""
     n = int(x.shape[-1]) - size + 1
     y = Conv2D(nchan, size, kernel_regularizer=l2(l2_reg))(x)
-    y = Reshape((nchan, n, n))(BatchNormalization(axis=-1)(Flatten()(y)))
+    y = Reshape((n, n, nchan))(BatchNormalization(axis=-1)(Flatten()(y)))
     return Activation('relu')(y)
 
 def bn_cnn(inputs, n_out, l2_reg=0.01):

@@ -86,6 +86,14 @@ def auto_encoder(inputs, l2_reg=0.01,name="Autoencoder"):
     decoded = Lambda(lambda y: tf.squeeze(y, 1))(decoded)
     return Model(inputs, decoded, name=name)
 
+def decoder(inputs, l2_reg=0.01,name="Decoder"):
+    """Decoder CNN model for g_cnnv."""
+    decoded = bn_layer_t(inputs, 8, 15, [26,26], l2_reg)
+    decoded = bn_layer_t(decoded, 8, 11, [36,36], l2_reg)
+    decoded = bn_layer_t(decoded, 1, 15, [50,50], l2_reg)
+    decoded = Lambda(lambda y: tf.squeeze(y, 1))(decoded)
+    return Model(inputs, decoded, name=name)
+
 
 def linear_nonlinear(inputs, n_out, *args, activation='softplus', l2_reg=0.01):
     """A linear-nonlinear model"""

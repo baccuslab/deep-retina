@@ -33,22 +33,22 @@ config.data_dir = "/storage/baccus/"
 # config.data_dir = "/home/tyler/scratch/"
 config.results_dir = "/home/tyler/scratch/results/"
 expts = [
-    ("15-10-07",D.experiments.CELLS["15-10-07"],"whitenoise"),
-    ("15-10-07",D.experiments.CELLS["15-10-07"],"naturalscene"),
-    ("15-11-21a",D.experiments.CELLS["15-11-21a"],"whitenoise"),
-    ("15-11-21a",D.experiments.CELLS["15-11-21a"],"naturalscene"),
-    ("15-11-21b",D.experiments.CELLS["15-11-21b"],"whitenoise"),
-    ("15-11-21b",D.experiments.CELLS["15-11-21b"],"naturalscene"),
-    ("16-01-07",D.experiments.CELLS["16-01-07"],"naturalscene"),
-    ("16-01-07",D.experiments.CELLS["16-01-07"],"whitenoise"),
-    ("16-01-08",D.experiments.CELLS["16-01-08"],"naturalscene"),
-    ("16-01-08",D.experiments.CELLS["16-01-08"],"whitenoise"),
-    ("17-11-10-ssb","all","naturalmovie"),
-    ("17-12-09-ssb","all","naturalmovie"),
-    # ("17-12-09b-ssb","all","naturalmovie"),
-    ("17-12-16b-ssb","all","naturalmovie")
+    # ("15-10-07",D.experiments.CELLS["15-10-07"],"whitenoise"),
+    # ("15-10-07",D.experiments.CELLS["15-10-07"],"naturalscene"),
+    # ("15-11-21a",D.experiments.CELLS["15-11-21a"],"whitenoise"),
+    # ("15-11-21a",D.experiments.CELLS["15-11-21a"],"naturalscene"),
+    # ("15-11-21b",D.experiments.CELLS["15-11-21b"],"whitenoise"),
+    # ("15-11-21b",D.experiments.CELLS["15-11-21b"],"naturalscene"),
+    # ("16-01-07",D.experiments.CELLS["16-01-07"],"naturalscene"),
+    # ("16-01-07",D.experiments.CELLS["16-01-07"],"whitenoise"),
+    # ("16-01-08",D.experiments.CELLS["16-01-08"],"naturalscene"),
+    # ("16-01-08",D.experiments.CELLS["16-01-08"],"whitenoise"),
+    # ("17-11-10-ssb","all","naturalmovie"),
+    # ("17-12-09-ssb","all","naturalmovie"),
+    ("17-12-09b-ssb","all","naturalmovie"),
+    # ("17-12-16b-ssb","all","naturalmovie")
     ]
-run_name = "13_files"
+run_name = "17-12-09b-ssb_naturalmovie"
 # run_name = "test"
 
 data, input_shape, nsamples = D.experiments.load_multiple_expt(expts, 'train', 40, 6000)

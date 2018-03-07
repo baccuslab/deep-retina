@@ -34,7 +34,7 @@ def bn_layer(x, nchan, size, l2_reg, sigma=0.05):
 
 def resize_layer(x,resize):
     # account for channels_first
-    # xx = Permute((2,3,1))(x)
+    xx = Permute((2,3,1))(x)
     xx = Lambda( lambda y: tf.image.resize_images(y, resize,
         method=ResizeMethod.NEAREST_NEIGHBOR))(x)
     return Permute((3,1,2))(xx)

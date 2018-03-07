@@ -36,7 +36,7 @@ ExptSequence = D.experiments.ExptSequence
 config.results_dir = "/home/tyler/results/"
 config.data_dir = "/home/salamander/experiments/data/"
 
-weights = Path(config.results_dir) / "G-CNN__15-11-21b_naturalscene_2018.02.18-22.28.34" / "weights-171--6.156.h5"
+weights = Path(config.results_dir) / "G-CNN_josh_naturalmovie_2018.02.22-11.43.29" / "weights-066--5.115.h5"
 model = load_model(weights, custom_objects={"tf": tf, "ResizeMethod": D.models.ResizeMethod,
     "argmin_poisson": D.metrics.argmin_poisson,
     "matched_cc": D.metrics.matched_cc,
@@ -45,7 +45,7 @@ model = load_model(weights, custom_objects={"tf": tf, "ResizeMethod": D.models.R
     })
 
 
-datafile = Path(config.data_dir) / "15-11-21b" / "naturalscene.h5"
+datafile = Path(config.data_dir) / "17-12-09b-ssb" / "naturalmovie.h5"
 data = h5py.File(datafile, mode='r')
 
 # %%

@@ -22,12 +22,15 @@ import deepretina.metrics
 D = deepretina
 
 expt = "15-11-21b"
-stim = "whitenoise"
-# stim = "naturalscene"
+# stim = "whitenoise"
+stim = "naturalscene"
 cells = D.experiments.CELLS[expt]
+config.data_dir = "/home/tyler/scratch/"
+config.data_dir = "/storage/baccus/"
+config.results_dir = "/home/tyler/scratch/results/"
 
-config.data_dir = "/home/salamander/experiments/data/"
-config.results_dir = "/home/tyler/results/"
+# config.data_dir = "/home/salamander/experiments/data/"
+# config.results_dir = "/home/tyler/results/"
 # data = D.experiments.loadexpt(expt, cells, stim, 'train', 40, 6000)
 # n = data.X.shape[0]
 # ntrain = int(np.floor(n*0.95))

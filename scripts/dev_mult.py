@@ -27,11 +27,11 @@ batch_size = 1000
 np.arange(0,5,1)[0:10]
 val_split=0.95
 config.data_dir = "/storage/baccus/"
-config.results_dir = "/storage/baccus/results/"
-config.data_dir = "/home/salamander/experiments/data/"
-config.results_dir = "/home/tyler/results/"
+# config.results_dir = "/storage/baccus/results/"
+# config.data_dir = "/home/salamander/experiments/data/"
+# config.results_dir = "/home/tyler/results/"
 # config.data_dir = "/home/tyler/scratch/"
-# config.results_dir = "/home/tyler/scratch/results/"
+config.results_dir = "/home/tyler/scratch/results/"
 expts = [
     ("15-10-07",D.experiments.CELLS["15-10-07"],"whitenoise"),
     ("15-10-07",D.experiments.CELLS["15-10-07"],"naturalscene"),

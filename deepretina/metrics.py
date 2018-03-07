@@ -9,6 +9,7 @@ from functools import wraps
 import tensorflow as tf
 K = tf.keras.backend
 from tensorflow.python.keras import layers
+import numpy as np
 
 __all__ = ['cc', 'rmse', 'fev', 'CC', 'RMSE', 'FEV', 'np_wrap',
            'root_mean_squared_error', 'correlation_coefficient',
@@ -81,6 +82,24 @@ def poisson_matching(y_true, y_pred):
     est_matched = tf.gather(est[:,0,:],matching,axis=1)
     obs_matched = obs[:,:,0]
     return obs_matched, est_matched
+
+def poisson_argmin_idx(y_true, y_pred):
+    "Return optimal (c, x, y) mactching per y_true."
+    nr = np.shape(y_true)[1]
+    nb = np.shape(y_pred)[0]
+    nc = np.shape(y_pred)[1]
+    nx = np.shape(y_pred)[2]
+    ny = np.shape(y_pred)[3]
+    obs = np.reshape(y_true, [nb,nr,1])
+    est = np.reshape(y_pred, (nb,1,nx*ny*nc))
+
+    loss = est - obs * np.log(est + 1e-07)
+    # R x (X+Y+C)
+    mean_loss = np.mean(loss,0)
+    # reduce across XYC
+    matching = np.argmin(mean_loss,axis=1)
+    matching = np.array(np.unravel_index(matching,np.shape(y_pred)[1:])).T
+    return matching
 
 def argmin_poisson(y_true, y_pred):
     """Find a matching that produces the lowest loss and return that loss.

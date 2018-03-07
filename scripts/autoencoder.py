@@ -26,6 +26,7 @@ import deepretina.utils
 # %aimport deepretina.metrics
 # %aimport deepretina.utils
 D = deepretina
+ExptSequence = D.experiments.ExptSequence
 # config.results_dir = "/home/tyler/scratch/results/"
 config.results_dir = "/home/tyler/results/"
 
@@ -36,24 +37,33 @@ data = h5py.File(datafile, mode='r')
 
 # %%
 
-X = data["train"]["stimulus"]
+X = np.array(data["train"]["stimulus"])
 Y = X[41:]
 X = D.experiments.rolling_window(X,40)
 X = X[0:len(X)-1]
-
 n = len(X)
-ntrain = int(np.floor(n*0.95))
-nvalid = n - ntrain
-train_data = D.experiments.Exptdata(X[0:ntrain],Y[0:ntrain])
-valid_data = D.experiments.Exptdata(X[ntrain:ntrain+1000],Y[ntrain:ntrain+1000])
+ntrain = int(np.floor(n*0.9))
+nvalid = int(np.floor(n*0.05))
+ntest = n - ntrain - nvalid
+train_data = ExptSequence([
+    D.experiments.Exptdata(X[0:ntrain],Y[0:ntrain])
+    ])
+valid_data = ExptSequence([
+    D.experiments.Exptdata(X[ntrain:ntrain+nvalid],Y[ntrain:ntrain+nvalid])
+    ])
 run_name = "auto_encoder_naturalmovie"
+input_shape = train_data[0][0].shape[1:]
+train_data[0][1].shape
+steps_per_epoch = len(train_data)
+steps_per_valid = len(valid_data)
+
 # %%
 @D.utils.context
-def fit_autoencoder(train_data, valid_data, name="AE"):
-    D.core.simple_train(D.models.auto_encoder, train_data, valid_data, name, lr=1e-2, nb_epochs=250, bz=1000,the_metrics=[], loss='mse')
+def fit_autoencoder(train_data, input_shape, steps_per_epoch, run_name, valid_data, steps_per_valid):
+    D.core.train_generator(D.models.auto_encoder, train_data, input_shape, steps_per_epoch, run_name, valid_data, steps_per_valid, lr=1e-2, nb_epochs=250, bz=1000,the_metrics=[], loss='mse')
 
 # %%
-fit_autoencoder(train_data, valid_data, "AE_test")
+fit_autoencoder(train_data, input_shape, steps_per_epoch, run_name, valid_data, steps_per_valid)
 
 
 # @D.utils.context

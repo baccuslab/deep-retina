@@ -101,7 +101,7 @@ def simple_train(model, train_data, valid_data, run_name=None, model_args=(), lr
     return history
 
 
-def train_generator(model, train_gen, input_shape, steps_per_epoch, run_name, valid_gen=None, validation_steps=None, model_args=(), lr=5e-2, bz=1000, nb_epochs=250, loss="poisson", the_metrics=[metrics.cc, metrics.rmse, metrics.fev]):
+def train_generator(model, train_gen, input_shape, steps_per_epoch, run_name, valid_gen=None, steps_per_valid=None, model_args=(), lr=5e-2, bz=1000, nb_epochs=250, loss="poisson", the_metrics=[metrics.cc, metrics.rmse, metrics.fev]):
     """Trains a model"""
     # build the model
     x = Input(shape=input_shape)
@@ -127,7 +127,7 @@ def train_generator(model, train_gen, input_shape, steps_per_epoch, run_name, va
     # train
     history = mdl.fit_generator(train_gen, steps_per_epoch=steps_per_epoch,
         epochs=nb_epochs, callbacks=cbs, validation_data=valid_gen,
-        validation_steps=validation_steps, shuffle=False)
+        validation_steps=steps_per_valid, shuffle=False)
     dd.io.save(os.path.join(base, 'history.h5'), history.history)
 
     return history

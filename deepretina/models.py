@@ -84,7 +84,7 @@ def auto_encoder(inputs, l2_reg=0.01,name="Autoencoder"):
     decoded = bn_layer_t(decoded, 8, 11, [36,36], l2_reg)
     decoded = bn_layer_t(decoded, 1, 15, [50,50], l2_reg)
     decoded = Lambda(lambda y: tf.squeeze(y, 1))(decoded)
-    return Model(inputs, (encoded, decoded), name=name)
+    return Model(inputs, decoded, name=name)
 
 
 def linear_nonlinear(inputs, n_out, *args, activation='softplus', l2_reg=0.01):

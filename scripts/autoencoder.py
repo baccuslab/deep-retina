@@ -64,11 +64,3 @@ def fit_autoencoder(train_data, input_shape, steps_per_epoch, run_name, valid_da
 
 # %%
 fit_autoencoder(train_data, input_shape, steps_per_epoch, run_name, valid_data, steps_per_valid)
-
-
-# @D.utils.context
-# def fit_autoencoder(train_data, valid_data, name="AE"):
-#     D.core.simple_train(D.models.auto_encoder, train_data, valid_data, name, lr=1e-2, nb_epochs=250, bz=1000,the_metrics=[])
-#
-# # %%
-# fit_autoencoder(train_data, valid_data, "AE_test")

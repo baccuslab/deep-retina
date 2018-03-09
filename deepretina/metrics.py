@@ -73,6 +73,13 @@ def poisson(y_true, y_pred):
     return K.mean(y_pred - y_true * K.log(y_pred + K.epsilon()), axis=-1)
 
 def poisson_matching(y_true, y_pred):
+    """Find a matching that produces the lowest loss and return that matching.
+    Params:
+        y_true: B x R
+        y_pred: B x X x Y x C
+    Return:
+        matching: (B x R, B x R)
+    """
     obs, est, nb, nr, nx, ny, nc = get_gconv_shape(y_true,y_pred)
     loss = est - obs * K.log(est + K.epsilon())
     # R x (X+Y+C)
@@ -84,7 +91,7 @@ def poisson_matching(y_true, y_pred):
     return obs_matched, est_matched
 
 def poisson_argmin_idx(y_true, y_pred):
-    "Return optimal (c, x, y) mactching per y_true."
+    "Return optimal (c, x, y) mactching per y_true using CPU (numpy)."
     nr = np.shape(y_true)[1]
     nb = np.shape(y_pred)[0]
     nc = np.shape(y_pred)[1]
@@ -108,7 +115,7 @@ def argmin_poisson(y_true, y_pred):
         y_pred: B x X x Y x C
     Return:
         loss: L
-    future ref: https://github.com/mbaradad/munkres-tensorflow"""
+    """
     obs, est, nb, nr, nx, ny, nc = get_gconv_shape(y_true,y_pred)
 
     loss = est - obs * K.log(est + K.epsilon())

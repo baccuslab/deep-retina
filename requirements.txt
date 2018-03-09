@@ -1,6 +1,6 @@
 numpy
 scipy
-tensorflow>=1.4.0
+tensorflow>=1.5.0
 h5py
 matplotlib
 tableprint>=0.7.1

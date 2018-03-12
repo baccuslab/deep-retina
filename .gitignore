@@ -34,3 +34,4 @@ tags
 sandbox/
 tensorboard/
 results/
+nohup.out

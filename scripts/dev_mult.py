@@ -26,12 +26,12 @@ D = deepretina
 batch_size = 1000
 np.arange(0,5,1)[0:10]
 val_split=0.95
-config.data_dir = "/storage/baccus/"
+# config.data_dir = "/storage/baccus/"
 # config.results_dir = "/storage/baccus/results/"
-# config.data_dir = "/home/salamander/experiments/data/"
-# config.results_dir = "/home/tyler/results/"
+config.data_dir = "/home/salamander/experiments/data/"
+config.results_dir = "/home/tyler/results/"
 # config.data_dir = "/home/tyler/scratch/"
-config.results_dir = "/home/tyler/scratch/results/"
+# config.results_dir = "/home/tyler/scratch/results/"
 expts = [
     # ("15-10-07",D.experiments.CELLS["15-10-07"],"whitenoise"),
     # ("15-10-07",D.experiments.CELLS["15-10-07"],"naturalscene"),
@@ -43,8 +43,8 @@ expts = [
     # ("16-01-07",D.experiments.CELLS["16-01-07"],"whitenoise"),
     # ("16-01-08",D.experiments.CELLS["16-01-08"],"naturalscene"),
     # ("16-01-08",D.experiments.CELLS["16-01-08"],"whitenoise"),
-    # ("17-11-10-ssb","all","naturalmovie"),
-    # ("17-12-09-ssb","all","naturalmovie"),
+    ("17-11-10-ssb","all","naturalmovie"),
+    ("17-12-09-ssb","all","naturalmovie"),
     ("17-12-09b-ssb","all","naturalmovie"),
     # ("17-12-16b-ssb","all","naturalmovie")
     ]

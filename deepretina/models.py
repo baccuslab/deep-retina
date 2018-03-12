@@ -39,13 +39,14 @@ def resize_layer(x,resize):
         method=ResizeMethod.NEAREST_NEIGHBOR))(y)
     return Permute((3,1,2))(y)
 
-def bn_layer_t(x, nchan, size, resize, l2_reg, sigma=0.05):
+def bn_layer_t(x, nchan, size, resize, l2_reg, sigma=0.05, batch_normalization=True):
     """An individual batchnorm transpose-rescale layer"""
     y = resize_layer(x,resize)
     y = Conv2D(nchan, size,
         padding='same',
         kernel_regularizer=l2(l2_reg), data_format="channels_first")(y)
-    y = BatchNormalization(axis=1)(y)
+    if batch_normalization:
+        y = BatchNormalization(axis=1)(y)
     return Activation('relu')(GaussianNoise(sigma)(y))
 
 def bn_conv(x, nchan, size, l2_reg):
@@ -90,7 +91,7 @@ def decoder(inputs, l2_reg=0.01,name="Decoder"):
     """Decoder CNN model for g_cnnv."""
     decoded = bn_layer_t(inputs, 8, 15, [26,26], l2_reg)
     decoded = bn_layer_t(decoded, 8, 11, [36,36], l2_reg)
-    decoded = bn_layer_t(decoded, 1, 15, [50,50], l2_reg)
+    decoded = bn_layer_t(decoded, 1, 15, [50,50], l2_reg, batch_normalization=False)
     decoded = Lambda(lambda y: tf.squeeze(y, 1))(decoded)
     return Model(inputs, decoded, name=name)
 

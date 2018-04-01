@@ -30,3 +30,7 @@ var/
 
 # ctags
 tags
+
+results/
+scripts/
+.mypy_cache

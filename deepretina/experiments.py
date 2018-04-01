@@ -1,172 +1,36 @@
 """
 Preprocessing utility functions for loading and formatting experimental data
 """
-
-from __future__ import absolute_import, division, print_function
-import os
-from functools import partial
-from itertools import repeat
 from collections import namedtuple
-import numpy as np
+
 import h5py
+import numpy as np
+from os.path import join, expanduser
 from scipy.stats import zscore
-from .utils import notify, allmetrics
+import pyret.filtertools as ft
+from .utils import notify
+
+NUM_BLOCKS = {
+    '15-10-07': 6,
+    '15-11-21a': 6,
+    '15-11-21b': 6,
+    '16-01-07': 3,
+    '16-01-08': 3,
+}
+CELLS = {
+    '15-10-07': [0, 1, 2, 3, 4],
+    '15-11-21a': [6, 10, 12, 13],
+    '15-11-21b': [0, 1, 3, 5, 8, 9, 13, 14, 16, 17, 18, 20, 21, 22, 23, 24, 25],
+    '16-01-07': [0, 2, 7, 10, 11, 12, 31],
+    '16-01-08': [0, 3, 7, 9, 11],
+    '16-05-31': [2, 3, 4, 14, 16, 18, 20, 25, 27]
+}
+
 Exptdata = namedtuple('Exptdata', ['X', 'y'])
-dt = 1e-2
-__all__ = ['Experiment', 'loadexpt']
+__all__ = ['loadexpt', 'stimcut', 'CELLS']
 
 
-class Experiment(object):
-    """Class to keep track of loaded experiment data"""
-
-    def __init__(self, expt, cells, train_filenames, test_filenames, history, batchsize, holdout=0.1, nskip=6000, zscore_flag=True):
-        """Keeps track of experimental data
-
-        Parameters
-        ----------
-        expt : string
-            The experiment date or name
-
-        cells : list
-            Which cells from this experiment to train on
-
-        train_filenames : list of strings
-            Which h5 file to load for training (e.g. 'whitenoise' or 'naturalscene')
-            If a list of strings is given (e.g. ['whitenoise', 'naturalscene']),
-            the two experiments are concatenated
-
-        test_filenames : list of strings
-            Which h5 file to load for testing (same as train_filenames)
-
-        history : int
-            Temporal history, in samples, for the rolling window (Toeplitz stimulus)
-
-        batchsize : int
-            How many samples to include in each training batch
-
-        holdout : float
-            How much data to holdout (fraction of batches) (must be between 0 and 1)
-
-        nskip : int
-            The number of stimulus frames to skip at the beginning of each stimulus block.
-            Used to remove times when the retina is rapidly adapting to the change in stimulus
-            statistics. (Default: 6000)
-
-        zscore_flag : bool
-            Whether stimulus should be zscored (default: True)
-        """
-
-        # store experiment variables (for saving later)
-        self.info = {
-            'date': expt,
-            'cells': cells,
-            'train_datasets': ' + '.join(train_filenames),
-            'test_datasets': ' + '.join(test_filenames),
-            'history': history,
-            'batchsize': batchsize,
-            'clipped': nskip * dt,
-        }
-
-        assert holdout >= 0 and holdout < 1, "holdout must be between 0 and 1"
-        self.batchsize = batchsize
-        self.dt = dt
-        self.holdout = holdout
-
-        # partially apply function arguments to the loadexpt function
-        load_data = partial(loadexpt, expt, cells, history=history, zscore_flag=zscore_flag)
-
-        # load training data, and generate the train/validation split, for each filename
-        self._train_data = {}
-        self._train_batches = list()
-        self._validation_batches = list()
-        for filename in train_filenames:
-
-            # load the training experiment as an Exptdata tuple
-            self._train_data[filename] = load_data(filename, 'train', nskip=nskip)
-
-            # generate the train/validation split
-            length = self._train_data[filename].X.shape[0]
-            train, val = _train_val_split(length, self.batchsize, holdout)
-
-            # append these train/validation batches to the master list
-            self._train_batches.extend(zip(repeat(filename), train))
-            self._validation_batches.extend(zip(repeat(filename), val))
-
-        # load the data for each experiment, store as a list of Exptdata tuple
-        self._test_data = {filename: load_data(filename, 'test', nskip=0) for filename in test_filenames}
-
-        # save batches_per_epoch for calculating # epochs later
-        self.batches_per_epoch = len(self._train_batches)
-
-    def train(self, shuffle):
-        """Returns a generator that yields batches of *training* data
-
-        Parameters
-        ----------
-        shuffle : boolean
-            Whether or not to shuffle the time points before making batches
-        """
-        # generate an order in which to go through the batches
-        indices = np.arange(len(self._train_batches))
-        if shuffle:
-            np.random.shuffle(indices)
-
-        # yield training data, one batch at a time
-        for ix in indices:
-            expt, inds = self._train_batches[ix]
-            yield self._train_data[expt].X[inds], self._train_data[expt].y[inds]
-
-    def validate(self, modelrate, metrics):
-        """Evaluates the model on the validation set
-
-        Parameters
-        ----------
-        modelrate : function
-            A function that takes a spatiotemporal stimulus and predicts a firing rate
-        """
-        # choose a random validation batch
-        expt, inds = self._validation_batches[np.random.randint(len(self._validation_batches))]
-
-        # load the stimulus and response on this batch
-        X = self._train_data[expt].X[inds]
-        r = self._train_data[expt].y[inds]
-
-        # make predictions
-        rhat = modelrate({'stim': X})
-
-        # evaluate using the given metrics
-        return allmetrics(r, rhat, metrics), r, rhat
-
-    def test(self, modelrate, metrics):
-        """Tests model predictions on the repeat stimuli
-
-        Parameters
-        ----------
-        modelrate : function
-            A function that takes a spatiotemporal stimulus and predicts a firing rate
-        """
-        avg_scores = {}
-        all_scores = {}
-        for fname, exptdata in self._test_data.items():
-
-            # get data and model firing rates
-            r = exptdata.y
-            rhat = modelrate({'stim': exptdata.X})
-
-            # evaluate
-            avg_scores[fname], all_scores[fname] = allmetrics(r, rhat, metrics)
-
-        return avg_scores, all_scores
-
-    def cutout(self, xi, yi):
-        """Cuts out the given slice from the stimuli in this experiment"""
-        for stimset in ('_train_data', '_test_data'):
-            stim = self.__dict__[stimset]
-            for key, ex in stim.items():
-                stim[key] = Exptdata(ex.X[:, :, xi, yi], ex.y)
-
-
-def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=True):
+def loadexpt(expt, cells, filename, train_or_test, history, nskip, cutout_width=None):
     """Loads an experiment from an h5 file on disk
 
     Parameters
@@ -174,7 +38,7 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=T
     expt : str
         The date of the experiment to load in YY-MM-DD format (e.g. '15-10-07')
 
-    cells : int or list of ints
+    cells : list of ints
         Indices of the cells to load from the experiment
 
     filename : string
@@ -187,31 +51,36 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=T
         Number of samples of history to include in the toeplitz stimulus
 
     nskip : float, optional
-        Number of samples to skip at the beginning of each repeat (Default: 0)
+        Number of samples to skip at the beginning of each repeat
 
-    zscore_flag : bool
-        Whether to zscore the stimulus (Default: True)
+    cutout_width : int, optional
+        If not None, cuts out the stimulus around the STA (assumes cells is a scalar)
     """
     assert history > 0 and type(history) is int, "Temporal history must be a positive integer"
     assert train_or_test in ('train', 'test'), "train_or_test must be 'train' or 'test'"
 
     with notify('Loading {}ing data for {}/{}'.format(train_or_test, expt, filename)):
 
+        # get whitenoise STA for cutout stimulus
+        if cutout_width is not None:
+            assert len(cells) == 1, "cutout must be used with single cells"
+            wn = _loadexpt_h5(expt, 'whitenoise')
+            sta = np.array(wn[f'train/stas/cell{cells[0]+1:02d}']).copy()
+            py, px = ft.filterpeak(sta)[1]
+
         # load the hdf5 file
-        filepath = os.path.join(os.path.expanduser('~/experiments/data'), expt, filename + '.h5')
-        with h5py.File(filepath, mode='r') as f:
+        with _loadexpt_h5(expt, filename) as f:
 
             expt_length = f[train_or_test]['time'].size
 
-            # load the stimulus into memory as a numpy array
-            stim = np.array(f[train_or_test]['stimulus']).astype('float32')
-
-            # z-score the stimulus if desired
-            if zscore_flag:
-                stim = zscore(stim)
+            # load the stimulus into memory as a numpy array, and z-score it
+            if cutout_width is None:
+                stim = zscore(np.array(f[train_or_test]['stimulus']).astype('float32'))
+            else:
+                stim = zscore(ft.cutout(np.array(f[train_or_test]['stimulus']), idx=(px, py), width=cutout_width).astype('float32'))
 
             # apply clipping to remove the stimulus just after transitions
-            num_blocks = NUM_BLOCKS[expt] if train_or_test == 'train' else 1
+            num_blocks = NUM_BLOCKS[expt] if train_or_test == 'train' and nskip > 0 else 1
             valid_indices = np.arange(expt_length).reshape(num_blocks, -1)[:, nskip:].ravel()
 
             # reshape into the Toeplitz matrix (nsamples, history, *stim_dims)
@@ -222,6 +91,28 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, zscore_flag=T
             resp = resp[history:]
 
     return Exptdata(stim_reshaped, resp)
+
+def _loadexpt_h5(expt, filename):
+    """Loads an h5py reference to an experiment on disk"""
+    filepath = join(expanduser('~/experiments/data'), expt, filename + '.h5')
+    return h5py.File(filepath, mode='r')
+
+
+def stimcut(data, expt, ci, width=11):
+    """Cuts out a stimulus around the whitenoise receptive field"""
+
+    # get the white noise STA for this cell
+    wn = _loadexpt_h5(expt, 'whitenoise')
+    sta = np.array(wn[f'train/stas/cell{ci+1:02d}']).copy()
+
+    # find the peak of the sta
+    xc, yc = ft.filterpeak(sta)[1]
+
+    # cutout stimulus
+    X, y = data
+    Xc = ft.cutout(X, idx=(yc, xc), width=width)
+    yc = y[:, ci].reshape(-1, 1)
+    return Exptdata(Xc, yc)
 
 
 def rolling_window(array, window, time_axis=0):
@@ -256,9 +147,7 @@ def rolling_window(array, window, time_axis=0):
     >>> np.mean(rolling_window(x, 3), -1)
     array([[ 1.,  2.,  3.],
            [ 6.,  7.,  8.]])
-
     """
-
     if time_axis == 0:
         array = array.T
 
@@ -280,33 +169,3 @@ def rolling_window(array, window, time_axis=0):
         return np.rollaxis(arr.T, 1, 0)
     else:
         return arr
-
-
-def _train_val_split(length, batchsize, holdout):
-    """Returns a set of training and a set of validation indices
-
-    Parameters
-    ----------
-    length : int
-        The total number of samples of data
-
-    batchsize : int
-        The number of samples to include in each batch
-
-    holdout : float
-        The fraction of batches to hold out for validation
-    """
-    # compute the number of available batches, given the fixed batch size
-    num_batches = int(np.floor(length / batchsize))
-
-    # the total number of samples for training
-    total = int(num_batches * batchsize)
-
-    # generate batch indices, and shuffle the deck of batches
-    batch_indices = np.arange(total).reshape(num_batches, batchsize)
-    np.random.shuffle(batch_indices)
-
-    # compute the held out (validation) batches
-    num_holdout = int(np.round(holdout * num_batches))
-
-    return batch_indices[num_holdout:].copy(), batch_indices[:num_holdout].copy()

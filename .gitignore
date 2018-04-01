@@ -28,9 +28,9 @@ var/
 *.jpg
 *.svg
 
-# ctags
+# other
 tags
-
-results/
-scripts/
 .mypy_cache
+sandbox/
+tensorboard/
+results/

@@ -1,76 +1,62 @@
 """
-Core tools for training models
+Core tools for training models.
 """
-from keras.models import Model
-from .glms import GLM
-from time import time
-import tableprint as tp
+import os
+from datetime import datetime
+import deepdish as dd
+import keras.callbacks as cb
+from keras.layers import Input
+from deepretina import metrics, activations
+from deepretina.experiments import loadexpt, CELLS
+from keras.models import load_model
+from keras.optimizers import Adam
 
-__all__ = ['train']
+__all__ = ['train', 'load']
 
 
-def train(model, experiment, monitor, num_epochs, augment=False):
-    """Train the given network against the given data
+def load(filepath):
+    """Reload a keras model"""
+    objects = {k: activations.__dict__[k] for k in activations.__all__}
+    objects.update({k: metrics.__dict__[k] for k in metrics.__all__})
+    return load_model(filepath, custom_objects=objects)
 
-    Parameters
-    ----------
-    model : keras.models.Model or glms.GLM
-        A GLM or Keras Model object
 
-    experiment : experiments.Experiment
-        An Experiment object
+def train(model, expt, stim, model_args=(), lr=1e-2, bz=5000, nb_epochs=500, val_split=0.05, cells=None):
+    """Trains a model"""
+    if cells is None:
+        width = None
+        cells = CELLS[expt]
+        cellname = ''
+    else:
+        width = 11
+        cellname = f'cell-{cells[0]+1:02d}'
 
-    monitor : io.Monitor
-        Saves the model parameters and plots of performance progress
+    # load experimental data
+    data = loadexpt(expt, cells, stim, 'train', 40, 6000, cutout_width=width)
 
-    num_epochs : int
-        Number of epochs to train for
+    # build the model
+    n_cells = data.y.shape[1]
+    x = Input(shape=data.X.shape[1:])
+    mdl = model(x, n_cells, *model_args)
 
-    reduce_lr_every : int
-        How often to reduce the learning rate
+    # compile the model
+    mdl.compile(loss='poisson', optimizer=Adam(lr), metrics=[metrics.cc, metrics.rmse, metrics.fev])
 
-    reduce_rate : float
-        A fraction (constant) to multiply the learning rate by
+    # store results in this directory
+    name = '_'.join([mdl.name, cellname, expt, stim, datetime.now().strftime('%Y.%m.%d-%H.%M')])
+    base = f'../results/{name}'
+    os.mkdir(base)
 
-    """
-    assert isinstance(model, (Model, GLM)), "'model' must be a GLM or Keras model"
+    # define model callbacks
+    cbs = [cb.ModelCheckpoint(os.path.join(base, 'weights-{epoch:03d}-{val_loss:.3f}.h5')),
+           cb.TensorBoard(log_dir=base, histogram_freq=1, batch_size=5000, write_grads=True),
+           cb.ReduceLROnPlateau(min_lr=0, factor=0.2, patience=10),
+           cb.CSVLogger(os.path.join(base, 'training.csv')),
+           cb.EarlyStopping(monitor='val_loss', patience=20)]
 
-    # initialize training iteration
-    iteration = 0
-    train_start = time()
+    # train
+    history = mdl.fit(x=data.X, y=data.y, batch_size=bz, epochs=nb_epochs,
+                      callbacks=cbs, validation_split=val_split, shuffle=True)
+    dd.io.save(os.path.join(base, 'history.h5'), history.history)
 
-    # loop over epochs
-    try:
-        for epoch in range(num_epochs):
-            tp.banner('Epoch #{} of {}'.format(epoch + 1, num_epochs))
-            print(tp.header(["Iteration", "Loss", "Runtime"]), flush=True)
-
-            # loop over data batches for this epoch
-            for X, y in experiment.train(shuffle=True):
-
-                # update on save_every, assuming it is positive
-                if (monitor is not None) and (iteration % monitor.save_every == 0):
-
-                    # performs validation, updates performance plots, saves results to dropbox
-                    monitor.save(epoch, iteration, X, y, model.predict)
-
-                # train on the batch
-                tstart = time()
-                loss = model.train_on_batch({'stim':X, 'loss':y})[0]
-                elapsed_time = time() - tstart
-
-                # update
-                iteration += 1
-                print(tp.row([iteration, float(loss), tp.humantime(elapsed_time)]), flush=True)
-
-            print(tp.bottom(3))
-
-    except KeyboardInterrupt:
-        print('\nCleaning up')
-
-    # allows the monitor to perform any post-training visualization
-    if monitor is not None:
-        elapsed_time = time() - train_start
-        monitor.cleanup(iteration, elapsed_time)
-
-    tp.banner('Training complete!')
+    return history

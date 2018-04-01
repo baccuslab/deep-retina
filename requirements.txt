@@ -1,8 +1,7 @@
-future
 numpy
 scipy
 matplotlib
-keras==0.3.2
+keras>=2.0.5
 tqdm
 tableprint
 scikit-learn

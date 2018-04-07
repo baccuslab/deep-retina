@@ -5,7 +5,7 @@ Deepretina example script
 from __future__ import absolute_import
 from deepretina.models import convnet, ln, sequential
 from deepretina.core import train
-from deepretina.experiments import Experiment
+from deepretina.experiments import load_expt
 from deepretina.io import KerasMonitor, main_wrapper
 from keras.optimizers import RMSprop
 

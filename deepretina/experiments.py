@@ -92,6 +92,7 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, cutout_width=
 
     return Exptdata(stim_reshaped, resp)
 
+
 def _loadexpt_h5(expt, filename):
     """Loads an h5py reference to an experiment on disk"""
     filepath = join(expanduser('~/experiments/data'), expt, filename + '.h5')

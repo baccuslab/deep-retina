@@ -26,7 +26,7 @@ CELLS = {
     '16-05-31': [2, 3, 4, 14, 16, 18, 20, 25, 27]
 }
 
-Exptdata = namedtuple('Exptdata', ['X', 'y'])
+Exptdata = namedtuple('Exptdata', ['X', 'y', 'spkhist'])
 __all__ = ['loadexpt', 'stimcut', 'CELLS']
 
 
@@ -90,7 +90,11 @@ def loadexpt(expt, cells, filename, train_or_test, history, nskip, cutout_width=
             resp = np.array(f[train_or_test]['response/firing_rate_10ms'][cells]).T[valid_indices]
             resp = resp[history:]
 
-    return Exptdata(stim_reshaped, resp)
+            # get the spike history counts for this cell (nsamples, ncells)
+            binned = np.array(f[train_or_test]['response/binned'][cells]).T[valid_indices]
+            spk_hist = rolling_window(binned, history, time_axis=0)
+
+    return Exptdata(stim_reshaped, resp, spk_hist)
 
 
 def _loadexpt_h5(expt, filename):

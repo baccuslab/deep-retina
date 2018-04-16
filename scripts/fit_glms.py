@@ -1,4 +1,6 @@
 import os
+import tableprint as tp
+import argparse
 from deepretina import experiments
 from collections import defaultdict
 from deepretina.metrics import np_wrap, cc, rmse, fev
@@ -13,6 +15,9 @@ import numpy as np
 from tqdm import tqdm
 
 from collections import namedtuple
+
+
+Graph = namedtuple('graph', ('stim', 'hist', 'rate'))
 
 
 class GLM(snt.AbstractModule):
@@ -66,22 +71,18 @@ def datafeed(expt, keys, batchsize=5000, niter=1000):
         }
 
 
-if __name__ == '__main__':
-
-    HISTORY = 40
-    CELL = 0
-    CUTOUT = 7
-    Keys = namedtuple('graph', ('stim', 'hist', 'rate'))
+def fit_glm(ci, exptdate, stimulus, cutout=7, history=40):
+    tp.banner(f'Training GLM, expt {exptdate}, {stimulus}, cell {ci+1:02d}')
 
     # load experiment
-    expt = experiments.loadexpt('15-10-07', (CELL,), 'whitenoise', 'train', HISTORY, 5000, cutout_width=CUTOUT)
+    expt = experiments.loadexpt(exptdate, (ci,), stimulus, 'train', history, 5000, cutout_width=cutout)
 
     tf.reset_default_graph()
 
     stim = tf.placeholder(tf.float32, shape=(None, *expt.X.shape[1:]), name='stimulus')
     hist = tf.placeholder(tf.float32, shape=(None, *expt.spkhist.shape[1:]), name='spike_history')
     rate = tf.placeholder(tf.float32, (None, 1), name='firing_rate')
-    graph = Keys(stim, hist, rate)
+    graph = Graph(stim, hist, rate)
 
     # define model
     model = GLM(l2_filter=1e-4, l2_hist=1e-2)
@@ -129,10 +130,10 @@ if __name__ == '__main__':
 
     # get parameters
     weights, whist, offset = sess.run(model.get_variables())
-    sta = weights.reshape(HISTORY, CUTOUT * 2, CUTOUT * 2)
+    sta = weights.reshape(history, cutout * 2, cutout * 2)
     whist = whist.ravel()
 
-    testdata = experiments.loadexpt('15-10-07', (CELL,), 'whitenoise', 'test', HISTORY, 5000, cutout_width=CUTOUT)
+    testdata = experiments.loadexpt(exptdate, (ci,), stimulus, 'test', history, 5000, cutout_width=cutout)
     test_feed = next(datafeed(testdata, graph, batchsize=None))
     test_pred = sess.run(pred, feed_dict=test_feed)[:, 0]
     test_rate = testdata.y
@@ -154,5 +155,26 @@ if __name__ == '__main__':
         'test_pred': test_pred,
         'test_rate': test_rate,
     }
-    basedir = os.path.expanduser('~/research/deep-retina/deepretina/scripts/')
-    dd.io.save(os.path.join(basedir, f'cell{CELL:02d}.h5'), results)
+
+    basedir = os.path.expanduser('~/research/deep-retina/results/glms/')
+    folder = os.path.join(basedir, f'{exptdate}_{stimulus}')
+    try:
+        os.mkdir(folder)
+    except FileExistsError:
+        pass
+    dd.io.save(os.path.join(folder, f'cell{ci:02d}.h5'), results)
+
+
+if __name__ == '__main__':
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+    # expts = ('15-10-07', '15-11-21a', '15-11-21b')
+    # stims = ('whitenoise', 'naturalscene')
+
+    parser = argparse.ArgumentParser(description='Train a GLM model')
+    parser.add_argument('--expt', help='Experiment date (e.g. 15-10-07)')
+    parser.add_argument('--stim', help='Stimulus class (e.g. naturalscene)')
+    parser.add_argument('--cell', help='Cell index')
+    args = parser.parse_args()
+
+    fit_glm(int(args.cell), args.expt, args.stim)

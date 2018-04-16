@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# activations = "softplus sigmoid relu requ exp rbf"
-
 # associative array of cells for each experiment
 declare -A EXPTS
 EXPTS['15-10-07']="0 1 2 3 4"

@@ -7,6 +7,7 @@ import deepdish as dd
 import keras.callbacks as cb
 from keras.layers import Input
 from deepretina import metrics, activations
+from convbatchnorm import normalization
 from deepretina.experiments import loadexpt, CELLS
 from keras.models import load_model
 from keras.optimizers import Adam
@@ -18,6 +19,7 @@ def load(filepath):
     """Reload a keras model"""
     objects = {k: activations.__dict__[k] for k in activations.__all__}
     objects.update({k: metrics.__dict__[k] for k in metrics.__all__})
+    objects.update({k: normalization.__dict__[k] for k in normalization.__all__})
     return load_model(filepath, custom_objects=objects)
 
 

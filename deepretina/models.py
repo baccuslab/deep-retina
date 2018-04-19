@@ -9,6 +9,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.layers.noise import GaussianNoise
 from keras.regularizers import l1, l2
 from deepretina import activations
+from convbatchnorm.normalization import ConvBatchNormalization
 
 __all__ = ['bn_cnn', 'linear_nonlinear', 'ln', 'nips_cnn']
 
@@ -17,14 +18,22 @@ def bn_layer(x, nchan, size, l2_reg, sigma=0.05):
     """An individual batchnorm layer"""
     n = int(x.shape[-1]) - size + 1
     y = Conv2D(nchan, size, data_format="channels_first", kernel_regularizer=l2(l2_reg))(x)
-    y = Reshape((nchan, n, n))(BatchNormalization(axis=-1)(Flatten()(y)))
+    y = BatchNormalization(axis=1)(y)
+    return Activation('relu')(GaussianNoise(sigma)(y))
+
+
+def conv_bn_layer(x, nchan, size, l2_reg, sigma=0.05):
+    """An individual convolutional batchnorm layer"""
+    n = int(x.shape[-1]) - size + 1
+    y = Conv2D(nchan, size, data_format="channels_first", kernel_regularizer=l2(l2_reg))(x)
+    y = ConvBatchNormalization(normalization_axis=[1, 2, 3], parameter_axis=[1])(y)
     return Activation('relu')(GaussianNoise(sigma)(y))
 
 
 def bn_cnn(inputs, n_out, l2_reg=0.01):
     """Batchnorm CNN model"""
-    y = bn_layer(inputs, 8, 15, l2_reg)
-    y = bn_layer(y, 8, 11, l2_reg)
+    y = conv_bn_layer(inputs, 8, 15, l2_reg)
+    y = conv_bn_layer(y, 8, 11, l2_reg)
     y = Dense(n_out, use_bias=False)(Flatten()(y))
     outputs = Activation('softplus')(BatchNormalization(axis=-1)(y))
     return Model(inputs, outputs, name='BN-CNN')

@@ -10,3 +10,4 @@ scikit-image
 h5py
 descent
 deepdish
+pyret

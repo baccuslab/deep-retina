@@ -45,7 +45,7 @@ def train(model, expt, stim, model_args=(), lr=1e-2, bz=5000, nb_epochs=500, val
     # store results in this directory
     name = '_'.join([mdl.name, cellname, expt, stim, datetime.now().strftime('%Y.%m.%d-%H.%M')])
     base = f'../results/{name}'
-    os.mkdir(base)
+    os.makedirs(base, exist_ok=True)
 
     # define model callbacks
     cbs = [cb.ModelCheckpoint(os.path.join(base, 'weights-{epoch:03d}-{val_loss:.3f}.h5')),

@@ -6,15 +6,4 @@ Please see our [NIPS paper](https://arxiv.org/abs/1702.01825) for more details.
 Note that deepretina requires python 3.5 or higher.
 
 ### Usage
-To install the dependencies, run `pip install -r requirements.txt`. If you run the `runme.py` script, it will print out a brief overview of the different modules in deepretina (assuming it is able to import everything correctly).
-
-The following is a high level description of the different modules:
-- `core.py`: contains a function for training a deepretina model
-- `models.py`: contains functions for building different kinds of deepretina models (convnets, RNNs, etc.)
-- `experiments.py`: class structure for loading experimental data
-- `io.py`: contains tools for saving model training progress and parameters to disk
-
-A more comprehensive tutorial is in the works.
-
-### Contact
-Lane McIntosh (lmcintosh@stanford.edu) and Niru Maheswaranathan (nirum@stanford.edu)
+To install the dependencies, run `pip install -r requirements.txt`. Scripts for training models are located in the `scripts` folder (e.g. see `scripts/fit_models.py`). Model definitions are in `deepretina/models.py`
